@@ -1,1 +1,245 @@
-{"sections":{"main":{"type":"main-product","blocks":{"text_eWyEKj":{"type":"text","name":"Title","settings":{"text":"{{ product.title }}","font":"font-heading","text_size":"text-heading-secondary","symbol":"none","icon":"none","space_above":0.5}},"text_6HKtW8":{"type":"text","settings":{"text":"{{ product.metafields.spy.custom_field_product_color.value }}","font":"font-heading","text_size":"text-base","symbol":"none","icon":"none","space_above":0.5}},"price_jk9rEJ":{"type":"price","settings":{"text_size":"text-heading-secondary","show_discount_tag":false,"discount_type":"percentage","use_accent_color":false,"space_above":2}},"richtext_4yPNzt":{"type":"richtext","settings":{"text":"{{ product.description }}","space_above":2}},"variant_robot_block_E43QxW":{"type":"shopify:\/\/apps\/variant-robot\/blocks\/block\/688c8244-0443-4219-ab70-b6ab325fa020","settings":{"variant_robot_products_label":"Color","display_mode":"image","text_display":"auto","text_metafield":"","text_display_layout":"auto","swatch_display_mode":"swatch","swatch_metafield":"","enable_tooltips":true,"tooltip_display":"product_title","tooltip_metafield":"","text_below_product":"none","swatch_style":"circle","image_to_display":"featured_image","image_style":"square","image_display_mode":"show_more_variants_button","variant_robot_products_per_row":8,"variant_robot_products_spacing":5,"variant_robot_border_radius":0,"variant_robot_products_sold_out":false,"variant_robot_zoom_on_hover":false,"variant_robot_border_color":"#ffffff","variant_robot_active_border_color":"#000000","variant_robot_border_width":1,"variant_robot_inner_border_color":"#000000","variant_robot_inner_border_width":0,"variant_robot_custom_liquid":""}},"variant_picker":{"type":"variant_picker","settings":{"option_style":"buttons","full_width_buttons":false,"spread_options":false,"hide_option_labels":false,"hide_sold_out_variants":false,"hide_unavailable_variants":false,"space_above":2}},"mp_size_chart_size_guide_mp_inline_button_yhTHwM":{"type":"shopify:\/\/apps\/mp-size-chart-size-guide\/blocks\/mp-inline-button\/305100b1-3599-492a-a54d-54f196ff1f94","settings":{}},"buy_buttons":{"type":"buy_buttons","settings":{"show_payment_terms":false,"enable_payment_button":false,"full_width":false,"show_atc_price":false,"atc_price_separator":"&rarr;","atc_price_separator_repeats":1,"show_pickup_availability":false,"space_above_pickup_availability":1,"show_gift_card_recipient":false,"show_quantity_selector":true,"space_above":2}},"richtext_wiMwnp":{"type":"richtext","settings":{"text":"<ul><li>Free shipping for orders over 599 KR<\/li><li>Delivery between 1-3 days<\/li><\/ul>","space_above":2}},"richtext_H3NyXT":{"type":"richtext","settings":{"text":"","space_above":2}},"collapsible_tab_iXhkGh":{"type":"collapsible_tab","settings":{"heading":"Care & Treatment","heading_text_style":"font-body","content":"<p>We are commited to crafting products that stand the test of time. By thoughtfully choosing only the best materials, we ensure durability, quality, and longevity in every item we create.<\/p><p>For optimal care, wash your garments gently at 30°C, unless the care label indicates otherwise. This will help extend the life of your clothes.<\/p><p>Wear often, wash less for a happy environment.<br\/><br\/>If you have questions <a href=\"\/pages\/contact\" title=\"Contact\">contact support.<\/a><\/p>","page":"","icon":"none","space_above":1}},"collapsible_tab_LCQai8":{"type":"collapsible_tab","settings":{"heading":"Delivery & Returns","heading_text_style":"font-body","content":"<p>Free shipping for for orders above 599 DKK.<br\/>Delivery between 1-3 business days.<\/p><p>You have 14 days to return your order.<\/p><p>Do you need more info?<strong><br\/><\/strong>Read our Shipping & Returns <a href=\"\/pages\/refusionspolitik\" target=\"_blank\" title=\"Returpolitik\">here.<\/a><\/p>","page":"about-us","icon":"none","space_above":1}}},"block_order":["text_eWyEKj","text_6HKtW8","price_jk9rEJ","richtext_4yPNzt","variant_robot_block_E43QxW","variant_picker","mp_size_chart_size_guide_mp_inline_button_yhTHwM","buy_buttons","richtext_wiMwnp","richtext_H3NyXT","collapsible_tab_iXhkGh","collapsible_tab_LCQai8"],"custom_css":[],"settings":{"desktop_media_width":"three-fifths","desktop_media_position":"left","two_media_per_row":true,"first_media_full_width":true,"preselect_variant":true,"variant_media_behavior":"swap","always_show_product_featured_media_first":false,"single_variant_mode":false,"enable_variant_media":true,"enable_image_zoom":true,"enable_video_looping":true,"enable_video_autoplay":true,"max_width_of_content":"w-full","app_space_above":1,"color_scheme":"scheme-a8e638e6-366e-4670-8fd6-073410c0890c","override_header_footer_color_scheme":false}},"featured_collection_NCNmLN":{"type":"featured-collection","settings":{"collection":"accessories","product_tile_type":"standard","grid":4,"rows":1,"grid_mobile":"2","enable_quick_buy":true,"subheading":"","title":"Combine this with","show_view_all":false,"show_collection_count":false,"color_scheme":"scheme-a8e638e6-366e-4670-8fd6-073410c0890c"}},"related-products":{"type":"related-products","settings":{"product_tile_type":"standard","limit":"4","products_per_row_desktop":"4","products_per_row_mobile":"2","enable_quick_buy":true,"subheading":"","title":"You may also like","color_scheme":"scheme-a8e638e6-366e-4670-8fd6-073410c0890c"}}},"order":["main","featured_collection_NCNmLN","related-products"]}
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "main": {
+      "type": "main-product",
+      "blocks": {
+        "text_eWyEKj": {
+          "type": "text",
+          "name": "Title",
+          "settings": {
+            "text": "{{ product.title }}",
+            "font": "font-heading",
+            "text_size": "text-heading-secondary",
+            "symbol": "none",
+            "icon": "none",
+            "space_above": 0.5
+          }
+        },
+        "text_6HKtW8": {
+          "type": "text",
+          "settings": {
+            "text": "{{ product.metafields.spy.custom_field_product_color.value }}",
+            "font": "font-heading",
+            "text_size": "text-base",
+            "symbol": "none",
+            "icon": "none",
+            "space_above": 0.5
+          }
+        },
+        "price_jk9rEJ": {
+          "type": "price",
+          "settings": {
+            "text_size": "text-heading-secondary",
+            "show_discount_tag": false,
+            "discount_type": "percentage",
+            "use_accent_color": false,
+            "space_above": 2
+          }
+        },
+        "richtext_4yPNzt": {
+          "type": "richtext",
+          "settings": {
+            "text": "{{ product.description }}",
+            "space_above": 2
+          }
+        },
+        "variant_robot_block_E43QxW": {
+          "type": "shopify://apps/variant-robot/blocks/block/688c8244-0443-4219-ab70-b6ab325fa020",
+          "settings": {
+            "variant_robot_products_label": "Color",
+            "display_mode": "image",
+            "text_display": "auto",
+            "text_metafield": "",
+            "text_display_layout": "auto",
+            "swatch_display_mode": "swatch",
+            "swatch_metafield": "",
+            "enable_tooltips": true,
+            "tooltip_display": "product_title",
+            "tooltip_metafield": "",
+            "text_below_product": "none",
+            "swatch_style": "circle",
+            "image_to_display": "featured_image",
+            "image_style": "square",
+            "image_display_mode": "show_more_variants_button",
+            "variant_robot_products_per_row": 8,
+            "variant_robot_products_spacing": 5,
+            "variant_robot_border_radius": 0,
+            "variant_robot_products_sold_out": false,
+            "variant_robot_zoom_on_hover": false,
+            "variant_robot_border_color": "#ffffff",
+            "variant_robot_active_border_color": "#000000",
+            "variant_robot_border_width": 1,
+            "variant_robot_inner_border_color": "#000000",
+            "variant_robot_inner_border_width": 0,
+            "variant_robot_custom_liquid": ""
+          }
+        },
+        "variant_picker": {
+          "type": "variant_picker",
+          "settings": {
+            "option_style": "buttons",
+            "full_width_buttons": false,
+            "spread_options": false,
+            "hide_option_labels": false,
+            "hide_sold_out_variants": false,
+            "hide_unavailable_variants": false,
+            "space_above": 2
+          }
+        },
+        "mp_size_chart_size_guide_mp_inline_button_yhTHwM": {
+          "type": "shopify://apps/mp-size-chart-size-guide/blocks/mp-inline-button/305100b1-3599-492a-a54d-54f196ff1f94",
+          "settings": {}
+        },
+        "buy_buttons": {
+          "type": "buy_buttons",
+          "settings": {
+            "show_payment_terms": false,
+            "enable_payment_button": false,
+            "full_width": false,
+            "show_atc_price": false,
+            "atc_price_separator": "&rarr;",
+            "atc_price_separator_repeats": 1,
+            "show_pickup_availability": false,
+            "space_above_pickup_availability": 1,
+            "show_gift_card_recipient": false,
+            "show_quantity_selector": true,
+            "space_above": 2
+          }
+        },
+        "richtext_wiMwnp": {
+          "type": "richtext",
+          "settings": {
+            "text": "<ul><li>Free shipping for orders over 599 KR</li><li>Delivery between 1-3 days</li></ul>",
+            "space_above": 2
+          }
+        },
+        "richtext_H3NyXT": {
+          "type": "richtext",
+          "settings": {
+            "text": "",
+            "space_above": 2
+          }
+        },
+        "collapsible_tab_LCQai8": {
+          "type": "collapsible_tab",
+          "settings": {
+            "heading": "Delivery & Returns",
+            "heading_text_style": "font-heading",
+            "content": "<p>Free shipping for for orders above 599 DKK.<br/>Delivery between 1-3 business days.</p><p>You have 14 days to return your order.</p><p>Do you need more info?<strong><br/></strong>Read our Shipping & Returns <a href=\"/pages/refusionspolitik\" target=\"_blank\" title=\"Returpolitik\">here.</a></p>",
+            "page": "about-us",
+            "open_by_default": true,
+            "show_bottom_border": true,
+            "border_width": 1,
+            "icon": "none",
+            "space_above": 1
+          }
+        },
+        "collapsible_tab_iXhkGh": {
+          "type": "collapsible_tab",
+          "settings": {
+            "heading": "FIT & FEATURES",
+            "heading_text_style": "font-heading",
+            "content": "<p>We are commited to crafting products that stand the test of time. By thoughtfully choosing only the best materials, we ensure durability, quality, and longevity in every item we create.</p><p>For optimal care, wash your garments gently at 30°C, unless the care label indicates otherwise. This will help extend the life of your clothes.</p><p>Wear often, wash less for a happy environment.<br/><br/>If you have questions <a href=\"/pages/contact\" title=\"Contact\">contact support.</a></p>",
+            "page": "",
+            "open_by_default": false,
+            "show_bottom_border": true,
+            "border_width": 1,
+            "icon": "none",
+            "space_above": 1
+          }
+        },
+        "collapsible_tab_jxcTRa": {
+          "type": "collapsible_tab",
+          "settings": {
+            "heading": "Care & Treatment",
+            "heading_text_style": "font-heading",
+            "content": "<p>We are commited to crafting products that stand the test of time. By thoughtfully choosing only the best materials, we ensure durability, quality, and longevity in every item we create.</p><p>For optimal care, wash your garments gently at 30°C, unless the care label indicates otherwise. This will help extend the life of your clothes.</p><p>Wear often, wash less for a happy environment.<br/><br/>If you have questions <a href=\"/pages/contact\" title=\"Contact\">contact support.</a></p>",
+            "page": "",
+            "open_by_default": false,
+            "show_bottom_border": true,
+            "border_width": 1,
+            "icon": "none",
+            "space_above": 1
+          }
+        }
+      },
+      "block_order": [
+        "text_eWyEKj",
+        "text_6HKtW8",
+        "price_jk9rEJ",
+        "richtext_4yPNzt",
+        "variant_robot_block_E43QxW",
+        "variant_picker",
+        "mp_size_chart_size_guide_mp_inline_button_yhTHwM",
+        "buy_buttons",
+        "richtext_wiMwnp",
+        "richtext_H3NyXT",
+        "collapsible_tab_LCQai8",
+        "collapsible_tab_iXhkGh",
+        "collapsible_tab_jxcTRa"
+      ],
+      "custom_css": [],
+      "settings": {
+        "desktop_media_width": "three-fifths",
+        "desktop_media_position": "left",
+        "two_media_per_row": true,
+        "first_media_full_width": true,
+        "preselect_variant": true,
+        "variant_media_behavior": "swap",
+        "always_show_product_featured_media_first": false,
+        "single_variant_mode": false,
+        "enable_variant_media": true,
+        "enable_image_zoom": true,
+        "enable_video_looping": true,
+        "enable_video_autoplay": true,
+        "max_width_of_content": "w-full",
+        "app_space_above": 1,
+        "color_scheme": "scheme-a8e638e6-366e-4670-8fd6-073410c0890c",
+        "override_header_footer_color_scheme": false
+      }
+    },
+    "featured_collection_NCNmLN": {
+      "type": "featured-collection",
+      "settings": {
+        "collection": "accessories",
+        "product_tile_type": "standard",
+        "grid": 4,
+        "rows": 1,
+        "grid_mobile": "2",
+        "enable_quick_buy": true,
+        "subheading": "",
+        "title": "Combine this with",
+        "show_view_all": false,
+        "show_collection_count": false,
+        "color_scheme": "scheme-a8e638e6-366e-4670-8fd6-073410c0890c"
+      }
+    },
+    "related-products": {
+      "type": "related-products",
+      "settings": {
+        "product_tile_type": "standard",
+        "limit": "4",
+        "products_per_row_desktop": "4",
+        "products_per_row_mobile": "2",
+        "enable_quick_buy": true,
+        "subheading": "",
+        "title": "You may also like",
+        "color_scheme": "scheme-a8e638e6-366e-4670-8fd6-073410c0890c"
+      }
+    }
+  },
+  "order": [
+    "main",
+    "featured_collection_NCNmLN",
+    "related-products"
+  ]
+}
