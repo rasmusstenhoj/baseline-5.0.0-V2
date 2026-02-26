@@ -67,7 +67,7 @@
         when '@app'
           render 'product-block-app', block: block, product: product
         when 'title'
-          render 'product-block-title', block: block, product: product, wrap_with_link: featured_product_section
+          render 'product-block-title', block: block, product: product, wrap_with_link: featured_product_section, current_variant: current_variant
         when 'vendor'
           render 'product-block-vendor', block: block, product: product
         when 'price'
