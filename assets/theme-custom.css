@@ -1,0 +1,338 @@
+/* CSS-bridge = Theme.liquid */
+
+/* ##### MENU ##### */
+
+/* ––––– Hover Styling ––––– */
+.menu-item-hover:hover,
+.menu-link-hover:hover {
+  color: #B4AB88 !important;
+  transition: color 0.2s ease;
+}
+
+/* ##### PRODUKTSIDE ##### */
+
+/* ––––– Levering countdown timer ––––– */
+/* Liquid = Custom liquid Shopify block */
+/* Script = Countdown-timer-main.liquid */
+
+.countdown-timer {
+  font-size: inherit; 
+  font-family: inherit; 
+  letter-spacing: inherit; 
+  line-height: inherit; 
+  font-weight: inherit; 
+  color: inherit; 
+  text-align: center;
+  margin-top: 0;
+  display: inline-block;
+  width: 95px; 
+  padding: 0 5px;
+}
+
+.time-label {
+  display: inline-block;
+  width: auto;
+  text-align: center;
+  margin-left: 3px;
+}
+
+/* ––––– Dynamisk button 'betalingsmuligheder' ––––– */
+
+.shopify-payment-button__more-options {
+  font-size: var(--font-size-sm) !important;
+  text-align: left !important;
+}
+
+/* ––––– Size Chart App styling ––––– */
+
+#shopify-block-AbXZobHVHQmFjZ2Q5U__esc_size_charts_app_block_7f4QHK {
+  margin-top: -20px;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-body);
+}
+
+/* ––––– Margin price block ––––– */
+
+.product-price-block {
+  margin-bottom: -20px;
+}
+
+/* ––––– Variant model description ––––– */
+/* Liquid = Product-form-component-variant-picker.liquid (se comment) */
+
+.size-meta {
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-body);
+}
+
+/* ––––– Variant color swatch ––––– */
+/* Liquid = color.swatch.liquid */
+
+.color-swatches {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 15px;
+  width: 100%;
+}
+
+.swatch-title {
+  font-weight: bold;
+  display: block;
+  width: 100%;
+}
+
+.swatch-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.swatch {
+  display: inline-block;
+  width: var(--swatch-size, 24px);
+  height: var(--swatch-size, 24px);
+  border: var(--gridline-width) solid #000;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.swatch-spacing {
+  display: block;
+  padding: 0.5rem;
+}
+
+/* ––––– Variant picker jeans & shorts logic ––––– */
+/* Liquid = Product-form-component-variant-picker.liquid */
+
+/* ##### KOLLEKTIONSIDE ##### */
+
+/* ––––– Collection Color Swatches ––––– */
+/* Basisstilarter til collection swatches */
+.collection-color-swatches {
+  padding-left: var(--section-horizontal-spacing); /* Brug samme værdi som titlen */
+  margin-top: 0.5rem;
+  z-index: 25 !important; 
+  position: relative !important;
+  pointer-events: auto !important; /* Meget vigtigt */
+}
+
+/* Sørg for at swatch containeren kan modtage klik-events */
+.swatch-container {
+  display: flex;
+  justify-content: flex-start; 
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin: 0.2rem 0;
+  align-items: center;
+  padding-top: 0.5rem;
+  position: relative !important;
+  z-index: 50 !important; /* Meget høj z-index for at være over alt andet */
+  pointer-events: auto !important;
+}
+
+/* Meget aggressiv styling af swatches for at sikre klikbarhed */
+.collection-swatch {
+  height: 0.9rem;
+  width: 0.9rem;
+  border-radius: 9999px;
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  z-index: 50;
+  pointer-events: auto;
+  border: 2px solid transparent;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.collection-swatch.current-swatch {
+  border-color: currentColor;
+}
+
+.collection-swatch.active-swatch {
+  transform: scale(1.3);
+  border-color: white;
+  box-shadow: 0 0 0 1px currentColor, 0 0 5px rgba(0, 0, 0, 0.3);
+  z-index: 55;
+}
+
+.swatch-more-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 0.25rem;
+  font-size: 0.875rem;
+  opacity: 0.75;
+}
+
+.collection-color-swatches {
+  padding: 0.5rem;
+  margin: -0.5rem;
+}
+
+/* ––––– Dynamiske Subcollections ––––– */
+/* Liquid = main-collection.liquid line 220-303 */
+/* Script = main-collection.liquid line 291-304 */
+
+.subcollections-container {
+  @apply py-section-vertical-spacing px-section-horizontal-spacing !important;
+  background-color: var(--color-background) !important;
+  overflow-x: auto !important; 
+  white-space: nowrap !important;
+}
+
+.subcollections-grid {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 1rem !important;
+  justify-content: flex-start !important;
+  overflow-x: auto !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--color-border) transparent !important;
+  padding-bottom: 0.5rem !important;
+}
+
+.subcollection-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.75rem 1.5rem !important;
+  background: var(--color-background) !important;
+  border: var(--gridline-width) solid #000000 !important;
+  border-radius: 0px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease-in-out !important;
+  min-width: max-content !important;
+  height: auto !important;
+}
+
+.subcollection-name {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+/* valgte subcollection styling */
+
+.subcollection-item.active {
+  color: #B4AB88 !important;
+  border-color: #B4AB88 !important;
+}
+
+.subcollection-item.active .subcollection-name {
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+}
+
+/* scrollbar */
+
+.subcollections-grid::-webkit-scrollbar {
+  height: 0px;
+}
+
+.subcollections-grid::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 10px;
+}
+
+.subcollections-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media screen and (max-width: 768px) {
+  .subcollections-grid::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ##### DRAWER CART ##### */
+
+/* ––––– Consent checkbox ––––– */
+/* HTML + Script = line cart-footer.liquid (se comment) */
+
+/* terms */
+
+.agree-to-terms {
+  padding-top: 0.5rem;
+  text-align: left !important;
+  font-family: var(--font-family-body);
+}
+
+/* terms link styling */
+
+.agree-to-terms a {
+  text-decoration: underline;
+  text-decoration-thickness: var(--gridline-width);
+}
+
+/* ––––– taxes ––––– */
+
+/* taxes text */
+
+.taxes {
+  padding-bottom: 0.5rem;
+  text-align: left !important;
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-sm);
+}
+
+/* taxes link styling */
+
+.taxes a {
+  text-decoration: underline;
+  text-decoration-thickness: var(--gridline-width);
+}
+
+@font-face {
+  font-family: "Director-Regular";
+  src:
+    url("https://cdn.shopify.com/s/files/1/0459/2107/5352/files/Director-Regular.ttf") format("ttf");
+  }
+
+  @font-face {
+  font-family: "Roobert-Medium";
+  src:
+    url("https://cdn.shopify.com/s/files/1/0459/2107/5352/files/Roobert-Medium.woff2") format("woff2");
+  }
+
+  h1 {
+    font-family: Director-Regular; !important;
+  }
+
+   h2 {
+    font-family: Director-Regular; !important;
+  }
+
+   h3 {
+    font-family: Director-Regular; !important;
+  }
+
+   h4 {
+    font-family: Director-Regular; !important;
+  }
+
+   h5 {
+    font-family: Director-Regular; !important;
+  }
+
+   h6 {
+    font-family: Director-Regular; !important;
+  }
+
+  p {
+    font-family: Roobert-Medium; !important;
+  }
+
+  a {
+    font-family: Roobert-Medium; !important;
+  }
+
+  li {
+    font-family: Roobert-Medium; !important;
+  }

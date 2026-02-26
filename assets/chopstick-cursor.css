@@ -1,0 +1,36 @@
+*, *::before, *::after {
+  cursor: url('https://cdn.shopify.com/s/files/1/0459/2107/5352/files/chopstick_cursor_4.svg?v=1741076324') 16 16, auto !important;
+}
+
+/* Fjern cursor-pointer fra knapper og links for konsistens */
+button, 
+[role="button"], 
+a, 
+.cursor-pointer, 
+input[type="submit"], 
+.btn, 
+.button,
+.theme-button,
+.collection-swatch,
+.theme-button--secondary {
+  cursor: url('https://cdn.shopify.com/s/files/1/0459/2107/5352/files/chopstick_cursor_4.svg?v=1741076324') 16 16, pointer !important;
+}
+
+/* Tilføj hover cursor til interaktive elementer */
+button:hover, 
+[role="button"]:hover, 
+a:hover, 
+.cursor-pointer:hover, 
+input[type="submit"]:hover, 
+.btn:hover, 
+.button:hover,
+.theme-button:hover,
+.collection-swatch:hover,
+.theme-button--secondary:hover {
+  cursor: url('https://cdn.shopify.com/s/files/1/0459/2107/5352/files/chopstick_cursor_hover_4.svg?v=1741076324') 16 16, pointer !important;
+}
+
+/* Behold standard-cursor for deaktiverede elementer */
+:disabled {
+  cursor: default !important;
+}
