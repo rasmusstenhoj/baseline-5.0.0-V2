@@ -3,6 +3,12 @@
   assign hide_on_mobile = section.settings.hide_on_mobile
   assign display = section.settings.display
   assign link = section.settings.link
+
+  assign bottom_border_style = ''
+  if section.settings.show_bottom_border
+    assign border_width = section.settings.bottom_border_width | default: 2
+    assign bottom_border_style = 'border-bottom: ' | append: border_width | append: 'px solid rgb(var(--color-scheme-text));'
+  endif
 -%}
 
 {%- if section.blocks.size == 1
@@ -117,6 +123,7 @@
       class="border-b-gridline border-gridline-color bg-scheme-background py-2 text-center text-scheme-text {% if section.settings.uppercase %}uppercase{% endif %} {% if hide_on_mobile %}hidden lg:block{% endif %}"
       role="complementary"
       data-color-scheme="{{ section_color }}"
+      {% if bottom_border_style != '' %}style="{{ bottom_border_style }}"{% endif %}
     >
       {%- if link != blank -%}
         <a
@@ -143,6 +150,7 @@
       class="group border-b-gridline border-gridline-color bg-scheme-background text-scheme-text {% if section.settings.uppercase %}uppercase{% endif %} {% if hide_on_mobile %}hidden lg:block{% endif %}"
       role="complementary"
       data-color-scheme="{{ section_color }}"
+      {% if bottom_border_style != '' %}style="{{ bottom_border_style }}"{% endif %}
     >
       {%- liquid
         assign speed_setting = section.settings.speed | plus: 0
@@ -538,6 +546,27 @@
       "id": "color_scheme",
       "default": "scheme1",
       "label": "Color scheme"
+    },
+    {
+      "type": "header",
+      "content": "Border"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_bottom_border",
+      "label": "Show bottom border",
+      "default": false
+    },
+    {
+      "visible_if": "{{ section.settings.show_bottom_border }}",
+      "type": "range",
+      "id": "bottom_border_width",
+      "label": "Border width",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "unit": "px",
+      "default": 2
     }
   ],
   "max_blocks": 1,
