@@ -24,17 +24,6 @@
             "space_above": 0.5
           }
         },
-        "text_6HKtW8": {
-          "type": "text",
-          "settings": {
-            "text": "{{ product.metafields.spy.custom_field_product_color.value }}",
-            "font": "font-heading",
-            "text_size": "text-base",
-            "symbol": "none",
-            "icon": "none",
-            "space_above": 0.5
-          }
-        },
         "price_jk9rEJ": {
           "type": "price",
           "settings": {
@@ -62,7 +51,7 @@
             "text_display_layout": "auto",
             "swatch_display_mode": "swatch",
             "swatch_metafield": "",
-            "enable_tooltips": true,
+            "enable_tooltips": false,
             "tooltip_display": "product_title",
             "tooltip_metafield": "",
             "text_below_product": "none",
@@ -77,7 +66,7 @@
             "variant_robot_zoom_on_hover": false,
             "variant_robot_border_color": "#ffffff",
             "variant_robot_active_border_color": "#000000",
-            "variant_robot_border_width": 1,
+            "variant_robot_border_width": 0,
             "variant_robot_inner_border_color": "#000000",
             "variant_robot_inner_border_width": 0,
             "variant_robot_custom_liquid": ""
@@ -167,7 +156,6 @@
       },
       "block_order": [
         "text_eWyEKj",
-        "text_6HKtW8",
         "price_jk9rEJ",
         "richtext_4yPNzt",
         "variant_robot_block_E43QxW",
