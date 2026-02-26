@@ -38,6 +38,20 @@
     endcapture
     assign font_classes = 'font-heading ' | append: header_type_scale_classes
   endif
+
+  assign nav_font_classes = font_classes
+  assign nav_uppercase_classes = ''
+  if section.settings.nav_font != 'default'
+    assign nav_font_classes = section.settings.nav_font
+    if section.settings.nav_text_size != 'default'
+      assign nav_font_classes = nav_font_classes | append: ' ' | append: section.settings.nav_text_size
+    endif
+    if section.settings.nav_uppercase_override == 'yes'
+      assign nav_uppercase_classes = 'uppercase'
+    elsif section.settings.nav_uppercase_override == 'no'
+      assign nav_uppercase_classes = 'normal-case'
+    endif
+  endif
 -%}
 
 {%- capture header_logo -%}
@@ -134,7 +148,7 @@
 
 {%- liquid
   capture header_menu
-    render 'header-menu', layout: layout, item_spacing: item_spacing, section: section, font_classes: font_classes
+    render 'header-menu', layout: layout, item_spacing: item_spacing, section: section, font_classes: font_classes, nav_font_classes: nav_font_classes, nav_uppercase_classes: nav_uppercase_classes
   endcapture
 -%}
 
@@ -680,6 +694,85 @@
       "type": "checkbox",
       "id": "show_current_page_indicator",
       "label": "Show current page indicator"
+    },
+    {
+      "type": "header",
+      "content": "Navigation font"
+    },
+    {
+      "type": "select",
+      "id": "nav_font",
+      "label": "Font",
+      "info": "Override the global header font for top-level navigation links",
+      "options": [
+        {
+          "value": "default",
+          "label": "Default (global setting)"
+        },
+        {
+          "value": "font-body",
+          "label": "Body"
+        },
+        {
+          "value": "font-heading",
+          "label": "Heading"
+        },
+        {
+          "value": "font-subheading",
+          "label": "Subheading"
+        }
+      ],
+      "default": "default"
+    },
+    {
+      "visible_if": "{{ section.settings.nav_font != 'default' }}",
+      "type": "select",
+      "id": "nav_text_size",
+      "label": "Text size",
+      "options": [
+        {
+          "value": "default",
+          "label": "Default"
+        },
+        {
+          "value": "text-base",
+          "label": "Body"
+        },
+        {
+          "value": "text-subheading",
+          "label": "Subheading"
+        },
+        {
+          "value": "text-heading-standard",
+          "label": "Standard heading"
+        },
+        {
+          "value": "text-heading-secondary",
+          "label": "Secondary heading"
+        }
+      ],
+      "default": "default"
+    },
+    {
+      "visible_if": "{{ section.settings.nav_font != 'default' }}",
+      "type": "select",
+      "id": "nav_uppercase_override",
+      "label": "Uppercase",
+      "options": [
+        {
+          "value": "default",
+          "label": "Default (global setting)"
+        },
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ],
+      "default": "default"
     },
     {
       "type": "header",

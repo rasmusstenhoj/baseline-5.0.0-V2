@@ -443,7 +443,7 @@
         class="no-js-focus-wrapper flex self-stretch"
       >
         <button
-          class="inline-flex {{ item_spacing }} items-center {% if settings.nav_uppercase and settings.header_font == 'body' %}uppercase{% endif %} {{ font_classes }}"
+          class="inline-flex {{ item_spacing }} items-center {% if nav_uppercase_classes != blank %}{{ nav_uppercase_classes }}{% elsif settings.nav_uppercase and settings.header_font == 'body' %}uppercase{% endif %} {{ nav_font_classes }}"
           @click="expanded = !expanded"
           :aria-expanded="expanded ? true : 'false'"
           aria-controls="menu{{ counter }}"
@@ -606,7 +606,7 @@
         {% if link.active %}
           aria-current="page"
         {% endif %}
-        class="relative flex {{ item_spacing }} {% if layout contains 'spread' %}self-stretch inline-flex items-center{% endif %} {{ font_classes }} {% if settings.nav_uppercase and settings.header_font == 'body' %}uppercase{% endif %}"
+        class="relative flex {{ item_spacing }} {% if layout contains 'spread' %}self-stretch inline-flex items-center{% endif %} {{ nav_font_classes }} {% if nav_uppercase_classes != blank %}{{ nav_uppercase_classes }}{% elsif settings.nav_uppercase and settings.header_font == 'body' %}uppercase{% endif %}"
         href="{{ link.url }}"
       >
         <span class="m-auto inline-block">{{- link.title -}}</span>
