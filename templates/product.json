@@ -22,16 +22,6 @@
             "space_above": 1
           }
         },
-        "price_jk9rEJ": {
-          "type": "price",
-          "settings": {
-            "text_size": "text-heading-secondary",
-            "show_discount_tag": false,
-            "discount_type": "percentage",
-            "use_accent_color": false,
-            "space_above": 2
-          }
-        },
         "richtext_4yPNzt": {
           "type": "richtext",
           "settings": {
@@ -162,7 +152,6 @@
       },
       "block_order": [
         "title_nM9QCj",
-        "price_jk9rEJ",
         "richtext_4yPNzt",
         "variant_robot_block_E43QxW",
         "variant_picker",
