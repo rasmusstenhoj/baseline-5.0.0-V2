@@ -75,7 +75,7 @@
         "variant_picker": {
           "type": "variant_picker",
           "settings": {
-            "option_style": "buttons",
+            "option_style": "text_underline",
             "full_width_buttons": false,
             "spread_options": false,
             "hide_option_labels": false,
