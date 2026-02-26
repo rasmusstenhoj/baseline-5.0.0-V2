@@ -1,0 +1,61 @@
+{
+  "sections": {
+    "shop_the_look_": {
+      "type": "shop-the-look",
+      "blocks": {
+        "product_hotspot_1": {
+          "type": "product_hotspot",
+          "settings": {
+            "product": "",
+            "x_position": 25,
+            "y_position": 50,
+            "use_mobile_position": false,
+            "x_position_mobile": 25,
+            "y_position_mobile": 50
+          }
+        },
+        "product_hotspot_2": {
+          "type": "product_hotspot",
+          "settings": {
+            "product": "",
+            "x_position": 66,
+            "y_position": 33,
+            "use_mobile_position": false,
+            "x_position_mobile": 25,
+            "y_position_mobile": 50
+          }
+        },
+        "product_hotspot_3": {
+          "type": "product_hotspot",
+          "settings": {
+            "product": "",
+            "x_position": 82,
+            "y_position": 82,
+            "use_mobile_position": false,
+            "x_position_mobile": 25,
+            "y_position_mobile": 50
+          }
+        }
+      },
+      "block_order": [
+        "product_hotspot_1",
+        "product_hotspot_2",
+        "product_hotspot_3"
+      ],
+      "name": "Shop the look",
+      "settings": {
+        "crop_image": "1",
+        "image_position": "right",
+        "use_large_hotspot_desktop": false,
+        "show_product_thumbnail": false,
+        "thumbnail_aspect": "1",
+        "show_vendor": false,
+        "desktop_alignment": "bottom",
+        "subheading": "",
+        "title": "Shop the look",
+        "color_scheme": ""
+      }
+    }
+  },
+  "order": ["shop_the_look_"]
+}
