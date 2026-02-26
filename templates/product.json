@@ -111,14 +111,7 @@
             "show_pickup_availability": false,
             "space_above_pickup_availability": 1,
             "show_gift_card_recipient": false,
-            "show_quantity_selector": true,
-            "space_above": 2
-          }
-        },
-        "richtext_wiMwnp": {
-          "type": "richtext",
-          "settings": {
-            "text": "<ul><li>Free shipping for orders over 599 KR</li><li>Delivery between 1-3 days</li></ul>",
+            "show_quantity_selector": false,
             "space_above": 2
           }
         },
@@ -181,7 +174,6 @@
         "variant_picker",
         "mp_size_chart_size_guide_mp_inline_button_yhTHwM",
         "buy_buttons",
-        "richtext_wiMwnp",
         "richtext_H3NyXT",
         "collapsible_tab_LCQai8",
         "collapsible_tab_iXhkGh",
