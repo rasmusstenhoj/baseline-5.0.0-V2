@@ -632,27 +632,46 @@
       "type": "@app"
     },
     {
-      "type": "title",
-      "name": "Title",
-      "limit": 1,
-      "settings": [
-        {
-          "type": "header",
-          "content": "Layout"
-        },
-        {
-          "type": "range",
-          "id": "space_above",
-          "min": 0.5,
-          "max": 2,
-          "step": 0.5,
-          "unit": "x",
-          "label": "Space above",
-          "default": 1,
-          "info": "Setting is disabled if positioned at the top of the column."
-        }
-      ]
+  "type": "title",
+  "name": "Title",
+  "limit": 1,
+  "settings": [
+    {
+      "type": "select",
+      "id": "font",
+      "label": "Font",
+      "options": [
+        { "value": "font-body", "label": "Body" },
+        { "value": "font-subheading", "label": "Subheading" },
+        { "value": "font-heading", "label": "Heading" }
+      ],
+      "default": "font-heading"
     },
+    {
+      "type": "select",
+      "id": "text_size",
+      "label": "Text size",
+      "options": [
+        { "value": "text-base", "label": "Body" },
+        { "value": "text-subheading", "label": "Subheading" },
+        { "value": "text-heading-standard", "label": "Standard heading" },
+        { "value": "text-heading-secondary", "label": "Secondary heading" },
+        { "value": "text-heading-feature", "label": "Feature heading" }
+      ],
+      "default": "text-heading-feature"
+    },
+    {
+      "type": "range",
+      "id": "space_above",
+      "min": 0.5,
+      "max": 2,
+      "step": 0.5,
+      "unit": "x",
+      "label": "Space above",
+      "default": 1
+    }
+  ]
+},
     {
       "type": "price",
       "name": "Price",
@@ -3049,3 +3068,6 @@
   ]
 }
 {% endschema %}
+
+
+Claude
