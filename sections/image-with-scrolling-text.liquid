@@ -1,0 +1,690 @@
+{% liquid
+  assign color_scheme = section.settings.color_scheme
+  assign repeat_text = section.settings.repeat_text
+  assign image = section.settings.image
+  assign image_mobile = section.settings.image_mobile
+  assign text = section.settings.text
+  assign link = section.settings.link
+  assign mobile_text_scale = section.settings.mobile_text_scale
+  assign desktop_text_scale = section.settings.desktop_text_scale
+  assign font = section.settings.font
+  assign overlaid_content_position = section.settings.overlaid_content_position
+  assign speed_setting = section.settings.speed | plus: 0
+  assign direction = section.settings.direction
+  assign separator = section.settings.separator
+  assign separator_repeats = section.settings.separator_repeats
+  assign spacing_between_repeated_separators = section.settings.spacing_between_repeated_separators
+  assign spacing_between_repeated_text = section.settings.spacing_between_repeated_text
+  assign separator_type = section.settings.separator_type
+  assign inline_link_text = section.settings.inline_link_text
+  assign button_style = section.settings.button_style
+  assign image_size_mobile = section.settings.image_size_mobile
+  assign image_size_desktop = section.settings.image_size_desktop
+  assign image_ratio_desktop = image.aspect_ratio | default: '4/3'
+  assign image_ratio_mobile = image_mobile.aspect_ratio | default: '4/3'
+
+  if section.index == 1
+    assign preload = true
+  else
+    assign preload = false
+  endif
+
+  unless preload
+    assign preload = false
+  endunless
+
+  if image_mobile != blank
+    assign desktop_preload = false
+  else
+    assign desktop_preload = preload
+  endif
+
+  capture size_classes
+    render 'banner-media-classes', image_size: image_size_mobile, image_size_desktop: image_size_desktop
+  endcapture
+
+  capture text_size_class
+    render 'type-scale-classes', mobile_text_scale: mobile_text_scale, desktop_text_scale: desktop_text_scale
+  endcapture
+%}
+
+<section
+  style="--media-aspect-ratio: {{ image_ratio_mobile }}; --media-aspect-ratio-desktop: {{ image_ratio_desktop }};"
+>
+  <div
+    class="group relative overflow-hidden border-b-gridline border-gridline-color bg-scheme-background {{ size_classes }}"
+    data-color-scheme="{{ color_scheme }}"
+  >
+    <div
+      class="relative h-full w-full overflow-hidden bg-scheme-background p-grid-media text-scheme-text {% if link != blank %}group/zoom{% endif %}"
+    >
+      <div class="relative h-full w-full">
+        {% if image != blank %}
+          <div
+            {% if image_mobile != blank %}
+              class="hidden lg:block"
+            {% endif %}
+          >
+            {% render 'image-fill', image: image, preload: desktop_preload %}
+          </div>
+
+          {% if image_mobile != blank %}
+            <div class="lg:hidden">
+              {% assign image = image_mobile %}
+              {% render 'image-fill', image: image, preload: preload %}
+            </div>
+          {% endif %}
+        {% else %}
+          {%- render 'image-fill-placeholder', type: 'lifestyle-1' -%}
+        {% endif %}
+      </div>
+
+      <div
+        class="group absolute bottom-0 left-0 right-0 top-0 z-10 rounded-grid-media p-grid-media"
+        data-color-scheme="{{ color_scheme }}"
+      >
+        <div class="flex h-full w-full overflow-hidden rounded-grid-media">
+          <div
+            class="text-scheme-text"
+          >
+            {%- liquid
+              render 'scrolling-text', id: section.id, font: font, text_size_class: text_size_class, mobile_text_scale: mobile_text_scale, desktop_text_scale: desktop_text_scale, speed_setting: speed_setting, link: link, text: text, direction: direction, repeat_text: repeat_text, separator: separator, separator_repeats: separator_repeats, spacing_between_repeated_separators: spacing_between_repeated_separators, spacing_between_repeated_text: spacing_between_repeated_text, separator_type: separator_type, inline_link_text: inline_link_text, button_style: button_style, is_overlaid: true, overlaid_content_position: overlaid_content_position, full_height: true, overlays_media: true
+            -%}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Image with scrolling text",
+  "disabled_on": {
+    "groups": [
+      "header",
+      "footer",
+      "aside"
+    ]
+  },
+  "settings": [
+    {
+      "id": "image",
+      "type": "image_picker",
+      "label": "Image",
+      "info": "Landscape-orientation JPG of at least 3,600 × 1,600 pixels recommended"
+    },
+    {
+      "id": "image_mobile",
+      "type": "image_picker",
+      "label": "Mobile image",
+      "info": "Portrait-orientation JPG of at least 1,600 × 2,400 pixels recommended"
+    },
+    {
+      "type": "select",
+      "id": "image_size_desktop",
+      "label": "Desktop height",
+      "options": [
+        {
+          "value": "natural",
+          "label": "Natural",
+          "group": "No cropping"
+        },
+        {
+          "value": "full_screen",
+          "label": "Full screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "three_quarters_screen",
+          "label": "3/4 screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "two_thirds_screen",
+          "label": "2/3 screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "half_screen",
+          "label": "1/2 screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "600px",
+          "label": "600px",
+          "group": "Fixed height"
+        },
+        {
+          "value": "700px",
+          "label": "700px",
+          "group": "Fixed height"
+        },
+        {
+          "value": "800px",
+          "label": "800px",
+          "group": "Fixed height"
+        },
+        {
+          "value": "standard",
+          "label": "Standard (4:3)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "widescreen",
+          "label": "Widescreen (16:9)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "cinema",
+          "label": "Cinema (1.85:1)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "ultrawide",
+          "label": "Ultrawide (2.35:1)",
+          "group": "Aspect ratios"
+        }
+      ],
+      "default": "full_screen"
+    },
+    {
+      "type": "select",
+      "id": "image_size_mobile",
+      "label": "Mobile height",
+      "options": [
+        {
+          "value": "natural",
+          "label": "Natural"
+        },
+        {
+          "value": "full_screen",
+          "label": "Full screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "three_quarters_screen",
+          "label": "3/4 screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "two_thirds_screen",
+          "label": "2/3 screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "half_screen",
+          "label": "1/2 screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "600px",
+          "label": "600px",
+          "group": "Fixed height"
+        },
+        {
+          "value": "700px",
+          "label": "700px",
+          "group": "Fixed height"
+        },
+        {
+          "value": "800px",
+          "label": "800px",
+          "group": "Fixed height"
+        },
+        {
+          "value": "full_portrait",
+          "label": "Full portrait (9:16)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "portrait",
+          "label": "Portrait (4:5)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "square",
+          "label": "Square (1:1)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "standard",
+          "label": "Standard (4:3)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "widescreen",
+          "label": "Widescreen (16:9)",
+          "group": "Aspect ratios"
+        }
+      ],
+      "default": "full_screen"
+    },
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "text",
+      "id": "text",
+      "label": "Text",
+      "default": "Use this text to share information about your brand."
+    },
+    {
+      "type": "url",
+      "id": "link",
+      "label": "Link"
+    },
+    {
+      "type": "range",
+      "id": "mobile_text_scale",
+      "min": -2,
+      "max": 4,
+      "step": 1,
+      "label": "Mobile font size scale",
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "desktop_text_scale",
+      "min": -2,
+      "max": 9,
+      "step": 1,
+      "label": "Desktop font size scale",
+      "default": 7
+    },
+    {
+      "type": "select",
+      "id": "font",
+      "label": "Font",
+      "options": [
+        {
+          "value": "font-heading",
+          "label": "Heading"
+        },
+        {
+          "value": "font-body",
+          "label": "Body"
+        }
+      ],
+      "default": "font-heading"
+    },
+    {
+      "type": "select",
+      "id": "overlaid_content_position",
+      "label": "Position",
+      "options": [
+        {
+          "value": "items-start",
+          "label": "Top"
+        },
+        {
+          "value": "items-center",
+          "label": "Center"
+        },
+        {
+          "value": "items-end",
+          "label": "Bottom"
+        }
+      ],
+      "default": "items-center"
+    },
+    {
+      "type": "header",
+      "content": "Scroll"
+    },
+    {
+      "type": "paragraph",
+      "content": "If a user has reduced motion enabled the scrolling text will not animate and display as a static banner as a fallback."
+    },
+    {
+      "type": "range",
+      "id": "speed",
+      "min": 20,
+      "max": 400,
+      "step": 10,
+      "label": "Speed",
+      "default": 180
+    },
+    {
+      "type": "select",
+      "id": "direction",
+      "label": "Direction",
+      "options": [
+        {
+          "value": "normal",
+          "label": "Right to left"
+        },
+        {
+          "value": "reverse",
+          "label": "Left to right"
+        }
+      ],
+      "default": "normal"
+    },
+    {
+      "type": "checkbox",
+      "id": "repeat_text",
+      "default": true,
+      "label": "Repeat text",
+      "info": "Automatically repeat text to create an infinity effect."
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text }}",
+      "type": "header",
+      "content": "Repeat text separator"
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text }}",
+      "type": "select",
+      "id": "spacing_between_repeated_text",
+      "label": "Spacing",
+      "options": [
+        {
+          "value": "gap-4 lg:gap-8",
+          "label": "S"
+        },
+        {
+          "value": "gap-10 lg:gap-20",
+          "label": "M"
+        },
+        {
+          "value": "gap-16 lg:gap-32",
+          "label": "L"
+        },
+        {
+          "value": "gap-32 lg:gap-64",
+          "label": "XL"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text }}",
+      "type": "select",
+      "id": "separator_type",
+      "label": "Type",
+      "options": [
+        {
+          "value": "gap",
+          "label": "Gap"
+        },
+        {
+          "value": "symbol",
+          "label": "Character"
+        },
+        {
+          "value": "button",
+          "label": "Button"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text and section.settings.separator_type == 'symbol' }}",
+      "type": "select",
+      "id": "separator",
+      "label": "Character",
+      "options": [
+        {
+          "label": "·",
+          "value": "&middot;"
+        },
+        {
+          "label": "•",
+          "value": "&bullet;"
+        },
+        {
+          "label": "↑",
+          "value": "&uarr;"
+        },
+        {
+          "label": "→",
+          "value": "&rarr;"
+        },
+        {
+          "label": "↓",
+          "value": "&darr;"
+        },
+        {
+          "label": "←",
+          "value": "&larr;"
+        },
+        {
+          "label": "<",
+          "value": "&lt;"
+        },
+        {
+          "label": ">",
+          "value": "&gt;"
+        },
+        {
+          "label": "^",
+          "value": "^"
+        },
+        {
+          "label": "!",
+          "value": "!"
+        },
+        {
+          "label": "¡",
+          "value": "¡"
+        },
+        {
+          "label": "?",
+          "value": "?"
+        },
+        {
+          "label": "/",
+          "value": "/"
+        },
+        {
+          "label": "|",
+          "value": "|"
+        },
+        {
+          "label": "\\",
+          "value": "\\"
+        },
+        {
+          "label": ":",
+          "value": ":"
+        },
+        {
+          "label": "∞",
+          "value": "&infin;"
+        },
+        {
+          "label": "§",
+          "value": "&sect;"
+        },
+        {
+          "label": "#",
+          "value": "&num;"
+        },
+        {
+          "label": "%",
+          "value": "%"
+        },
+        {
+          "label": "@",
+          "value": "@"
+        },
+        {
+          "label": "№",
+          "value": "&numero;"
+        },
+        {
+          "label": "×",
+          "value": "&times;"
+        },
+        {
+          "label": "÷",
+          "value": "&divide;"
+        },
+        {
+          "label": "+",
+          "value": "&plus;"
+        },
+        {
+          "label": "−",
+          "value": "&minus;"
+        },
+        {
+          "label": "=",
+          "value": "&equals;"
+        },
+        {
+          "label": "~",
+          "value": "&tilde;"
+        },
+        {
+          "label": "–",
+          "value": "&ndash;"
+        },
+        {
+          "label": "—",
+          "value": "&mdash;"
+        },
+        {
+          "label": "&",
+          "value": "&amp;"
+        },
+        {
+          "label": "*",
+          "value": "&ast;"
+        },
+        {
+          "label": "✓",
+          "value": "&check;"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text and section.settings.separator_type == 'symbol' }}",
+      "type": "range",
+      "id": "separator_repeats",
+      "label": "Repeat character",
+      "min": 1,
+      "max": 6,
+      "unit": "x",
+      "default": 1
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text and section.settings.separator_type == 'symbol' }}",
+      "type": "select",
+      "id": "spacing_between_repeated_separators",
+      "label": "Spacing between repeated characters",
+      "options": [
+        {
+          "label": "None",
+          "value": ""
+        },
+        {
+          "label": "Hair",
+          "value": "&hairsp;"
+        },
+        {
+          "label": "Thin",
+          "value": "&thinsp;"
+        },
+        {
+          "label": "Punctuation",
+          "value": "&puncsp;"
+        },
+        {
+          "label": "4-per-em",
+          "value": "&emsp14;"
+        },
+        {
+          "label": "3-per-em",
+          "value": "&emsp13;"
+        },
+        {
+          "label": "Figure",
+          "value": "&numsp;"
+        },
+        {
+          "label": "En",
+          "value": "&ensp;"
+        },
+        {
+          "label": "Em",
+          "value": "&emsp;"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text and section.settings.separator_type == 'button' }}",
+      "type": "text",
+      "id": "inline_link_text",
+      "label": "Button label",
+      "info": "Provide a URL in the link setting above.",
+      "default": "Button label"
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text and section.settings.separator_type == 'button' }}",
+      "type": "select",
+      "id": "button_style",
+      "label": "Button style",
+      "default": "secondary",
+      "options": [
+        {
+          "value": "primary",
+          "label": "Primary"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "HTML tag"
+    },
+    {
+      "type": "paragraph",
+      "content": "When using scrolling text for a page heading, set the appropriate heading tag."
+    },
+    {
+      "type": "select",
+      "id": "html_tag",
+      "label": "HTML tag",
+      "options": [
+        {
+          "value": "",
+          "label": "None"
+        },
+        {
+          "value": "h1",
+          "label": "H1"
+        },
+        {
+          "value": "h2",
+          "label": "H2"
+        },
+        {
+          "value": "h3",
+          "label": "H3"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Image with scrolling text",
+      "category": "Banners"
+    }
+  ]
+}
+{% endschema %}

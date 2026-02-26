@@ -1,0 +1,1290 @@
+{%- liquid
+  assign hide_title = section.settings.hide_title
+  assign section_color = section.settings.color_scheme
+  assign show_image = section.settings.show_image
+  assign ratio = section.settings.crop | plus: 0
+  assign deep_inset = section.settings.deep_inset
+  assign description_color = section.settings.description_color_scheme
+  assign description_position = section.settings.description_position
+  assign product_limit = section.settings.grid | times: section.settings.rows
+  assign products_per_row = section.settings.grid
+  assign products_per_row_mobile = section.settings.grid_mobile | plus: 0
+  assign show_sort = section.settings.enable_sorting
+  assign show_filters = section.settings.enable_filtering
+  assign enable_quick_buy = section.settings.enable_quick_buy
+  assign show_collection_count = section.settings.show_collection_count
+  assign counter = 0
+  assign grid_cols = 12
+
+  assign filters_layout_on_desktop = section.settings.filters_layout_on_desktop
+
+  if show_sort or show_filters
+    assign sort_by = collection.sort_by | default: collection.default_sort_by
+    assign clear_url = collection.url | append: '?sort_by=' | append: sort_by
+  endif
+
+  assign collapse_filters = section.settings.collapse_filters
+
+  if show_filters
+    assign total_active_values = 0
+
+    for filter in collection.filters
+      assign total_active_values = total_active_values | plus: filter.active_values.size
+    endfor
+  endif
+
+  assign show_heading_container = true
+
+  if hide_title
+    assign show_heading_container = false
+  endif
+
+  if description_position == 'under_title' and collection.description != blank
+    assign show_heading_container = true
+  endif
+
+  if show_image and collection.image
+    assign show_heading_container = true
+  endif
+
+  unless filters_layout_on_desktop == 'sidebar' and show_sort or show_filters
+    assign desktop_sizes_base = '100vw'
+  else
+    assign desktop_sizes_base = 'calc(100vw - 18.75rem)'
+  endunless
+
+  case products_per_row
+    when 2
+      assign desktop_col_span = 'lg:col-span-6'
+      assign sizes = '(min-width: 1024px) calc(' | append: desktop_sizes_base | append: ' / 12 * 6)'
+    when 3
+      assign desktop_col_span = 'lg:col-span-4'
+      assign sizes = '(min-width: 1024px) calc(' | append: desktop_sizes_base | append: ' / 12 * 4)'
+    when 4
+      assign desktop_col_span = 'lg:col-span-3'
+      assign sizes = '(min-width: 1024px) calc(' | append: desktop_sizes_base | append: ' / 12 * 3)'
+    when 5
+      assign grid_cols = 10
+      assign desktop_col_span = 'lg:col-span-2'
+      assign sizes = '(min-width: 1024px) calc(' | append: desktop_sizes_base | append: ' / 10 * 2)'
+  endcase
+
+  if filters_layout_on_desktop == 'sidebar' and show_sort or show_filters
+    case products_per_row_mobile
+      when 1
+        assign sizes = sizes | append: ', (min-width: 768px) calc(100vw - 18.75rem)'
+      when 2
+        assign sizes = sizes | append: ', (min-width: 768px) calc(50vw - 18.75rem)'
+    endcase
+  endif
+
+  case products_per_row_mobile
+    when 1
+      assign mobile_col_span = 'col-span-2'
+      assign sizes = sizes | append: ', 100vw'
+    when 2
+      assign mobile_col_span = 'col-span-1'
+      assign sizes = sizes | append: ', 50vw'
+  endcase
+
+  assign desktop_grid_class = 'lg:grid-cols-' | append: grid_cols
+  assign text_width_desktop = 'lg:col-span-12 pt-theme-double pb-theme'
+  assign image_width_desktop = 'lg:col-span-12'
+
+  assign collection_image_enabled = false
+
+  if section.settings.show_image and collection.image
+    assign collection_image_enabled = true
+  endif
+
+  if collection_image_enabled
+    case section.settings.image_size
+      when 'one-third'
+        assign text_width_desktop = 'lg:col-span-8 flex items-end py-section-vertical-spacing'
+        assign image_width_desktop = 'lg:col-start-9 lg:col-end-13'
+        assign collection_image_sizes = '(min-width: 1024px) calc(100vw / 3)'
+      when 'one-half'
+        assign text_width_desktop = 'lg:col-span-6 flex items-end py-section-vertical-spacing'
+        assign image_width_desktop = 'lg:col-start-7 lg:col-end-13'
+        assign collection_image_sizes = '(min-width: 1024px) 50vw'
+      when 'three-fifths'
+        assign text_width_desktop = 'lg:col-span-5 flex items-end py-section-vertical-spacing'
+        assign image_width_desktop = 'lg:col-start-6 lg:col-end-13'
+        assign collection_image_sizes = '(min-width: 1024px) calc(100vw / 5 * 3)'
+      when 'two-thirds'
+        assign text_width_desktop = 'lg:col-span-4 flex items-end py-section-vertical-spacing'
+        assign image_width_desktop = 'lg:col-start-5 lg:col-end-13'
+        assign collection_image_sizes = '(min-width: 1024px) calc(100vw / 3 * 2)'
+      when 'full-width'
+        assign collection_image_full_width = true
+        assign collection_image_sizes = '100vw'
+    endcase
+
+    unless collection_image_full_width
+      assign collection_image_sizes = collection_image_sizes | append: ', 100vw'
+    endunless
+  endif
+
+  assign center_heading = false
+  if settings.section_title_align == 'center'
+    if collection_image_enabled
+      if collection_image_full_width
+        assign center_heading = true
+      endif
+    else
+      assign center_heading = true
+    endif
+  endif
+
+  assign show_scrolling_text = false
+
+  for block in section.blocks
+    if block.type == 'scrolling_text'
+      assign show_scrolling_text = true
+      assign scrolling_text_position = block.settings.position
+      assign scrolling_text_speed_setting = block.settings.speed | plus: 0
+      assign scrolling_text_link = block.settings.link
+      assign scrolling_text_text = block.settings.text
+      assign scrolling_text_font = block.settings.font
+      assign scrolling_text_section_color = block.settings.color_scheme
+      assign scrolling_text_direction = block.settings.direction
+      assign scrolling_text_shopify_attributes = block.shopify_attributes
+      assign scrolling_text_repeat_text = block.settings.repeat_text
+      assign scrolling_text_separator = block.settings.separator
+      assign scrolling_text_separator_repeats = block.settings.separator_repeats
+      assign scrolling_text_spacing_between_repeated_separators = block.settings.spacing_between_repeated_separators
+      assign spacing_between_repeated_text = block.settings.spacing_between_repeated_text
+      assign scrolling_text_mobile_text_scale = block.settings.mobile_text_scale
+      assign scrolling_text_desktop_text_scale = block.settings.desktop_text_scale
+      assign separator_type = block.settings.separator_type
+      assign inline_link_text = block.settings.inline_link_text
+      assign button_style = block.settings.button_style
+
+      capture scrolling_text_text_size_class
+        render 'type-scale-classes', mobile_text_scale: scrolling_text_mobile_text_scale, desktop_text_scale: scrolling_text_desktop_text_scale
+      endcapture
+    endif
+  endfor
+
+  if deep_inset
+    assign media_padding_class = 'p-deep-inset-media'
+  else
+    assign media_padding_class = 'p-grid-media'
+  endif
+-%}
+
+{%- if show_scrolling_text and scrolling_text_position == 'top' -%}
+  <section
+    class="group border-b-gridline border-gridline-color bg-scheme-background"
+    data-color-scheme="{{ scrolling_text_section_color }}"
+    {{ scrolling_text_shopify_attributes }}
+  >
+    {% render 'scrolling-text',
+      text_size_class: scrolling_text_text_size_class,
+      mobile_text_scale: scrolling_text_mobile_text_scale,
+      desktop_text_scale: scrolling_text_desktop_text_scale,
+      speed_setting: scrolling_text_speed_setting,
+      link: scrolling_text_link,
+      text: scrolling_text_text,
+      font: scrolling_text_font,
+      section_color: scrolling_text_section_color,
+      direction: scrolling_text_direction,
+      repeat_text: scrolling_text_repeat_text,
+      separator: scrolling_text_separator,
+      separator_repeats: scrolling_text_separator_repeats,
+      spacing_between_repeated_separators: scrolling_text_spacing_between_repeated_separators,
+      spacing_between_repeated_text: spacing_between_repeated_text,
+      separator_type: separator_type,
+      inline_link_text: inline_link_text,
+      button_style: button_style
+    %}
+  </section>
+{%- endif -%}
+
+{% paginate collection.products by product_limit %}
+  <data-island
+    id="filterable"
+    class="collection border-b-gridline border-gridline-color bg-scheme-background text-scheme-text transition-opacity duration-200 ease-in-out"
+    role="banner"
+    {% if show_filters or show_sort %}
+      x-data="Filterable"
+    {% else %}
+      x-data
+    {% endif %}
+    data-color-scheme="{{ section_color }}"
+    @keydown.escape.document="onEscape"
+  >
+    {%- if show_heading_container -%}
+      <div class="grid grid-flow-row-dense grid-cols-1 gap-gutter overflow-hidden border-b-gridline border-gridline-color bg-gridline-color lg:grid-cols-12">
+        {% if show_image and collection.image %}
+          {%- liquid
+            assign collection_image_loading = 'lazy'
+            assign collection_image_preload = false
+
+            if section.index == 1
+              assign collection_image_preload = true
+            endif
+
+            if section.index <= 3
+              assign collection_image_loading = 'eager'
+            endif
+          -%}
+          <div class="{{ image_width_desktop }} bg-scheme-background{% if settings.grid_media_style == 'inset' %} h-full w-full{% endif %}">
+            <div class="relative min-h-full {{ media_padding_class }}">
+              {% render 'image-crop',
+                image: collection.image,
+                loading: collection_image_loading,
+                preload: collection_image_preload,
+                sizes: collection_image_sizes,
+                ratio: ratio,
+                is_deep_inset: deep_inset
+              %}
+            </div>
+          </div>
+        {% endif %}
+        <div class="{{ text_width_desktop }} bg-scheme-background px-section-horizontal-spacing {% if center_heading %} text-center{% endif %}">
+          <div>
+            {% unless hide_title %}
+              <h1 class="font-heading text-heading-feature">
+                <span>{{- collection.title -}}</span>
+                {% if show_collection_count %}
+                  <sup
+                    class="-ml-inline-sup"
+                  >
+                    {{- collection.products_count -}}
+                    <span class="sr-only">
+                      {{- 'general.search.products' | t -}}
+                    </span>
+                  </sup>
+                {% endif %}
+              </h1>
+            {% endunless %}
+            {% if description_position == 'under_title'
+              and collection.description != blank
+            %}
+              <div class="rte mt-4">{{ collection.description }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {%- endif -%}
+
+    {%- if show_scrolling_text and scrolling_text_position == 'under_title' -%}
+      <aside
+        class="group border-b-gridline border-gridline-color bg-scheme-background"
+        data-color-scheme="{{ scrolling_text_section_color }}"
+        {{ scrolling_text_shopify_attributes }}
+      >
+        {% render 'scrolling-text',
+          text_size_class: scrolling_text_text_size_class,
+          mobile_text_scale: scrolling_text_mobile_text_scale,
+          desktop_text_scale: scrolling_text_desktop_text_scale,
+          speed_setting: scrolling_text_speed_setting,
+          link: scrolling_text_link,
+          text: scrolling_text_text,
+          font: scrolling_text_font,
+          section_color: scrolling_text_section_color,
+          direction: scrolling_text_direction,
+          repeat_text: scrolling_text_repeat_text,
+          separator: scrolling_text_separator,
+          separator_repeats: scrolling_text_separator_repeats,
+          spacing_between_repeated_separators: scrolling_text_spacing_between_repeated_separators,
+          spacing_between_repeated_text: spacing_between_repeated_text,
+          separator_type: separator_type,
+          inline_link_text: inline_link_text,
+          button_style: button_style
+        %}
+      </aside>
+    {%- endif -%}
+
+    {% if section.settings.linklist != blank %}
+      <data-island
+        class="relative border-b-gridline border-gridline-color"
+        x-data="{ showOverflowIndicator: false }"
+      >
+        <div
+          x-show="showOverflowIndicator"
+          x-transition.opacity.duration.150ms
+          class="pointer-events-none absolute bottom-0 right-0 top-0 w-8 bg-gradient-to-r from-scheme-background/0 via-scheme-background/75 to-scheme-background lg:hidden"
+          aria-hidden="true"
+          role="presentation"
+          style="display: none;"
+        ></div>
+        <div class="overflow-x-auto px-section-horizontal-spacing py-2">
+          <nav
+            role="navigation"
+            aria-label="{{ linklists[section.settings.linklist].title }}"
+          >
+            <ul class="flex lg:flex-wrap{% if center_heading %} lg:justify-center {% else %} lg:justify-start {% endif %}whitespace-nowrap -mx-2 lg:-mx-4 {% if settings.nav_uppercase %}uppercase{% endif %}">
+              {%- for link in linklists[section.settings.linklist].links -%}
+                <li
+                  class="inline-block px-section-horizontal-spacing"
+                  {% if forloop.last %}
+                    x-intersect:enter.threshold.75="showOverflowIndicator = false"
+                    x-intersect:leave.threshold.75="showOverflowIndicator = true"
+                  {% endif %}
+                >
+                  {%- if link.active -%}
+                    <a
+                      class="block py-2 hover:text-scheme-accent"
+                      href="{{ link.url }}"
+                      aria-current="page"
+                      ><span class="border-b-text border-current">
+                        {{- link.title -}}
+                      </span></a
+                    >
+                  {%- else -%}
+                    <a
+                      class="block py-2 hover:text-scheme-accent"
+                      href="{{ link.url }}"
+                      ><span class="border-current border-b-transparent">
+                        {{- link.title -}}
+                      </span></a
+                    >
+                  {%- endif -%}
+                </li>
+              {%- endfor -%}
+            </ul>
+          </nav>
+        </div>
+      </data-island>
+    {% endif %}
+
+    <div
+      {% if filters_layout_on_desktop == 'sidebar'
+        and show_sort
+        or show_filters
+      %}
+        class="md:grid md:grid-cols-[18.75rem_minmax(0,1fr)]"
+      {% endif %}
+    >
+      {% if show_sort or show_filters %}
+        <a class="in-page-link skip-link" href="#facets-results">
+          {{- 'collections.general.collection_label' | t -}}
+        </a>
+        {% if show_filters %}
+          <div
+            class="sr-only"
+            id="results-count"
+            role="status"
+            data-fragment-id="count"
+            x-html-if-set="countHTML"
+          >
+            {%- if collection.products_count == 1 -%}
+              {{
+                'collections.general.items_with_count.one'
+                | t: count: collection.products_count
+              }}
+            {%- else -%}
+              {{
+                'collections.general.items_with_count.other'
+                | t: count: collection.products_count
+              }}
+            {%- endif -%}
+          </div>
+        {% endif %}
+
+        {% if filters_layout_on_desktop == 'sidebar' %}
+          <form
+            class="hidden border-gridline-color py-0 md:block md:flex-col md:justify-start md:border-b-0 md:border-r-gridline md:px-0"
+            id="filters-form-sidebar"
+            data-fragment-id="filters-form-sidebar"
+            @submit.prevent="filterFormSubmit"
+          >
+            {% render 'filterable-sidebar',
+              context: 'desktop',
+              show_filters: show_filters,
+              show_sort: show_sort,
+              filters: collection.filters,
+              total_active_values: total_active_values,
+              section_color: section_color,
+              clear_url: clear_url,
+              sort_options: collection.sort_options,
+              sort_by: sort_by,
+              start_collapsed: collapse_filters
+            %}
+          </form>
+        {% endif %}
+
+        <div class="relative flex items-center justify-between border-b-gridline border-gridline-color px-section-horizontal-spacing py-2{% if filters_layout_on_desktop == 'sidebar' %} md:hidden{% endif %}">
+          {%- liquid
+            if filters_layout_on_desktop == 'drop_down'
+              assign toggle_container_class = 'block md:hidden'
+            endif
+            if show_filters
+              render 'filterable-drawer-toggle', container_classes: toggle_container_class, total_active_values: total_active_values
+              if filters_layout_on_desktop == 'drop_down'
+                render 'filterable-filters-drop-down', filters: collection.filters, total_active_values: total_active_values, section_color: section_color, clear_url: clear_url, container_classes: 'hidden md:block'
+              endif
+            endif
+
+            if show_sort
+              render 'filterable-sort-drop-down', sort_options: collection.sort_options, sort_by: sort_by, filters_layout_on_desktop: filters_layout_on_desktop, show_filters: show_filters
+            endif
+          -%}
+        </div>
+      {% endif %}
+
+      <div
+        id="results"
+        data-fragment-id="results"
+        {% if show_sort or show_filters %}
+          x-html-if-set="resultsHTML"
+          :class="{ 'opacity-10' : loading }"
+        {% endif %}
+      >
+        {%- if collection.products.size > 0 -%}
+          <ul class="collection-list grid grid-cols-2 {{ desktop_grid_class }} gap-gutter bg-gridline-color{% if filters_layout_on_desktop == 'sidebar' %} border-b-gridline border-gridline-color -mb-gridline{% endif %}">
+            {%- for product in collection.products -%}
+              {% liquid
+                assign counter = counter | plus: 1
+
+                if section.index <= 3 and forloop.index <= products_per_row_mobile
+                  assign loading = 'eager'
+                else
+                  assign loading = 'lazy'
+                endif
+
+                if section.index == 1 and forloop.first
+                  assign preload = true
+                else
+                  assign preload = false
+                endif
+              %}
+
+              <li class="{{ mobile_col_span }} {{ desktop_col_span }} bg-scheme-background text-scheme-text">
+                {% if section.settings.product_tile_type == 'text_overlay' %}
+                  {%- render 'product-tile-text-overlay',
+                    product: product,
+                    sizes: sizes,
+                    preload: preload,
+                    loading: loading,
+                    section_color: section_color,
+                    products_per_row_mobile: products_per_row_mobile,
+                    product_tile_type: section.settings.product_tile_type
+                  -%}
+                {% else %}
+                  {%- render 'product-tile-standard',
+                    product: product,
+                    sizes: sizes,
+                    preload: preload,
+                    loading: loading,
+                    section_color: section_color,
+                    products_per_row_mobile: products_per_row_mobile,
+                    enable_quick_buy: enable_quick_buy,
+                    product_tile_type: section.settings.product_tile_type
+                  -%}
+                {% endif %}
+              </li>
+
+              {%- if show_scrolling_text
+                and scrolling_text_position == 'after_row'
+                and counter == products_per_row
+              -%}
+                <li
+                  class="col-span-full bg-scheme-background"
+                  data-color-scheme="{{ scrolling_text_section_color }}"
+                  {{ scrolling_text_shopify_attributes }}
+                >
+                  <aside class="group">
+                    {% render 'scrolling-text',
+                      text_size_class: scrolling_text_text_size_class,
+                      mobile_text_scale: scrolling_text_mobile_text_scale,
+                      desktop_text_scale: scrolling_text_desktop_text_scale,
+                      speed_setting: scrolling_text_speed_setting,
+                      link: scrolling_text_link,
+                      text: scrolling_text_text,
+                      font: scrolling_text_font,
+                      section_color: scrolling_text_section_color,
+                      direction: scrolling_text_direction,
+                      repeat_text: scrolling_text_repeat_text,
+                      separator: scrolling_text_separator,
+                      separator_repeats: scrolling_text_separator_repeats,
+                      spacing_between_repeated_separators: scrolling_text_spacing_between_repeated_separators,
+                      spacing_between_repeated_text: spacing_between_repeated_text,
+                      separator_type: separator_type,
+                      inline_link_text: inline_link_text,
+                      button_style: button_style
+                    %}
+                  </aside>
+                </li>
+              {%- endif -%}
+
+              {% if description_position == 'after_row'
+                and collection.description != blank
+                and counter == products_per_row
+              %}
+                <li class="col-span-full">
+                  <aside
+                    class="bg-scheme-background px-section-horizontal-spacing py-section-vertical-spacing text-scheme-text"
+                    data-color-scheme="{{ description_color }}"
+                  >
+                    <div class="rte">{{ collection.description }}</div>
+                  </aside>
+                </li>
+              {% endif %}
+            {%- endfor -%}
+
+            {%- liquid
+              assign items_on_last_row = counter | modulo: products_per_row
+              assign col_span = grid_cols | divided_by: products_per_row
+              assign placeholder_width = products_per_row | minus: items_on_last_row | times: col_span
+              assign items_on_last_row_mobile = counter | modulo: products_per_row_mobile
+              assign col_span_mobile = 2 | divided_by: products_per_row_mobile
+              assign placeholder_width_mobile = products_per_row_mobile | minus: items_on_last_row_mobile | times: col_span_mobile
+            -%}
+            {%- if items_on_last_row != 0 -%}
+              <li
+                style="--placeholder-width: {{ placeholder_width }};"
+                class="none absolute bg-scheme-background lg:static lg:col-span-placeholder-width lg:block"
+                aria-hidden="true"
+                role="presentation"
+              ></li>
+            {%- endif -%}
+            {%- if items_on_last_row_mobile != 0 -%}
+              <li
+                style="--placeholder-width-mobile: {{ placeholder_width_mobile }};"
+                class="lg:none col-span-placeholder-width-mobile block bg-scheme-background lg:absolute"
+                aria-hidden="true"
+                role="presentation"
+              ></li>
+            {%- endif -%}
+          </ul>
+        {%- else -%}
+          <p class="px-section-horizontal-spacing py-section-vertical-spacing">
+            {{ 'collections.general.no_matches' | t }}.
+          </p>
+        {%- endif -%}
+        {% liquid
+          if paginate.pages > 1
+            render 'pagination', paginate: paginate, section_color: section_color
+          endif
+        %}
+      </div>
+    </div>
+
+    {%- liquid
+      assign show_description_bottom = false
+
+      if description_position == 'bottom' and collection.description != blank
+        assign show_description_bottom = true
+      elsif description_position == 'after_row' and collection.products.size < products_per_row and collection.description != blank
+        assign show_description_bottom = true
+      endif
+    -%}
+
+    {% if show_description_bottom %}
+      <div
+        class="border-t-gridline border-gridline-color bg-scheme-background px-section-horizontal-spacing py-section-vertical-spacing text-scheme-text"
+        data-color-scheme="{{ description_color }}"
+      >
+        <div class="rte">{{ collection.description }}</div>
+      </div>
+    {% endif %}
+
+    {% if show_filters %}
+      {%- render 'mobile-filter-drawer',
+        context: 'drawer',
+        show_filters: show_filters,
+        show_sort: show_sort,
+        filters: collection.filters,
+        total_active_values: total_active_values,
+        section_color: section_color,
+        clear_url: clear_url,
+        sort_options: collection.sort_options,
+        sort_by: sort_by,
+        start_collapsed: collapse_filters
+      -%}
+    {% endif %}
+  </data-island>
+{% endpaginate %}
+
+{%- liquid
+  if section.settings.override_header_footer_color_scheme
+    render 'header-footer-color-scheme-override', section_color: section_color
+  endif
+-%}
+
+{% schema %}
+{
+  "name": "Collection",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "hide_title",
+      "label": "Hide title"
+    },
+    {
+      "visible_if": "{{ section.settings.hide_title == false }}",
+      "type": "checkbox",
+      "id": "show_collection_count",
+      "label": "Show collection products count as superscript"
+    },
+    {
+      "type": "header",
+      "content": "Image"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_image",
+      "label": "Show collection image"
+    },
+    {
+      "visible_if": "{{ settings.section_title_align == 'center' and section.settings.show_image }}",
+      "type": "paragraph",
+      "content": "Title and menu align left when the collection image is not full width."
+    },
+    {
+      "visible_if": "{{ section.settings.show_image }}",
+      "type": "checkbox",
+      "id": "deep_inset",
+      "label": "Deep inset",
+      "default": false
+    },
+    {
+      "visible_if": "{{ section.settings.show_image }}",
+      "type": "select",
+      "id": "crop",
+      "label": "Crop",
+      "options": [
+        {
+          "value": "0",
+          "label": "No crop"
+        },
+        {
+          "value": "0.5625",
+          "label": "Full portrait (9:16)"
+        },
+        {
+          "value": "0.8",
+          "label": "Portrait (4:5)"
+        },
+        {
+          "value": "1",
+          "label": "Square (1:1)"
+        },
+        {
+          "value": "1.333",
+          "label": "Standard (4:3)"
+        },
+        {
+          "value": "1.778",
+          "label": "Widescreen (16:9)"
+        },
+        {
+          "value": "1.85",
+          "label": "Cinema (1.85:1)"
+        },
+        {
+          "value": "2.35",
+          "label": "Ultrawide (2.35:1)"
+        },
+        {
+          "value": "4.0",
+          "label": "Letterbox (4:1)"
+        }
+      ],
+      "default": "1.333"
+    },
+    {
+      "visible_if": "{{ section.settings.show_image }}",
+      "type": "select",
+      "id": "image_size",
+      "label": "Desktop size",
+      "options": [
+        {
+          "value": "one-third",
+          "label": "One third"
+        },
+        {
+          "value": "one-half",
+          "label": "One half"
+        },
+        {
+          "value": "three-fifths",
+          "label": "Three fifths"
+        },
+        {
+          "value": "two-thirds",
+          "label": "Two thirds"
+        },
+        {
+          "value": "full-width",
+          "label": "Full width"
+        }
+      ],
+      "default": "one-half"
+    },
+    {
+      "type": "header",
+      "content": "Description"
+    },
+    {
+      "type": "select",
+      "id": "description_position",
+      "label": "Description position",
+      "default": "under_title",
+      "options": [
+        {
+          "value": "under_title",
+          "label": "Under title"
+        },
+        {
+          "value": "after_row",
+          "label": "After first row"
+        },
+        {
+          "value": "bottom",
+          "label": "Bottom of page"
+        }
+      ]
+    },
+    {
+      "type": "color_scheme",
+      "id": "description_color_scheme",
+      "label": "Description color scheme",
+      "default": "scheme1",
+      "info": "Only applies when after first row or bottom of page"
+    },
+    {
+      "type": "header",
+      "content": "Products"
+    },
+    {
+      "id": "product_tile_type",
+      "type": "select",
+      "label": "Product tile type",
+      "options": [
+        {
+          "value": "standard",
+          "label": "Standard"
+        },
+        {
+          "value": "text_overlay",
+          "label": "Text overlay"
+        }
+      ],
+      "default": "standard"
+    },
+    {
+      "type": "range",
+      "id": "grid",
+      "label": "Products per row",
+      "min": 2,
+      "max": 5,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "rows",
+      "label": "Rows",
+      "min": 1,
+      "max": 8,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "select",
+      "id": "grid_mobile",
+      "label": "Products per row on mobile",
+      "options": [
+        {
+          "value": "1",
+          "label": "1"
+        },
+        {
+          "value": "2",
+          "label": "2"
+        }
+      ],
+      "default": "1"
+    },
+    {
+      "type": "header",
+      "content": "Quick buy"
+    },
+    {
+      "type": "paragraph",
+      "content": "Only supported when product tile type is set to \"Standard\"."
+    },
+    {
+      "visible_if": "{{ section.settings.product_tile_type == 'standard' }}",
+      "type": "checkbox",
+      "id": "enable_quick_buy",
+      "label": "Enable quick buy"
+    },
+    {
+      "type": "header",
+      "content": "Navigation"
+    },
+    {
+      "type": "link_list",
+      "id": "linklist",
+      "label": "Collection menu",
+      "info": "This menu won't show drop-down items"
+    },
+    {
+      "type": "header",
+      "content": "Sorting and filtering"
+    },
+    {
+      "type": "select",
+      "id": "filters_layout_on_desktop",
+      "label": "Desktop layout",
+      "info": "\"Drawer\" applies to filters only.",
+      "default": "drop_down",
+      "options": [
+        {
+          "value": "drop_down",
+          "label": "Drop-down"
+        },
+        {
+          "value": "sidebar",
+          "label": "Sidebar"
+        },
+        {
+          "value": "drawer",
+          "label": "Drawer"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_sorting",
+      "label": "Enable sorting",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_filtering",
+      "label": "Enable filtering",
+      "info": "Learn how to [customize filters](https://help.shopify.com/en/manual/online-store/search-and-discovery/filters)",
+      "default": true
+    },
+    {
+      "visible_if": "{{ section.settings.enable_filtering }}",
+      "type": "checkbox",
+      "id": "collapse_filters",
+      "label": "Collapse filters",
+      "info": "Does not apply to \"drop-down\" layout.",
+      "default": false
+    },
+    {
+      "visible_if": "{{ section.settings.enable_filtering }}",
+      "type": "checkbox",
+      "id": "capitalize_filters",
+      "label": "Capitalize labels"
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    },
+    {
+      "type": "checkbox",
+      "id": "override_header_footer_color_scheme",
+      "label": "Use this color scheme for header and footer",
+      "info": "This will only apply to the collection template",
+      "default": false
+    }
+  ],
+  "blocks": [
+    {
+      "type": "scrolling_text",
+      "name": "Scrolling text",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "select",
+          "id": "position",
+          "label": "Position",
+          "default": "top",
+          "options": [
+            {
+              "value": "top",
+              "label": "Top"
+            },
+            {
+              "value": "under_title",
+              "label": "Under title"
+            },
+            {
+              "value": "after_row",
+              "label": "After first row"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Text",
+          "default": "Use this text to share information about your brand with your customers."
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Link"
+        },
+        {
+          "type": "range",
+          "id": "mobile_text_scale",
+          "min": -2,
+          "max": 4,
+          "step": 1,
+          "label": "Mobile font size scale",
+          "default": 3
+        },
+        {
+          "type": "range",
+          "id": "desktop_text_scale",
+          "min": -2,
+          "max": 9,
+          "step": 1,
+          "label": "Desktop font size scale",
+          "default": 7
+        },
+        {
+          "type": "select",
+          "id": "font",
+          "label": "Font",
+          "options": [
+            {
+              "value": "font-heading",
+              "label": "Heading"
+            },
+            {
+              "value": "font-body",
+              "label": "Body"
+            }
+          ],
+          "default": "font-body"
+        },
+        {
+          "type": "header",
+          "content": "Scroll"
+        },
+        {
+          "type": "paragraph",
+          "content": "If a user has reduced motion enabled the scrolling text will not animate and display as a static banner as a fallback."
+        },
+        {
+          "type": "range",
+          "id": "speed",
+          "min": 20,
+          "max": 400,
+          "step": 10,
+          "label": "Speed",
+          "default": 180
+        },
+        {
+          "type": "select",
+          "id": "direction",
+          "label": "Direction",
+          "options": [
+            {
+              "value": "normal",
+              "label": "Right to left"
+            },
+            {
+              "value": "reverse",
+              "label": "Left to right"
+            }
+          ],
+          "default": "normal"
+        },
+        {
+          "type": "checkbox",
+          "id": "repeat_text",
+          "default": true,
+          "label": "Repeat text",
+          "info": "Automatically repeat text to create an infinity effect."
+        },
+        {
+          "visible_if": "{{ block.settings.repeat_text }}",
+          "type": "header",
+          "content": "Repeat text separator"
+        },
+        {
+          "visible_if": "{{ block.settings.repeat_text }}",
+          "type": "select",
+          "id": "spacing_between_repeated_text",
+          "label": "Spacing",
+          "options": [
+            {
+              "value": "gap-4 lg:gap-8",
+              "label": "S"
+            },
+            {
+              "value": "gap-10 lg:gap-20",
+              "label": "M"
+            },
+            {
+              "value": "gap-16 lg:gap-32",
+              "label": "L"
+            },
+            {
+              "value": "gap-32 lg:gap-64",
+              "label": "XL"
+            }
+          ]
+        },
+        {
+          "visible_if": "{{ block.settings.repeat_text }}",
+          "type": "select",
+          "id": "separator_type",
+          "label": "Type",
+          "options": [
+            {
+              "value": "gap",
+              "label": "Gap"
+            },
+            {
+              "value": "symbol",
+              "label": "Character"
+            },
+            {
+              "value": "button",
+              "label": "Button"
+            }
+          ]
+        },
+        {
+          "visible_if": "{{ block.settings.repeat_text and block.settings.separator_type == 'symbol' }}",
+          "type": "select",
+          "id": "separator",
+          "label": "Character",
+          "options": [
+            {
+              "label": "·",
+              "value": "&middot;"
+            },
+            {
+              "label": "•",
+              "value": "&bullet;"
+            },
+            {
+              "label": "↑",
+              "value": "&uarr;"
+            },
+            {
+              "label": "→",
+              "value": "&rarr;"
+            },
+            {
+              "label": "↓",
+              "value": "&darr;"
+            },
+            {
+              "label": "←",
+              "value": "&larr;"
+            },
+            {
+              "label": "<",
+              "value": "&lt;"
+            },
+            {
+              "label": ">",
+              "value": "&gt;"
+            },
+            {
+              "label": "^",
+              "value": "^"
+            },
+            {
+              "label": "!",
+              "value": "!"
+            },
+            {
+              "label": "¡",
+              "value": "¡"
+            },
+            {
+              "label": "?",
+              "value": "?"
+            },
+            {
+              "label": "/",
+              "value": "/"
+            },
+            {
+              "label": "|",
+              "value": "|"
+            },
+            {
+              "label": "\\",
+              "value": "\\"
+            },
+            {
+              "label": ":",
+              "value": ":"
+            },
+            {
+              "label": "∞",
+              "value": "&infin;"
+            },
+            {
+              "label": "§",
+              "value": "&sect;"
+            },
+            {
+              "label": "#",
+              "value": "&num;"
+            },
+            {
+              "label": "%",
+              "value": "%"
+            },
+            {
+              "label": "@",
+              "value": "@"
+            },
+            {
+              "label": "№",
+              "value": "&numero;"
+            },
+            {
+              "label": "×",
+              "value": "&times;"
+            },
+            {
+              "label": "÷",
+              "value": "&divide;"
+            },
+            {
+              "label": "+",
+              "value": "&plus;"
+            },
+            {
+              "label": "−",
+              "value": "&minus;"
+            },
+            {
+              "label": "=",
+              "value": "&equals;"
+            },
+            {
+              "label": "~",
+              "value": "&tilde;"
+            },
+            {
+              "label": "–",
+              "value": "&ndash;"
+            },
+            {
+              "label": "—",
+              "value": "&mdash;"
+            },
+            {
+              "label": "&",
+              "value": "&amp;"
+            },
+            {
+              "label": "*",
+              "value": "&ast;"
+            },
+            {
+              "label": "✓",
+              "value": "&check;"
+            }
+          ]
+        },
+        {
+          "visible_if": "{{ block.settings.repeat_text and block.settings.separator_type == 'symbol' }}",
+          "type": "range",
+          "id": "separator_repeats",
+          "label": "Repeat character",
+          "min": 1,
+          "max": 6,
+          "unit": "x",
+          "default": 1
+        },
+        {
+          "visible_if": "{{ block.settings.repeat_text and block.settings.separator_type == 'symbol' }}",
+          "type": "select",
+          "id": "spacing_between_repeated_separators",
+          "label": "Spacing between repeated characters",
+          "options": [
+            {
+              "label": "None",
+              "value": ""
+            },
+            {
+              "label": "Hair",
+              "value": "&hairsp;"
+            },
+            {
+              "label": "Thin",
+              "value": "&thinsp;"
+            },
+            {
+              "label": "Punctuation",
+              "value": "&puncsp;"
+            },
+            {
+              "label": "4-per-em",
+              "value": "&emsp14;"
+            },
+            {
+              "label": "3-per-em",
+              "value": "&emsp13;"
+            },
+            {
+              "label": "Figure",
+              "value": "&numsp;"
+            },
+            {
+              "label": "En",
+              "value": "&ensp;"
+            },
+            {
+              "label": "Em",
+              "value": "&emsp;"
+            }
+          ]
+        },
+        {
+          "visible_if": "{{ block.settings.repeat_text and block.settings.separator_type == 'button' }}",
+          "type": "text",
+          "id": "inline_link_text",
+          "label": "Button label",
+          "info": "Provide a URL in the link setting above.",
+          "default": "Button label"
+        },
+        {
+          "visible_if": "{{ block.settings.repeat_text and block.settings.separator_type == 'button' }}",
+          "type": "select",
+          "id": "button_style",
+          "label": "Button style",
+          "default": "secondary",
+          "options": [
+            {
+              "value": "primary",
+              "label": "Primary"
+            },
+            {
+              "value": "secondary",
+              "label": "Secondary"
+            }
+          ]
+        },
+        {
+          "type": "header",
+          "content": "Color"
+        },
+        {
+          "type": "color_scheme",
+          "id": "color_scheme",
+          "default": "scheme1",
+          "label": "Color scheme"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

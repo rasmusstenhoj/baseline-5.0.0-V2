@@ -1,0 +1,303 @@
+{%- liquid
+  assign section_color = section.settings.color_scheme
+  assign products_per_row = section.settings.products_per_row_desktop | plus: 0
+  assign products_per_row_mobile = section.settings.products_per_row_mobile | plus: 0
+  assign enable_quick_buy = section.settings.enable_quick_buy
+  assign counter = 0
+  assign grid_cols = 12
+  assign desktop_grid_class = 'lg:grid-cols-' | append: grid_cols
+
+  case products_per_row
+    when 2
+      assign desktop_col_span = 'lg:col-span-6'
+      assign sizes = '(min-width: 1024px) calc(100vw / 12 * 6)'
+    when 3
+      assign desktop_col_span = 'lg:col-span-4'
+      assign sizes = '(min-width: 1024px) calc(100vw / 12 * 4)'
+    when 4
+      assign desktop_col_span = 'lg:col-span-3'
+      assign sizes = '(min-width: 1024px) calc(100vw / 12 * 3)'
+  endcase
+
+  case products_per_row_mobile
+    when 1
+      assign mobile_col_span = 'col-span-2'
+      assign sizes = sizes | append: ', 50vw'
+    when 2
+      assign mobile_col_span = 'col-span-1'
+      assign sizes = sizes | append: ', 100vw'
+  endcase
+-%}
+
+{%- if search.performed and search.results_count > 0 -%}
+  <div
+    class="recently-viewed-products"
+    data-color-scheme="{{ section_color }}"
+  >
+    {% liquid
+      assign product_id_strings = ''
+
+      assign id_strings_from_terms = search.terms | split: ' OR '
+
+      for id_string in id_strings_from_terms
+        assign product_id_string = id_string | split: 'id:' | last
+        assign product_id_strings = product_id_strings | append: product_id_string
+
+        unless forloop.last
+          assign product_id_strings = product_id_strings | append: ','
+        endunless
+      endfor
+
+      assign product_id_strings_array = product_id_strings | split: ','
+    %}
+    <div class="recently-viewed-products-container border-b-gridline border-gridline-color">
+      {% if section.settings.title != '' %}
+        {%- render 'section-header',
+          title: section.settings.title,
+          section_color: section_color,
+          subheading: section.settings.subheading
+        -%}
+      {% endif %}
+      <ul
+        class="grid grid-cols-2 {{ desktop_grid_class }} z-10 gap-gutter bg-gridline-color"
+        data-color-scheme="{{ section_color }}"
+      >
+        {%- for product_id_string in product_id_strings_array -%}
+          {%- liquid
+            assign product_id = product_id_string | plus: 0
+            assign product = search.results | where: 'id', product_id | first
+            unless product
+              continue
+            endunless
+            assign counter = counter | plus: 1
+          -%}
+          <li class="{{ mobile_col_span }} {{ desktop_col_span }} bg-scheme-background text-scheme-text">
+            {% if section.settings.product_tile_type == 'text_overlay' %}
+              {%- render 'product-tile-text-overlay',
+                product: product,
+                sizes: sizes,
+                loading: 'eager',
+                section_color: section_color,
+                products_per_row_mobile: products_per_row_mobile,
+                product_tile_type: section.settings.product_tile_type
+              -%}
+            {% else %}
+              {%- render 'product-tile-standard',
+                product: product,
+                sizes: sizes,
+                loading: 'eager',
+                section_color: section_color,
+                products_per_row_mobile: products_per_row_mobile,
+                enable_quick_buy: enable_quick_buy,
+                inserted: true,
+                product_tile_type: section.settings.product_tile_type
+              -%}
+            {% endif %}
+          </li>
+        {%- endfor -%}
+        {%- liquid
+          assign items_on_last_row = counter | modulo: products_per_row
+          assign col_span = grid_cols | divided_by: products_per_row
+          assign placeholder_width = products_per_row | minus: items_on_last_row | times: col_span
+          assign items_on_last_row_mobile = counter | modulo: products_per_row_mobile
+          assign col_span_mobile = 2 | divided_by: products_per_row_mobile
+          assign placeholder_width_mobile = products_per_row_mobile | minus: items_on_last_row_mobile | times: col_span_mobile
+        -%}
+        {%- if items_on_last_row != 0 -%}
+          <li
+            style="--placeholder-width: {{ placeholder_width }};"
+            class="absolute hidden bg-scheme-background lg:static lg:col-span-placeholder-width lg:block"
+            aria-hidden="true"
+            role="presentation"
+          ></li>
+        {%- endif -%}
+        {%- if items_on_last_row_mobile != 0 -%}
+          <li
+            style="--placeholder-width-mobile: {{ placeholder_width_mobile }};"
+            class="col-span-placeholder-width-mobile block bg-scheme-background lg:absolute lg:hidden"
+            aria-hidden="true"
+            role="presentation"
+          ></li>
+        {%- endif -%}
+      </ul>
+    </div>
+  </div>
+{%- else -%}
+  <data-island
+    x-data="
+      {
+        get productIds() {
+          {% unless template.name == 'product' %}
+            return getRecentlyViewedProducts()
+              .slice(0, {{ section.settings.limit }});
+          {% else %}
+            return getRecentlyViewedProducts()
+              .filter(id => id !== {{ product.id }})
+              .slice(0, {{ section.settings.limit }});
+          {% endunless %}
+        },
+        get url() {
+          if (this.productIds.length === 0) {
+            return null;
+          }
+
+          return getURLWithParams(
+            '{{ routes.search_url }}',
+            {
+              'type': 'product',
+              'q': this.productIds.map(id => `id:${id}`).join(' OR '),
+              'section_id': '{{ section.id }}'
+            }
+          );
+        }
+      }
+    "
+    class="contents"
+    on="idle"
+  >
+    <template x-if="url">
+      <div
+        class="empty:hidden"
+        x-html="
+          $fetchedFragment(
+            url,
+            '.recently-viewed-products'
+          )
+        "
+      ></div>
+    </template>
+  </data-island>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Recently viewed products",
+  "disabled_on": {
+    "groups": [
+      "header",
+      "footer",
+      "aside"
+    ]
+  },
+  "settings": [
+    {
+      "id": "product_tile_type",
+      "type": "select",
+      "label": "Product tile type",
+      "options": [
+        {
+          "value": "standard",
+          "label": "Standard"
+        },
+        {
+          "value": "text_overlay",
+          "label": "Text overlay"
+        }
+      ],
+      "default": "standard"
+    },
+    {
+      "type": "select",
+      "id": "limit",
+      "label": "Maximum products to show",
+      "default": "4",
+      "options": [
+        {
+          "value": "2",
+          "label": "2"
+        },
+        {
+          "value": "3",
+          "label": "3"
+        },
+        {
+          "value": "4",
+          "label": "4"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "products_per_row_desktop",
+      "label": "Products per row on desktop",
+      "default": "4",
+      "options": [
+        {
+          "value": "2",
+          "label": "2"
+        },
+        {
+          "value": "3",
+          "label": "3"
+        },
+        {
+          "value": "4",
+          "label": "4"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "products_per_row_mobile",
+      "label": "Products per row on mobile",
+      "default": "1",
+      "options": [
+        {
+          "value": "1",
+          "label": "1"
+        },
+        {
+          "value": "2",
+          "label": "2"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Quick buy"
+    },
+    {
+      "type": "paragraph",
+      "content": "Only supported when product tile type is set to \"Standard\"."
+    },
+    {
+      "visible_if": "{{ section.settings.product_tile_type == 'standard' }}",
+      "type": "checkbox",
+      "id": "enable_quick_buy",
+      "label": "Enable quick buy"
+    },
+    {
+      "type": "header",
+      "content": "Header"
+    },
+    {
+      "visible_if": "{{ section.settings.title != blank }}",
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "Recently viewed products"
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Recently viewed products",
+      "category": "Products"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,478 @@
+{%- liquid
+  assign section_color = section.settings.color_scheme
+  assign text_align = section.settings.text_alignment
+  assign text_position = section.settings.text_position
+  assign media_type = section.settings.media_type
+  assign image = section.settings.image
+  assign video = section.settings.video
+
+  assign media_position = section.settings.media_position
+  assign fill_media = section.settings.fill_media
+  assign deep_inset = section.settings.deep_inset
+
+  case section.settings.media_size
+    when 'third'
+      assign text_width_desktop = 'lg:col-span-8'
+
+      if media_position == 'right'
+        assign media_width_desktop = 'lg:col-start-9 lg:col-end-13'
+      else
+        assign media_width_desktop = 'lg:col-span-4'
+      endif
+
+      assign sizes = '(min-width: 1024px) calc(100vw / 3), 100vw'
+    when 'half'
+      assign text_width_desktop = 'lg:col-span-6'
+
+      if media_position == 'right'
+        assign media_width_desktop = 'lg:col-start-7 lg:col-end-13'
+      else
+        assign media_width_desktop = 'lg:col-span-6'
+      endif
+
+      assign sizes = '(min-width: 1024px) 50vw, 100vw'
+    when 'two_thirds'
+      assign text_width_desktop = 'lg:col-span-4'
+
+      if media_position == 'right'
+        assign media_width_desktop = 'lg:col-start-5 lg:col-end-13'
+      else
+        assign media_width_desktop = 'lg:col-span-8'
+      endif
+
+      assign sizes = '(min-width: 1024px) calc(100vw / 3 * 2), 100vw'
+  endcase
+
+  assign preload = false
+  assign loading = 'lazy'
+
+  if section.index == 1
+    assign preload = true
+  endif
+
+  if section.index <= 3
+    assign loading = 'eager'
+  endif
+
+  if deep_inset
+    assign media_padding_class = 'p-deep-inset-media'
+  else
+    assign media_padding_class = 'p-grid-media'
+  endif
+-%}
+
+<data-island
+  class="grid grid-flow-row-dense grid-cols-1 gap-gutter overflow-hidden border-b-gridline border-gridline-color bg-gridline-color lg:grid-cols-12"
+  role="banner"
+  x-data="{ currentLink: '' }"
+  data-color-scheme="{{ section_color }}"
+>
+  <div class="bg-scheme-background {{ media_width_desktop }} {{ media_padding_class }}{% if settings.grid_media_style == 'inset' %} h-full w-full{% endif %}">
+    <div class="relative min-h-full">
+      {%- if media_type == 'video' -%}
+        {% render 'video',
+          video: video,
+          sizes: sizes,
+          mode: 'autoplay',
+          container_id: section.id,
+          ratio: 'natural',
+          fill: fill_media,
+          fill_only_on_desktop: true,
+          poster_preload: preload,
+          poster_loading: loading,
+          is_deep_inset: deep_inset
+        %}
+      {%- else -%}
+        {%- if image != blank -%}
+          {%- if fill_media -%}
+            <div class="hidden lg:block">
+              {% render 'image-fill',
+                image: image,
+                sizes: sizes,
+                preload: false,
+                loading: loading,
+                is_deep_inset: deep_inset
+              %}
+            </div>
+            <div class="block lg:hidden">
+              {% render 'image',
+                image: image,
+                sizes: sizes,
+                preload: preload,
+                loading: loading,
+                is_deep_inset: deep_inset
+              %}
+            </div>
+          {%- else -%}
+            {% render 'image',
+              image: image,
+              sizes: sizes,
+              preload: preload,
+              loading: loading,
+              is_deep_inset: deep_inset
+            %}
+          {%- endif -%}
+        {%- else -%}
+          {%- if fill_media -%}
+            <div class="contents lg:hidden">
+              {%- render 'image-crop-placeholder', is_deep_inset: deep_inset -%}
+            </div>
+            <div class="hidden lg:contents">
+              {%- render 'image-fill-placeholder', is_deep_inset: deep_inset -%}
+            </div>
+          {%- else -%}
+            {%- render 'image-crop-placeholder', is_deep_inset: deep_inset -%}
+          {%- endif -%}
+        {%- endif -%}
+      {%- endif -%}
+
+      <div>
+        {%- for block in section.blocks -%}
+          {%- liquid
+            assign media_type = block.settings.media_type
+            assign video = block.settings.video
+            assign image = block.settings.image
+
+            assign container_id = section.id | append: '-' | append: block.id
+            assign handle = block.id | handleize
+
+            assign output_hover_media = false
+
+            if media_type == 'video' and video != blank
+              assign output_hover_media = true
+            elsif media_type == 'image' and image != blank
+              assign output_hover_media = true
+            endif
+
+            if output_hover_media
+              render 'hover-link-media', media_type: media_type, video: video, image: image, sizes: sizes, container_id: container_id, handle: handle, is_deep_inset: deep_inset, loading: loading
+            endif
+          -%}
+        {%- endfor -%}
+      </div>
+    </div>
+  </div>
+
+  <div class="{{ text_width_desktop }} relative flex bg-scheme-background px-section-horizontal-spacing py-section-vertical-spacing text-scheme-text {{ text_position }}">
+    <div
+      class="{% render 'type-scale-classes', mobile_text_scale: section.settings.mobile_text_scale, desktop_text_scale: section.settings.desktop_text_scale %} {{ text_align }} w-full"
+    >
+      <ul class="font-heading break-word inline-block max-w-full">
+        {%- for block in section.blocks -%}
+          {%- liquid
+            assign link = block.settings.link
+            assign text = block.settings.text
+            assign video = block.settings.video
+            assign image = block.settings.image
+          -%}
+          {%- if section.settings.show_index_as_superscript %}
+            {%- capture superscript_content -%}<sup class="pr-1">{{ forloop.index }}</sup>{%- endcapture -%}
+          {%- endif -%}
+          <li {{ block.shopify_attributes }}>
+            <div class=" relative inline-block max-w-full">
+              <a
+                href="{{ link }}"
+                class="font-heading break-word hover:text-scheme-accent"
+                x-on:mouseenter="currentLink = '{%- if video != blank or image != blank -%}{{- block.id | handleize -}}{%- endif -%}'"
+                x-on:mouseleave="
+                  setTimeout(
+                  () => {
+                    if (currentLink == '{{ block.id | handleize }}') {
+                      currentLink = ''
+                    }
+                  }, 200)
+                "
+                x-on:focus="currentLink = '{%- if video != blank or image != blank -%}{{- block.id | handleize -}}{%- endif -%}'"
+                x-on:blur="
+                  setTimeout(
+                  () => {
+                    if (currentLink == '{{ block.id | handleize }}') {
+                      currentLink = ''
+                    }
+                  }, 200)
+                "
+              >
+                {% if section.settings.show_index_as_superscript -%}
+                  {{- superscript_content }}
+                {%- endif -%}
+                <span class="hover:underline">{{ text }}</span>
+              </a>
+            </div>
+          </li>
+        {%- endfor -%}
+      </ul>
+    </div>
+  </div>
+</data-island>
+
+{% schema %}
+{
+  "name": "Custom links with media",
+  "disabled_on": {
+    "groups": [
+      "header",
+      "footer",
+      "aside"
+    ]
+  },
+  "settings": [
+    {
+      "type": "range",
+      "id": "mobile_text_scale",
+      "min": -2,
+      "max": 4,
+      "step": 1,
+      "label": "Mobile font size scale",
+      "default": 2
+    },
+    {
+      "type": "range",
+      "id": "desktop_text_scale",
+      "min": -2,
+      "max": 9,
+      "step": 1,
+      "label": "Desktop font size scale",
+      "default": 7
+    },
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "label": "Text alignment",
+      "options": [
+        {
+          "value": "text-left",
+          "label": "Left"
+        },
+        {
+          "value": "text-center",
+          "label": "Center"
+        },
+        {
+          "value": "text-right",
+          "label": "Right"
+        }
+      ],
+      "default": "text-left"
+    },
+    {
+      "type": "select",
+      "id": "text_position",
+      "label": "Text position",
+      "options": [
+        {
+          "value": "items-start",
+          "label": "Top"
+        },
+        {
+          "value": "items-center",
+          "label": "Middle"
+        },
+        {
+          "value": "items-end",
+          "label": "Bottom"
+        }
+      ],
+      "default": "items-center"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_index_as_superscript",
+      "label": "Show index as superscript",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Media"
+    },
+    {
+      "id": "media_type",
+      "type": "select",
+      "label": "Type",
+      "options": [
+        {
+          "value": "video",
+          "label": "Video"
+        },
+        {
+          "value": "image",
+          "label": "Image"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.media_type == 'image' }}",
+      "id": "image",
+      "type": "image_picker",
+      "label": "Image"
+    },
+    {
+      "visible_if": "{{ section.settings.media_type == 'video' }}",
+      "id": "video",
+      "type": "video",
+      "label": "Video"
+    },
+    {
+      "type": "select",
+      "id": "media_position",
+      "label": "Media position on desktop",
+      "default": "right",
+      "options": [
+        {
+          "value": "right",
+          "label": "Right"
+        },
+        {
+          "value": "left",
+          "label": "Left"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "media_size",
+      "label": "Media size on desktop",
+      "default": "half",
+      "options": [
+        {
+          "value": "third",
+          "label": "One third"
+        },
+        {
+          "value": "half",
+          "label": "One half"
+        },
+        {
+          "value": "two_thirds",
+          "label": "Two thirds"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "fill_media",
+      "label": "Fit media to text",
+      "default": false,
+      "info": "This setting will crop the media on desktop"
+    },
+    {
+      "type": "checkbox",
+      "id": "deep_inset",
+      "label": "Deep inset",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "blocks": [
+    {
+      "name": "link",
+      "type": "link",
+      "settings": [
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Link",
+          "default": "/collections/all"
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Link text",
+          "default": "Link"
+        },
+        {
+          "id": "media_type",
+          "type": "select",
+          "label": "Type",
+          "options": [
+            {
+              "value": "image",
+              "label": "Image"
+            },
+            {
+              "value": "video",
+              "label": "Video"
+            }
+          ]
+        },
+        {
+          "visible_if": "{{ block.settings.media_type == 'image' }}",
+          "id": "image",
+          "type": "image_picker",
+          "label": "Image"
+        },
+        {
+          "visible_if": "{{ block.settings.media_type == 'video' }}",
+          "id": "video",
+          "type": "video",
+          "label": "Video"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Custom links with image",
+      "category": "Navigation",
+      "settings": {
+        "media_type": "image"
+      },
+      "blocks": [
+        {
+          "type": "link",
+          "settings": {
+            "media_type": "image"
+          }
+        },
+        {
+          "type": "link",
+          "settings": {
+            "media_type": "image"
+          }
+        },
+        {
+          "type": "link",
+          "settings": {
+            "media_type": "image"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Custom links with video",
+      "category": "Navigation",
+      "settings": {
+        "media_type": "video"
+      },
+      "blocks": [
+        {
+          "type": "link",
+          "settings": {
+            "media_type": "video"
+          }
+        },
+        {
+          "type": "link",
+          "settings": {
+            "media_type": "video"
+          }
+        },
+        {
+          "type": "link",
+          "settings": {
+            "media_type": "video"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

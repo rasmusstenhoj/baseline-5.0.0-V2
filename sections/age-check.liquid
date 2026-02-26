@@ -1,0 +1,594 @@
+{%- if section.settings.enable or request.design_mode -%}
+  {%- liquid
+    assign loading = 'eager'
+    assign preload = true
+
+    assign deep_inset = section.settings.deep_inset
+    if deep_inset
+      assign ratio = section.settings.crop | plus: 0
+    else
+      assign ratio = 0
+    endif
+
+    assign input_image = section.settings.image
+    if input_image != blank
+      assign has_image = true
+    else
+      assign has_image = false
+    endif
+
+    assign content_classes = 'px-4 w-full md:max-w-3/4'
+    if has_image
+      assign content_classes = content_classes | append: ' items-start text-left'
+    else
+      assign content_classes = content_classes | append: ' flex flex-col items-center text-center xl:max-w-1/3'
+    endif
+
+    assign title_classes = 'font-heading text-xl lg:text-2xl'
+    assign text_classes = 'font-main text-theme-basic rte rte--content-only rte--compact'
+    if section.settings.title != blank
+      assign text_classes = text_classes | append: ' mt-4'
+    endif
+
+    assign redirect_link = section.settings.redirect_link
+    if redirect_link contains 'https://' or redirect_link contains 'http://'
+      assign redirect_link_external = redirect_link
+    else
+      assign redirect_link_external = 'https://www.google.com'
+    endif
+
+    if has_image
+      assign grid_layout_classes = ' grid lg:grid-cols-12 grid-flow-row-dense grid-cols-1 items-center gap-gutter'
+    else
+      assign layout_classes_no_image = ' w-screen h-screen'
+    endif
+
+    case section.settings.desktop_image_width
+      when '1/2'
+        assign desktop_col_span_class = 'lg:col-span-6'
+        assign content_col_start_class = 'lg:col-start-7'
+        assign sizes = '(min-width: 1024px) calc(100vw / 12 * 6), 100vw'
+      when '1/3'
+        assign desktop_col_span_class = 'lg:col-span-4'
+        assign content_col_start_class = 'lg:col-start-5'
+        assign sizes = '(min-width: 1024px) calc(100vw / 12 * 4), 100vw'
+      when '2/3'
+        assign desktop_col_span_class = 'lg:col-span-8'
+        assign content_col_start_class = 'lg:col-start-9'
+        assign sizes = '(min-width: 1024px) calc(100vw / 12 * 8), 100vw'
+    endcase
+  -%}
+
+  {% if section.settings.show_logo and settings.logo != blank %}
+    {%- # white-space: normal -%}
+    {% capture logo %}
+      <div
+        class="mx-4"
+        style="max-width: {{ section.settings.logo_max_width }}px;"
+      >
+        {% liquid
+          assign logo = settings.logo
+
+          assign image_size = section.settings.logo_max_width
+          assign image_size_2x = section.settings.logo_max_width | times: 2
+          assign image_size_3x = section.settings.logo_max_width | times: 3
+        %}
+        <img
+          src="{{ logo | image_url: width: image_size }}"
+          srcset="
+            {{- logo | image_url: width: image_size | append: ' 1x,' -}}
+            {{- logo | image_url: width: image_size_2x | append: ' 2x,' -}}
+            {{- logo | image_url: width: image_size_3x | append: ' 3x' -}}
+          "
+          width="{{ logo.width }}"
+          height="{{ logo.height }}"
+          loading="eager"
+          alt="{{ logo.alt | default: shop.name }}"
+        >
+      </div>
+    {% endcapture %}
+  {% endif %}
+
+  <data-island
+    id="{{ section.id }}"
+    x-data="
+      AgeCheck({
+        mode: {{ section.settings.mode | json | escape }},
+        dateFormat: {{ section.settings.date_format | json | escape }},
+        minimumAge: {{ section.settings.minimum_age | json | escape }},
+        redirectURL: {{ redirect_link_external | json | escape }},
+        enabled: {{ section.settings.enable | default: false }},
+        declineAction: {{ section.settings.age_check_fail | json | escape }},
+      })
+    "
+    on="load"
+  >
+    <div>
+      <template data-should-teleport="#modal-slot">
+        <template
+          id="ageCheck"
+          x-if="$store.modals.modal.contents === 'ageCheck'"
+        >
+          <div
+            class="{% if has_image %}flex items-center justify-center{% else %}max-lg:h-full{% endif %} bg-scheme-background text-scheme-text{{ layout_classes_no_image }}"
+            data-modal-label="{{ section.settings.title }}"
+            data-color-scheme="{{ section.settings.color_scheme | default: 'scheme1' }}"
+          >
+            <div
+              class="w-full overflow-hidden border-gridline-color bg-gridline-color{{ grid_layout_classes }} {% if has_image %}lg:min-h-screen lg:h-full{% else %}max-lg:bg-scheme-background{% endif %}"
+            >
+              <div class="h-full w-full items-center bg-scheme-background {{ desktop_col_span_class }}{% if has_image %} flex{% endif %}">
+                {% if has_image %}
+                  {% if deep_inset %}
+                    <div class="w-full bg-scheme-background">
+                      <div class="h-full w-full p-8 lg:p-16">
+                        <div class="relative">
+                          {% render 'image-crop',
+                            image: input_image,
+                            ratio: ratio,
+                            sizes: sizes,
+                            loading: loading,
+                            preload: preload,
+                            is_deep_inset: deep_inset
+                          %}
+                        </div>
+                      </div>
+                    </div>
+                  {% else %}
+                    <div class="h-full w-full bg-scheme-background">
+                      <div class="relative h-full w-full p-grid-media lg:mb-0{% if settings.grid_media_style == 'inset' %} mb-gridline{% endif %}">
+                        <div
+                          class="relative hidden h-full w-full lg:block"
+                        >
+                          {% render 'image-fill',
+                            image: input_image,
+                            sizes: sizes,
+                            loading: loading,
+                            preload: preload,
+                            is_deep_inset: deep_inset
+                          %}
+                        </div>
+                        <div
+                          class="relative block lg:hidden"
+                        >
+                          {% render 'image-crop',
+                            image: input_image,
+                            ratio: ratio,
+                            sizes: sizes,
+                            loading: loading,
+                            preload: preload,
+                            is_deep_inset: deep_inset
+                          %}
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+              </div>
+
+              <div
+                class="bg-scheme-background lg:col-end-13 {{ content_col_start_class }} {% if has_image %}h-full{% else %}h-screen{% endif %}"
+              >
+                <div
+                  class="flex h-full w-full flex-col justify-center gap-8 px-section-horizontal-spacing py-section-vertical-spacing {% if has_image %}items-start{% else %}items-center{% endif %}"
+                >
+                  {{ logo }}
+
+                  <div
+                    x-show="!showDeclinedMessage"
+                    class="{{ content_classes }}"
+                  >
+                    {% if section.settings.title != '' %}
+                      <h2 class="{{ title_classes }}">
+                        {{ section.settings.title }}
+                      </h2>
+                    {% endif %}
+
+                    {%- if section.settings.text != '' -%}
+                      <div class="{{ text_classes }}">
+                        {{ section.settings.text }}
+                      </div>
+                    {%- endif -%}
+
+                    {%- case section.settings.mode -%}
+                      {%- when 'buttons' -%}
+                        <div class="mt-cta flex flex-wrap justify-start gap-4">
+                          <button
+                            @click="approveEntry"
+                            role="button"
+                            class="theme-button min-w-[6rem]"
+                          >
+                            <span>{{ section.settings.yes_button_text }}</span>
+                          </button>
+
+                          <button
+                            @click="denyEntry"
+                            role="button"
+                            class="theme-button--secondary min-w-[6rem] px-8 py-2"
+                          >
+                            <span>{{ section.settings.no_button_text }}</span>
+                          </button>
+                        </div>
+                      {%- when 'dob' -%}
+                        {%- # white-space: normal -%}
+                        {%- capture day_input -%}
+                          <div class="input-container w-full">
+                            <label
+                              class="sr-only"
+                              for="day-input-{{ section.id }}"
+                            >
+                              {{- 'age_check.day' | t -}}
+                            </label>
+                            <input
+                              type="tel"
+                              maxlength="2"
+                              id="day-input-{{ section.id }}"
+                              name="day"
+                              class="w-full border-b-text border-current bg-transparent py-1 text-center"
+                              autocorrect="off"
+                              autocapitalize="off"
+                              autocomplete="email"
+                              placeholder="DD"
+                              required
+                              x-ref="day"
+                              x-model="day"
+                            >
+                          </div>
+                        {%- endcapture -%}
+
+                        {%- # white-space: normal -%}
+                        {%- capture month_input -%}
+                          <div class="input-container w-full">
+                            <label
+                              class="sr-only"
+                              for="month"
+                              id="month-input-{{ section.id }}"
+                            >
+                              {{- 'age_check.month' | t -}}
+                            </label>
+                            <input
+                              type="tel"
+                              maxlength="2"
+                              id="month-input-{{ section.id }}"
+                              name="month"
+                              class="w-full border-b-text border-current bg-transparent py-1 text-center"
+                              autocorrect="off"
+                              autocapitalize="off"
+                              autocomplete="email"
+                              placeholder="MM"
+                              x-ref="month"
+                              x-model="month"
+                              required
+                            >
+                          </div>
+                        {%- endcapture -%}
+
+                        <div
+                          class="dob-form mt-8 grid max-w-xs grid-cols-12 gap-2"
+                          id="dob-form-{{ section.id }}"
+                        >
+                          {%- if section.settings.date_format == 'dd-mm-yyyy'
+                          -%}
+                            <div class="input-grid-item col-span-4">
+                              {{ day_input }}
+                            </div>
+                            <div class="input-grid-item col-span-4">
+                              {{ month_input }}
+                            </div>
+                          {%- else -%}
+                            <div class="input-grid-item col-span-4">
+                              {{ month_input }}
+                            </div>
+                            <div class="input-grid-item col-span-4">
+                              {{ day_input }}
+                            </div>
+                          {%- endif -%}
+                          <div class="input-grid-item col-span-4">
+                            <div class="input-container">
+                              <label
+                                class="sr-only"
+                                for="year-input-{{ section.id }}"
+                              >
+                                {{- 'age_check.year' | t -}}
+                              </label>
+                              <input
+                                type="tel"
+                                maxlength="4"
+                                name="year"
+                                id="year-input-{{ section.id }}"
+                                class="w-full border-b-text border-current bg-transparent py-1 text-center"
+                                autocorrect="off"
+                                autocapitalize="off"
+                                autocomplete="email"
+                                placeholder="YYYY"
+                                required
+                                x-ref="year"
+                                x-model="year"
+                              >
+                            </div>
+                          </div>
+                        </div>
+                    {%- endcase -%}
+                  </div>
+
+                  {% if section.settings.age_check_fail == 'message' %}
+                    <div
+                      x-show="showDeclinedMessage"
+                      class="{{ content_classes }}"
+                    >
+                      {% if section.settings.age_check_fail_title != '' %}
+                        <h2 class="{{ title_classes }}">
+                          {{ section.settings.age_check_fail_title }}
+                        </h2>
+                      {% endif %}
+
+                      {%- if section.settings.age_check_fail_text != '' -%}
+                        <div class="{{ text_classes }}">
+                          {{ section.settings.age_check_fail_text }}
+                        </div>
+                      {%- endif -%}
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </template>
+    </div>
+  </data-island>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Age check",
+  "class": "contents",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "enable",
+      "label": "Enable age check",
+      "default": false
+    },
+    {
+      "visible_if": "{{ section.settings.enable }}",
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.show_logo }}",
+      "type": "paragraph",
+      "content": "Edit your logo in [theme settings](/editor?context=theme&category=logo)."
+    },
+    {
+      "visible_if": "{{ section.settings.enable }}",
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "Age verification"
+    },
+    {
+      "visible_if": "{{ section.settings.enable }}",
+      "id": "text",
+      "type": "richtext",
+      "label": "Text",
+      "default": "<p>Are you over 21 years of age?</p>"
+    },
+    {
+      "visible_if": "{{ section.settings.enable }}",
+      "type": "select",
+      "id": "mode",
+      "label": "Mode",
+      "default": "buttons",
+      "options": [
+        {
+          "value": "buttons",
+          "label": "Button"
+        },
+        {
+          "value": "dob",
+          "label": "Date of birth"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.enable }}",
+      "type": "header",
+      "content": "Logo"
+    },
+    {
+      "visible_if": "{{ section.settings.enable }}",
+      "type": "checkbox",
+      "id": "show_logo",
+      "label": "Show logo",
+      "default": true
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.show_logo }}",
+      "type": "range",
+      "id": "logo_max_width",
+      "min": 20,
+      "max": 800,
+      "step": 10,
+      "unit": "px",
+      "label": "Logo width",
+      "default": 150,
+      "info": "The logo is set in theme settings."
+    },
+    {
+      "visible_if": "{{ section.settings.enable }}",
+      "type": "header",
+      "content": "Image"
+    },
+    {
+      "visible_if": "{{ section.settings.enable }}",
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image"
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.image != blank }}",
+      "type": "checkbox",
+      "id": "deep_inset",
+      "label": "Deep inset",
+      "default": false
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.image != blank and section.settings.deep_inset }}",
+      "type": "select",
+      "id": "crop",
+      "label": "Crop",
+      "options": [
+        {
+          "value": "0",
+          "label": "No crop"
+        },
+        {
+          "value": "1.3",
+          "label": "Landscape"
+        },
+        {
+          "value": "1",
+          "label": "Square"
+        },
+        {
+          "value": "0.8",
+          "label": "Portrait"
+        }
+      ],
+      "default": "1"
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.image != blank }}",
+      "type": "select",
+      "id": "desktop_image_width",
+      "label": "Desktop width",
+      "default": "1/2",
+      "options": [
+        {
+          "value": "1/3",
+          "label": "1/3"
+        },
+        {
+          "value": "1/2",
+          "label": "1/2"
+        },
+        {
+          "value": "2/3",
+          "label": "2/3"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.mode == 'buttons' }}",
+      "type": "header",
+      "content": "Button"
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.mode == 'buttons' }}",
+      "type": "text",
+      "id": "yes_button_text",
+      "label": "Approve button text",
+      "default": "Yes"
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.mode == 'buttons' }}",
+      "type": "text",
+      "id": "no_button_text",
+      "label": "Deny button text",
+      "default": "No"
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.mode == 'dob' }}",
+      "type": "header",
+      "content": "Date of birth"
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.mode == 'dob' }}",
+      "type": "radio",
+      "id": "date_format",
+      "label": "Date format",
+      "default": "mm-dd-yyyy",
+      "options": [
+        {
+          "value": "mm-dd-yyyy",
+          "label": "MM DD YYYY"
+        },
+        {
+          "value": "dd-mm-yyyy",
+          "label": "DD MM YYYY"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.mode == 'dob' }}",
+      "type": "range",
+      "id": "minimum_age",
+      "min": 15,
+      "max": 25,
+      "step": 1,
+      "unit": "yrs",
+      "label": "Minimum age",
+      "default": 18
+    },
+    {
+      "visible_if": "{{ section.settings.enable }}",
+      "type": "header",
+      "content": "Age check declined"
+    },
+    {
+      "visible_if": "{{ section.settings.enable }}",
+      "type": "paragraph",
+      "content": "Displayed if visitor clicks the deny button or enters a date of birth that is under the required age."
+    },
+    {
+      "visible_if": "{{ section.settings.enable }}",
+      "type": "select",
+      "id": "age_check_fail",
+      "label": "Action",
+      "options": [
+        {
+          "value": "message",
+          "label": "Message"
+        },
+        {
+          "value": "redirect",
+          "label": "Redirect URL"
+        }
+      ],
+      "default": "message"
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.age_check_fail == 'redirect' }}",
+      "type": "url",
+      "id": "redirect_link",
+      "label": "External URL",
+      "info": "To test this feature, preview the theme. Internal URLs are not supported."
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.age_check_fail == 'message' }}",
+      "type": "text",
+      "id": "age_check_fail_title",
+      "label": "Heading",
+      "default": "Looks like you're not old enough just yet"
+    },
+    {
+      "visible_if": "{{ section.settings.enable and section.settings.age_check_fail == 'message' }}",
+      "type": "richtext",
+      "id": "age_check_fail_text",
+      "label": "Text",
+      "default": "<p>You must be 21 years or older to enter this website.</p>"
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,3308 @@
+{%- liquid
+  assign section_color = section.settings.color_scheme
+  assign enable_video_looping = section.settings.enable_video_looping
+  assign two_media_per_row = section.settings.two_media_per_row
+  assign preselect_variant = section.settings.preselect_variant
+
+  assign models = product.media | where: 'media_type', 'model'
+
+  assign has_borders = true
+  if settings.border_width == 0
+    assign has_borders = false
+  endif
+
+  assign xl_grid_areas_array = "'a b c'|'a c b'|'b a c'|'c a b'|'b c a'|'c b a'" | split: '|'
+
+  assign desktop_col_layout = section.settings.desktop_col_layout
+  assign array_index = desktop_col_layout | minus: 1
+  assign selected_xl_grid_areas = xl_grid_areas_array[array_index]
+
+  assign media_col_width = section.settings.media_col_width
+  assign product_form_col_width = section.settings.product_form_col_width
+  assign product_form_width_class = 'lg:[grid-area:var(--grid-area-b)] '
+  assign extra_info_width_class = 'lg:[grid-area:var(--grid-area-c)] '
+
+  assign lg_grid_areas = "'a b' 'a c'"
+  assign last_xl_col = selected_xl_grid_areas | slice: -2
+  if last_xl_col == 'a'
+    assign lg_grid_areas = "'b a' 'c a'"
+  endif
+
+  case media_col_width
+    when 'one_third'
+      assign media_width_class = 'lg:[grid-area:var(--grid-area-a)]'
+      assign xl_media_column_width = '4fr'
+
+      if product_form_col_width == 'two_thirds'
+        assign xl_product_form_column_width = '5fr'
+        assign xl_extra_info_column_width = '3fr'
+      else
+        assign xl_product_form_column_width = '4fr'
+        assign xl_extra_info_column_width = '4fr'
+      endif
+
+      assign media_sizes = '(min-width: 1400px) calc(100vw / 3), (min-width: 1024px) 50vw, 100vw'
+      # on 1024px breakpoint media is a slideshow, so half-width should be same size as non-half-width
+      assign half_width_media_sizes = '(min-width: 1400px) calc((100vw / 3) / 2), (min-width: 1024px) 50vw, 100vw'
+
+    when 'one_half'
+      assign media_width_class = 'lg:[grid-area:var(--grid-area-a)]'
+      assign xl_media_column_width = '6fr'
+
+      if product_form_col_width == 'two_thirds'
+        assign xl_product_form_column_width = '4fr'
+        assign xl_extra_info_column_width = '2fr'
+      else
+        assign xl_product_form_column_width = '3fr'
+        assign xl_extra_info_column_width = '3fr'
+      endif
+
+      assign media_sizes = '(min-width: 1400px) 50vw, (min-width: 1024px) 50vw, 100vw'
+      # on 1024px breakpoint media is a slideshow, so half-width should be same size as non-half-width
+      assign half_width_media_sizes = '(min-width: 1400px) 25vw, (min-width: 1024px) 50vw, 100vw'
+  endcase
+
+  assign grid_columns_parts = ''
+  assign areas_order = selected_xl_grid_areas | remove: "'" | split: ' '
+
+  for area in areas_order
+    case area
+      when 'a'
+        assign grid_columns_parts = grid_columns_parts | append: xl_media_column_width
+      when 'b'
+        assign grid_columns_parts = grid_columns_parts | append: xl_product_form_column_width
+      when 'c'
+        assign grid_columns_parts = grid_columns_parts | append: xl_extra_info_column_width
+    endcase
+    unless forloop.last
+      assign grid_columns_parts = grid_columns_parts | append: '|'
+    endunless
+  endfor
+
+  assign xl_grid_template_columns = grid_columns_parts | split: '|' | join: ' '
+
+  if section.settings.two_media_per_row
+    assign first_media_sizes = half_width_media_sizes
+    assign remaining_media_sizes = half_width_media_sizes
+  else
+    assign first_media_sizes = media_sizes
+    assign remaining_media_sizes = media_sizes
+  endif
+
+  assign first_media_full_width = false
+
+  if section.settings.first_media_full_width and section.settings.two_media_per_row
+    assign first_media_full_width = true
+    assign first_media_sizes = media_sizes
+  endif
+
+  if two_media_per_row == true and product.media.size > 1
+    assign left_over = product.media.size | modulo: 2
+  endif
+
+  assign last_media_full_width = false
+
+  if first_media_full_width and left_over == 0
+    assign last_media_full_width = true
+  elsif first_media_full_width and product.media.size == 2
+    assign last_media_full_width = true
+  endif
+
+  assign current_variant = product.selected_or_first_available_variant
+
+  assign enable_variant_media = false
+
+  unless product.has_only_default_variant or product.variants_count > 250
+    assign enable_variant_media = section.settings.enable_variant_media
+  endunless
+
+  if preselect_variant
+    assign always_show_product_featured_media_first = section.settings.always_show_product_featured_media_first
+  else
+    assign always_show_product_featured_media_first = true
+  endif
+
+  if always_show_product_featured_media_first or enable_variant_media
+    assign featured_media = product.featured_media
+  else
+    assign featured_media = current_variant.featured_media | default: product.featured_media
+  endif
+
+  assign image_index = 0
+
+  assign images_size = product.media | where: 'media_type', 'image' | size
+  assign product_media_size = product.media | size
+
+  if images_size < product_media_size
+    assign has_interactive_media = true
+  else
+    assign has_interactive_media = false
+  endif
+
+  if featured_media
+    # theme-check-disable VariableName
+    # https://github.com/Shopify/theme-tools/issues/397
+    assign featured_media_position0 = featured_media.position | minus: 1
+    # theme-check-enable VariableName
+    assign remaining = product_media_size | minus: featured_media.position
+
+    assign featured_media_slice = product.media | slice: featured_media_position0, 1
+    assign first_half = product.media | slice: 0, featured_media_position0
+    assign second_half = product.media | slice: featured_media.position, remaining
+    assign media_array = featured_media_slice | concat: first_half | concat: second_half
+  else
+    assign media_array = product.media
+  endif
+
+  if section.settings.variant_media_behavior == 'scroll'
+    assign media_scroll_to = true
+  else
+    assign media_scroll_to = false
+  endif
+
+  assign single_variant_mode = false
+
+  unless product.has_only_default_variant or product.variants_count > 250
+    if section.settings.single_variant_mode == true
+      assign single_variant_mode = true
+    else
+      assign single_variant_mode = false
+    endif
+  endunless
+
+  if enable_variant_media or single_variant_mode
+    assign variants_with_media = product.variants | where: 'featured_media'
+    assign variant_media_array = variants_with_media | map: 'featured_media'
+    assign first_variant_media = variants_with_media | map: 'featured_media' | first
+    assign variant_media_ids_array = variants_with_media | map: 'featured_media' | map: 'id' | uniq
+
+    if enable_variant_media == false and variants_with_media.size > 0
+      # Reset media ids array to only include reachable media
+
+      if first_variant_media
+        assign slice_point = first_variant_media.position | minus: 1
+        assign non_variant_media_array = product.media | slice: 0, slice_point
+      endif
+
+      if featured_media
+        assign featured_media_as_array = featured_media | sort
+        assign media_array = media_array | concat: featured_media_as_array
+      endif
+
+      assign media_array = non_variant_media_array | concat: variant_media_array | uniq
+    endif
+
+    if always_show_product_featured_media_first
+      # If there is no non-variant media, reset some assumptions
+      if first_variant_media.position == 1
+        assign always_show_product_featured_media_first = false
+        assign featured_media = current_variant.featured_media
+      endif
+    endif
+  endif
+
+  assign complementary_products_block = section.blocks | where: 'type', 'complementary' | first
+
+  assign has_title_in_product_form = false
+  assign has_vendor_in_extra_info = false
+  assign keep_vendor_natural_position = false
+
+  assign title_has_adjacent_vendor = false
+  assign previous_block_type = ''
+
+  for block in section.blocks
+    if block.type == 'title' and block.settings.desktop_column == 'product_form'
+      assign has_title_in_product_form = true
+    endif
+    if block.type == 'vendor' and block.settings.desktop_column == 'extra_info'
+      assign has_vendor_in_extra_info = true
+    endif
+
+    comment
+      Group adjacent title/vendor blocks when inserted on mobile
+    endcomment
+    if block.settings.desktop_column == 'extra_info'
+      if block.type == 'vendor' and previous_block_type == 'title'
+        assign title_has_adjacent_vendor = true
+      elsif block.type == 'title' and previous_block_type == 'vendor'
+        assign title_has_adjacent_vendor = true
+      endif
+
+      assign previous_block_type = block.type
+    endif
+  endfor
+
+  comment
+    For edge case when title is in product form and vendor is in extra info
+    Vendor block stays in its natural position, separate from title
+  endcomment
+  if has_title_in_product_form and has_vendor_in_extra_info
+    assign keep_vendor_natural_position = true
+  endif
+-%}
+
+<data-island
+  class="grid grid-flow-row-dense grid-cols-1 border-b-gridline border-gridline-color lg:grid-cols-2 lg:gap-gutter lg:bg-gridline-color lg:[grid-template-areas:var(--lg-grid-areas)] xl:grid-cols-[var(--xl-grid-cols)] xl:[grid-template-areas:var(--xl-grid-areas)] [&:not(:has(.product-media-container):has(.product-form-container))]:lg:bg-scheme-background {% if media_array.size == 0 %}-mt-gridline{% endif %}"
+  id="{{ section.id }}"
+  x-data="
+    Product({
+      product: {
+        id: {{ product.id | json }},
+        url: {{ product.url | json | escape }},
+      },
+      featuredMediaId: {% if featured_media %}{{ featured_media.id }}{% else %}null{% endif %},
+      mediaScrollTo: {{ media_scroll_to }},
+      singleVariantMode: {{ single_variant_mode }},
+      alwaysShowProductFeaturedMediaFirst:
+        {{ always_show_product_featured_media_first }},
+      firstMediaFullWidth: {{ first_media_full_width }},
+      shouldUpdateHistoryState: true,
+      preselectVariant: {{ preselect_variant }},
+      templateType: 'three-column',
+    })
+  "
+  src="product"
+  role="banner"
+  data-product-root="{{ section.id }}"
+  data-color-scheme="{{ section_color }}"
+  style="--lg-grid-areas: {{ lg_grid_areas }}; --xl-grid-areas: {{ selected_xl_grid_areas }}; --xl-grid-cols: {{ xl_grid_template_columns }}; --grid-area-a: a; --grid-area-b: b; --grid-area-c: c;"
+>
+  <div
+    class="product-media-container relative {{ media_width_class }} bg-scheme-background text-scheme-text"
+    data-product-media-container
+  >
+    <div
+      class="splide splide--product max-xl:visible xl:!sticky xl:top-sticky-header-less-gridline{% if two_media_per_row %} lg:-mb-gridline{% endif %}"
+      data-drag-disabled="{{ has_interactive_media }}"
+      {% if media_array.size > 1 %}
+        data-slideshow-enabled="true"
+      {% endif %}
+      x-ref="splide"
+    >
+      <div class="splide__track border-b-gridline border-b-gridline-color xl:-mb-gridline transition-[max-height]{% if media_array.size == 0 %} lg:border-b-0{% endif %}">
+        <ul
+          id="media-list-{{ product.id }}-{{ section.id }}"
+          class="
+            splide__list xl:grid xl:w-full {% if two_media_per_row and media_array.size > 1 %}xl:grid-cols-2{% else %}xl:grid-cols-1{% endif %} xl:gap-gutter xl:bg-gridline-color
+            {% unless single_variant_mode %}
+              {% if left_over > 0 or first_media_full_width %}
+                [&>li:first-child]:col-span-2
+              {% endif %}
+              {% if last_media_full_width %}
+                [&>li:last-child]:col-span-2
+              {% endif %}
+            {% endunless %}
+          "
+          x-ref="mediaList"
+        >
+          {% for media in media_array %}
+            {%- liquid
+              assign preload = false
+              assign loading = 'lazy'
+
+              if section.index == 1 and forloop.first
+                assign preload = true
+              endif
+
+              if section.index <= 3 and forloop.index <= 3
+                assign loading = 'eager'
+              endif
+
+              if enable_variant_media or single_variant_mode
+                if forloop.first
+                  assign is_non_variant_media = true
+                  assign media_group_id = media.id
+                endif
+
+                if variant_media_ids_array contains media.id
+                  assign media_group_id = media.id
+                  assign is_non_variant_media = false
+                else
+                  if single_variant_mode and enable_variant_media == false and is_non_variant_media == false
+                    assign media_group_id = null
+                  endif
+                endif
+              endif
+
+              unless enable_variant_media or single_variant_mode
+                if forloop.first
+                  assign sizes = first_media_sizes
+                else
+                  assign sizes = remaining_media_sizes
+                endif
+              else
+                assign sizes = first_media_sizes
+              endunless
+            -%}
+            <li
+              class="splide__slide bg-scheme-background max-xl:[.splide:not(.is-active)_&]:w-full{% unless media.id == featured_media.id %} max-xl:[.splide:not(.is-active)_&]:hidden{% endunless %}"
+              data-index="{{ forloop.index0 }}"
+              data-order="{{ forloop.index }}"
+              {% if enable_variant_media or single_variant_mode %}
+                {% if media_group_id %}
+                  data-media-group-id="{{ media_group_id }}"
+                {% endif %}
+              {% endif %}
+              {% if single_variant_mode %}
+                :class="
+                  {
+                  {% if two_media_per_row %}
+                    'col-span-2' : $el.parentNode && shouldBeFullWidth(),
+                  {% endif %}
+                    'xl:hidden' : $el.parentNode
+                    && {% if media_group_id %}currentMediaId !== {{ media_group_id }}{% else %}true{% endif %}
+                  }
+                "
+              {% endif %}
+            >
+              {%- render 'product-media',
+                media: media,
+                sizes: sizes,
+                image_index: image_index,
+                scroll_to: media_scroll_to,
+                enable_video_looping: enable_video_looping,
+                preload: preload,
+                loading: loading,
+                two_media_per_row: two_media_per_row,
+                template_type: 'three_col'
+              -%}
+            </li>
+
+            {%- liquid
+              if media.media_type == 'image'
+                assign image_index = image_index | plus: 1
+              endif
+            -%}
+          {% endfor %}
+        </ul>
+      </div>
+      {% assign first_3d_model = models | first %}
+      {% if media_array.size > 1 %}
+        <data-island
+          class="grid grid-cols-[minmax(0,_1fr)_auto] px-section-horizontal-spacing pb-product-slide-controls pt-2 xl:border-b-gridline xl:border-gridline-color {% if settings.slideshow_pagination_style == 'dots' %}gap-2{% else %}gap-3 md:gap-10{% endif %} opacity-0 no-js:hidden xl:hidden {% if single_variant_mode and enable_variant_media == false and variants_with_media.size > 0 and variant_media_ids_array contains featured_media.id or first_variant_media.position <= 2 %}hidden{% endif %}"
+          x-data="SlideshowPagination"
+          @resize.window.debounce.250="checkIfWrapped"
+          x-show="slideCount > 1"
+          :class="{ 'opacity-0' : !splideIsReady }"
+        >
+          <ul
+            x-ref="pagination"
+            class="splide__pagination"
+          >
+            {% unless single_variant_mode %}
+              {% for i in (1..product.media.size) %}
+                <li
+                  data-splide-pagination-placeholder
+                  aria-hidden="true"
+                >
+                  <div class="splide__pagination__page"></div>
+                </li>
+              {% endfor %}
+            {% endunless %}
+          </ul>
+          <div
+            class="splide__arrows col-end-last flex items-center justify-end gap-1 text-scheme-text"
+            :class="{ 'items-start pt-[--arrows-wrapped-top-offset]' : paginationIsWrapped, 'items-center' : !paginationIsWrapped }"
+          >
+            <button class="splide__arrow splide__arrow--prev w-8">
+              <span class="sr-only">
+                {{- 'sections.slideshow.previous_slide' | t -}}
+              </span>
+              <span class="block">{% render 'icon-arrow-left' %}</span>
+            </button>
+            <button class="splide__arrow splide__arrow--next w-8">
+              <span class="sr-only">
+                {{- 'sections.slideshow.next_slide' | t -}}
+              </span>
+              <span class="block">{% render 'icon-arrow-right' %}</span>
+            </button>
+          </div>
+        </data-island>
+      {% endif %}
+      {%- if first_3d_model -%}
+        <div class="px-section-horizontal-spacing text-center">
+          <button
+            aria-label="{{ 'products.product.view_in_space_label' | t }}"
+            class="product-single__view-in-space mb-2 mt-4 w-full max-w-sm border-text border-scheme-text py-2 pl-2 pr-4 text-center xl:my-4"
+            data-shopify-xr
+            data-shopify-model3d-id="{{ first_3d_model.id }}"
+            data-shopify-title="{{ product.title }}"
+            data-shopify-xr-hidden
+          >
+            <span class="inline-block w-6 align-middle">
+              {%- render 'icon-3d-model' -%}</span
+            ><span class="text-sm">
+              {{- 'products.product.view_in_space' | t -}}
+            </span>
+          </button>
+        </div>
+      {%- endif -%}
+    </div>
+  </div>
+
+  <div
+    class="product-form-container {% if media_array.size > 1 %}product-form-container--three-col{% endif %} {% if media_array.size > 1 %}is-below-slideshow{% endif %} bg-scheme-background px-section-horizontal-spacing text-scheme-text {{ product_form_width_class }}"
+  >
+    <div
+      class="product-block-area pb-product-template-col pt-section-vertical-spacing lg:sticky lg:top-sticky-header lg:py-section-vertical-spacing"
+      style="--spacing-multiplier: {{ section.settings.extra_information_col_space_above }};"
+    >
+      {%- liquid
+        assign product_form_id = 'product-form-' | append: section.id
+        assign has_inserted_title_or_vendor_block = false
+
+        comment
+          set first_block_in_column to true at start of the loop
+        endcomment
+        assign first_block_in_column = true
+      -%}
+
+      {% comment %} Always display the title and vendor block at the top on mobile and lg desktop if it's allocated to the extra info column. {% endcomment %}
+      {%- for block in section.blocks -%}
+        {%- liquid
+          assign should_render = false
+
+          if title_has_adjacent_vendor
+            if block.type == 'title' or block.type == 'vendor'
+              assign should_render = true
+            endif
+          elsif block.type == 'title' and block.settings.desktop_column == 'extra_info'
+            assign should_render = true
+          endif
+        -%}
+
+        {%- if should_render -%}
+          {%- assign has_inserted_title_or_vendor_block = true -%}
+          <div
+            class="product-block--inserted-block-mb-lg block xl:hidden"
+            style="--spacing-multiplier: {{ block.settings.space_above }}"
+            {{ block.shopify_attributes }}
+          >
+            {%- liquid
+              if block.type == 'title'
+                render 'product-block-title', block: block
+              elsif block.type == 'vendor'
+                render 'product-block-vendor', block: block
+              endif
+            -%}
+          </div>
+        {%- endif -%}
+      {%- endfor -%}
+
+      {%- for block in section.blocks -%}
+        {%- liquid
+          assign block_wrapper_classes = ''
+
+          if first_block_in_column
+            assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--first'
+          endif
+
+          if block.type == 'collapsible_tab'
+            assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--collapsible-tab'
+            if has_borders
+              assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--has-gridlines'
+            endif
+          endif
+
+          if block.type == 'complementary'
+            assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--complementary'
+            if has_borders
+              assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--has-gridlines'
+            endif
+          endif
+
+          if block.type == 'description' and product.description == blank
+            assign block_wrapper_classes = block_wrapper_classes | append: ' hidden'
+          endif
+
+          if block.type == 'information_list' and block.settings.style != 'list'
+            assign block_wrapper_classes = block_wrapper_classes
+            if has_borders
+              assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--has-gridlines'
+            endif
+          endif
+
+          if block.type == 'product_group'
+            assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--product-group'
+          endif
+
+          if block.type == 'variant_picker'
+            assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--variant-picker'
+          endif
+
+          if forloop.last
+            assign last_block_in_column = true
+          endif
+
+          assign supported_blocks = 'price, product_group, variant_picker, quantity_selector, buy_buttons, inventory, location_inventory'
+        -%}
+
+        {%- if block.settings.desktop_column == 'product_form'
+          or supported_blocks contains block.type
+          or block.type == '@app'
+          or block.type == 'complementary'
+        -%}
+          <div
+            class="product-block {% unless block.type == 'complementary'%}{% if block.type == 'collapsible_tab' %}mt-collapsible-tab{% else %}mt-product-block{% endif %}{% endunless %} {{ block_wrapper_classes }}"
+            {%- if first_block_in_column -%}
+              {%- if has_inserted_title_or_vendor_block -%}
+                style="--spacing-multiplier: {{ block.settings.space_above }}; --spacing-multiplier-xl: 0;"
+              {%- else -%}
+                style="--spacing-multiplier: 0;"
+              {%- endif -%}
+            {%- else -%}
+              {%- if block.type == 'collapsible_tab' -%}
+                style="--collapsible-tab-spacing-multiplier: {{ block.settings.space_above }}"
+              {%- elsif block.type == '@app' -%}
+                style="--spacing-multiplier: {{ section.settings.app_space_above }}"
+              {%- else -%}
+                style="--spacing-multiplier: {{ block.settings.space_above }};"
+              {%- endif -%}
+            {%- endif -%}
+            {{ block.shopify_attributes }}
+          >
+            {%- liquid
+              case block.type
+                when '@app'
+                  if section.settings.app_block_area == 'product_form'
+                    render 'product-block-app', block: block
+                  endif
+                when 'title'
+                  render 'product-block-title', block: block
+                when 'description'
+                  render 'product-block-description', product: product, truncate_description: block.settings.truncate_description, max_words: block.settings.max_words
+                when 'vendor'
+                  render 'product-block-vendor', block: block
+                when 'price'
+                  render 'product-form-component-price', variant_fragment_id: block.id, current_variant: current_variant, price_text_size: block.settings.text_size, show_discount_tag: block.settings.show_discount_tag, discount_type: block.settings.discount_type, use_accent_color: block.settings.use_accent_color
+                when 'product_group'
+                  render 'product-form-component-product-group', group_metafield_setting: block.settings.group_metafield_key, section_id: section.id, block_id: block.id, group_product_display_title_setting: block.settings.group_product_display_title_metafield_key, option_style: block.settings.option_style, full_width_buttons: block.settings.full_width_buttons, spread_options: block.settings.spread_options, hide_label: block.settings.hide_label, show_value_label: block.settings.show_value_label
+                when 'variant_picker'
+                  render 'product-form-component-variant-picker', variant_fragment_id: block.id, section_id: section.id, option_style: block.settings.option_style, full_width_buttons: block.settings.full_width_buttons, spread_options: block.settings.spread_options, hide_option_labels: block.settings.hide_option_labels, hide_sold_out_variants: block.settings.hide_sold_out_variants, hide_unavailable_variants: block.settings.hide_unavailable_variants, preselect_variant: preselect_variant
+                when 'quantity_selector'
+                  render 'product-form-component-quantity-selector', product_form_id: product_form_id, style: block.settings.style, full_width: block.settings.full_width, hide_label: block.settings.hide_label
+                when 'buy_buttons'
+                  render 'product-form-component-buy-buttons', product: product, product_form_id: product_form_id, current_variant: current_variant, variant_fragment_id: block.id, show_payment_terms: block.settings.show_payment_terms, show_gift_card_recipient: block.settings.show_gift_card_recipient, enable_payment_button: block.settings.enable_payment_button, show_pickup_availability: block.settings.show_pickup_availability, space_above_pickup_availability: block.settings.space_above_pickup_availability, show_quantity_selector: block.settings.show_quantity_selector, preselect_variant: preselect_variant, full_width: block.settings.full_width, show_atc_price: block.settings.show_atc_price, atc_price_separator: block.settings.atc_price_separator, atc_price_separator_repeats: block.settings.atc_price_separator_repeats
+                when 'text'
+                  render 'product-block-text', block: block
+                when 'richtext'
+                  render 'product-block-richtext', block: block
+                when 'collapsible_tab'
+                  render 'product-block-collapsible-tab', block: block
+                when 'icon_list'
+                  render 'product-block-icon-list', block: block
+                when 'popup'
+                  render 'product-block-popup', block: block, section_color: section_color
+                when 'custom_liquid'
+                  render 'product-block-custom-liquid', block: block, product: product
+                when 'share'
+                  render 'social-sharing', tag: 'h2', share_title: product.title, share_permalink: product.url, share_image: product, section_color: section_color
+                when 'separator'
+                  render 'product-block-separator'
+                when 'information_list'
+                  render 'product-block-information-list', block: block, product: product
+                when 'inventory'
+                  render 'product-block-inventory', block: block, product: product
+                when 'location_inventory'
+                  render 'product-block-location-inventory', block: block, product: product, current_variant: current_variant
+                when 'complementary'
+                  render 'product-block-complementary', block: block, product: product, last_block_in_column: last_block_in_column, current_variant: current_variant
+              endcase
+
+              comment
+                after rendering the first block, set first_block_in_column to false
+              endcomment
+              assign first_block_in_column = false
+            -%}
+          </div>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  </div>
+
+  <div
+    class="bg-scheme-background px-section-horizontal-spacing text-scheme-text max-lg:border-t-gridline max-lg:border-gridline-color {{ extra_info_width_class }}"
+  >
+    <div
+      class="product-block-area py-section-vertical-spacing lg:sticky lg:top-sticky-header"
+    >
+      {%- liquid
+        comment
+          set first_block_in_column to true at start of the loop
+        endcomment
+        assign first_block_in_column = true
+      -%}
+
+      {%- for block in section.blocks -%}
+        {%- liquid
+          assign block_wrapper_classes = ''
+
+          if first_block_in_column
+            assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--first'
+          endif
+
+          if block.type == 'collapsible_tab'
+            assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--collapsible-tab'
+            if has_borders
+              assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--has-gridlines'
+            endif
+          endif
+
+          if block.type == 'description' and product.description == blank
+            assign block_wrapper_classes = block_wrapper_classes | append: ' hidden'
+          endif
+
+          if block.type == 'information_list' and block.settings.style != 'list'
+            assign block_wrapper_classes = block_wrapper_classes
+            if has_borders
+              assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--has-gridlines'
+            endif
+          endif
+
+          if forloop.last
+            assign last_block_in_column = true
+          endif
+
+          if block.type == 'title' and block.settings.desktop_column == 'extra_info'
+            assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--hidden-block-mb-lg hidden xl:block'
+          endif
+
+          if title_has_adjacent_vendor
+            unless keep_vendor_natural_position
+              if block.type == 'vendor'
+                assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--hidden-block-mb-lg hidden xl:block'
+              endif
+            endunless
+          endif
+        -%}
+
+        {%- if block.settings.desktop_column == 'extra_info'
+          or block.type == '@app'
+        -%}
+          <div
+            class="product-block {% if block.type == 'collapsible_tab' %}mt-collapsible-tab{% else %}mt-product-block{% endif %} {{ block_wrapper_classes }}"
+            {%- if first_block_in_column -%}
+              style="--spacing-multiplier: 0;"
+            {%- else -%}
+              {%- if block.type == 'collapsible_tab' -%}
+                style="--collapsible-tab-spacing-multiplier: {{ block.settings.space_above }}"
+              {%- elsif block.type == '@app' -%}
+                style="--spacing-multiplier: {{ section.settings.app_space_above }}"
+              {%- else -%}
+                style="--spacing-multiplier: {{ block.settings.space_above }};"
+              {%- endif -%}
+            {%- endif -%}
+            {{ block.shopify_attributes }}
+          >
+            {%- liquid
+              case block.type
+                when '@app'
+                  if section.settings.app_block_area == 'extra_info'
+                    render 'product-block-app', block: block
+                  endif
+                when 'title'
+                  render 'product-block-title', block: block
+                when 'vendor'
+                  render 'product-block-vendor', block: block
+                when 'description'
+                  render 'product-block-description', product: product, truncate_description: block.settings.truncate_description, max_words: block.settings.max_words
+                when 'text'
+                  render 'product-block-text', block: block
+                when 'richtext'
+                  render 'product-block-richtext', block: block
+                when 'collapsible_tab'
+                  render 'product-block-collapsible-tab', block: block
+                when 'icon_list'
+                  render 'product-block-icon-list', block: block
+                when 'popup'
+                  render 'product-block-popup', block: block, section_color: section_color
+                when 'custom_liquid'
+                  render 'product-block-custom-liquid', block: block, product: product
+                when 'share'
+                  render 'social-sharing', tag: 'h2', share_title: product.title, share_permalink: product.url, share_image: product, section_color: section_color
+                when 'information_list'
+                  render 'product-block-information-list', block: block, product: product
+                when 'separator'
+                  render 'product-block-separator'
+              endcase
+
+              comment
+                after rendering the first block, set first_block_in_column to false
+              endcomment
+              assign first_block_in_column = false
+            -%}
+          </div>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  </div>
+
+  {% unless product == empty %}
+    {% if models.size %}
+      <script type="application/json" id="ModelJson-{{ section.id }}">
+        {{ product.media | where: 'media_type', 'model' | json }}
+      </script>
+      {% render 'product-shopify-xr-script' %}
+    {% endif %}
+  {% endunless %}
+
+  <div data-variant-fragment="current-variant" hidden>
+    {% if current_variant %}
+      <script data-current-variant type="application/json">
+        {{ current_variant | json }}
+      </script>
+    {% endif %}
+  </div>
+</data-island>
+
+{%- liquid
+  if section.settings.enable_image_zoom
+    render 'product-image-zoom'
+  endif
+
+  if section.settings.override_header_footer_color_scheme
+    render 'header-footer-color-scheme-override', section_color: section_color
+  endif
+-%}
+
+<script type="application/ld+json">
+  {{ product | structured_data }}
+</script>
+
+{% liquid
+  if complementary_products_block
+    case media_col_width
+      when 'one_third'
+        if product_form_col_width == 'two_thirds'
+          assign widescreen_content_column_sizes_base = 'calc(100vw * 5 / 12)'
+        else
+          assign widescreen_content_column_sizes_base = 'calc(100vw * 1 / 3)'
+        endif
+
+      when 'one_half'
+        if product_form_col_width == 'two_thirds'
+          assign widescreen_content_column_sizes_base = 'calc(100vw * 1 / 3)'
+        else
+          # theme-check-disable UnusedAssign
+          # passed into 'product-block-complementary-products-output'
+          assign widescreen_content_column_sizes_base = 'calc(100vw * 1 / 4)'
+          # theme-check-enable UnusedAssign
+        endif
+    endcase
+
+    if media_col_width == 'one_half' and product_form_col_width == 'one_half'
+      # theme-check-disable UnusedAssign
+      # passed into 'product-block-complementary-products-output'
+      assign widescreen_default_one_col = true
+      # theme-check-enable UnusedAssign
+    endif
+
+    # theme-check-disable NestedSnippet
+    render 'product-block-complementary-products-output', block: complementary_products_block, desktop_sizes_base: '50vw', widescreen_sizes_base: widescreen_content_column_sizes_base, add_widescreen_size: true, widescreen_default_one_col: widescreen_default_one_col
+    # theme-check-enable NestedSnippet
+  endif
+%}
+
+{% schema %}
+{
+  "name": "Product - three column",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Layout will display two columns on smaller desktop screens (1024px - 1399px). Three columns will display on larger desktop screens (1400px+)."
+    },
+    {
+      "type": "range",
+      "id": "desktop_col_layout",
+      "min": 1,
+      "max": 6,
+      "step": 1,
+      "label": "Desktop layout variation",
+      "default": 1
+    },
+    {
+      "type": "header",
+      "content": "Desktop column width"
+    },
+    {
+      "type": "select",
+      "id": "media_col_width",
+      "label": "Media",
+      "options": [
+        {
+          "value": "one_third",
+          "label": "One third"
+        },
+        {
+          "value": "one_half",
+          "label": "One half"
+        }
+      ],
+      "default": "one_half"
+    },
+    {
+      "type": "select",
+      "id": "product_form_col_width",
+      "label": "Product form",
+      "info": "Based on available space after media column width is set.",
+      "options": [
+        {
+          "value": "one_half",
+          "label": "One half"
+        },
+        {
+          "value": "two_thirds",
+          "label": "Two thirds"
+        }
+      ],
+      "default": "one_half"
+    },
+    {
+      "type": "header",
+      "content": "Media",
+      "info": "Learn more about [media types](https://help.shopify.com/manual/products/product-media)"
+    },
+    {
+      "type": "checkbox",
+      "id": "two_media_per_row",
+      "label": "Enable two media per row on desktop",
+      "default": false,
+      "info": "If there are an odd number of media, first media will be full width"
+    },
+    {
+      "type": "checkbox",
+      "id": "first_media_full_width",
+      "label": "Full width first media on desktop",
+      "default": false,
+      "info": "Applies only if two media per row on desktop is enabled"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_image_zoom",
+      "label": "Enable image zoom"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_video_looping",
+      "label": "Enable video looping",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_video_autoplay",
+      "label": "Enable video autoplay",
+      "default": true,
+      "info": "Video will be muted. Does not support YouTube or Vimeo."
+    },
+    {
+      "type": "header",
+      "content": "Product variants"
+    },
+    {
+      "type": "checkbox",
+      "id": "preselect_variant",
+      "label": "Select the first available variant",
+      "info": "When unchecked, adding to the cart will not be possible until each product option has a selection.",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "variant_media_behavior",
+      "label": "Variant media change behavior on desktop",
+      "options": [
+        {
+          "value": "swap",
+          "label": "Swap with first media"
+        },
+        {
+          "value": "scroll",
+          "label": "Scroll to media"
+        }
+      ],
+      "default": "swap"
+    },
+    {
+      "visible_if": "{{ section.settings.preselect_variant == true }}",
+      "type": "checkbox",
+      "id": "always_show_product_featured_media_first",
+      "label": "Always show product featured media first"
+    },
+    {
+      "type": "checkbox",
+      "id": "single_variant_mode",
+      "label": "Single variant mode",
+      "info": "Will override “Variant media change behavior on desktop” setting. This feature will be disabled if the product has more than 250 variants. [Learn more](https://help.switchthemes.co/baseline/sections/template/product-pages)."
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_variant_media",
+      "label": "Enable multiple variant media",
+      "info": "[Learn how to set up multiple variant media](https://help.switchthemes.co/baseline/guides/setup-multiple-variant-media.html). This feature will be disabled if the product has more than 250 variants. [Learn more](https://help.switchthemes.co/baseline/sections/template/product-pages)."
+    },
+    {
+      "type": "header",
+      "content": "Mobile spacing"
+    },
+    {
+      "type": "range",
+      "id": "extra_information_col_space_above",
+      "min": 0.5,
+      "max": 2,
+      "step": 0.5,
+      "unit": "x",
+      "label": "Space above extra information content",
+      "default": 2,
+      "info": "Doesn't apply if the preceding block has gridlines."
+    },
+    {
+      "type": "header",
+      "content": "App blocks"
+    },
+    {
+      "type": "select",
+      "id": "app_block_area",
+      "label": "App block area",
+      "options": [
+        {
+          "value": "product_form",
+          "label": "Product form"
+        },
+        {
+          "value": "extra_info",
+          "label": "Extra information"
+        }
+      ],
+      "default": "product_form",
+      "info": "This is where app blocks will be displayed."
+    },
+    {
+      "type": "range",
+      "id": "app_space_above",
+      "min": 0.5,
+      "max": 2,
+      "step": 0.5,
+      "unit": "x",
+      "label": "Space above",
+      "default": 2,
+      "info": "Setting is disabled if positioned at the top of the column."
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    },
+    {
+      "type": "checkbox",
+      "id": "override_header_footer_color_scheme",
+      "label": "Use this color scheme for header and footer",
+      "info": "This will only apply to the product template",
+      "default": false
+    }
+  ],
+  "blocks": [
+    {
+      "type": "@app"
+    },
+    {
+      "type": "price",
+      "name": "Price",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "select",
+          "id": "text_size",
+          "label": "Font and text size",
+          "options": [
+            {
+              "value": "text-base",
+              "label": "Body"
+            },
+            {
+              "value": "text-heading-standard",
+              "label": "Standard heading"
+            },
+            {
+              "value": "text-heading-feature",
+              "label": "Feature heading"
+            },
+            {
+              "value": "text-heading-secondary",
+              "label": "Secondary heading"
+            }
+          ],
+          "default": "text-heading-secondary"
+        },
+        {
+          "type": "header",
+          "content": "Discount tag"
+        },
+        {
+          "type": "checkbox",
+          "id": "show_discount_tag",
+          "label": "Show discount tag",
+          "info": "For products with a sale price using Shopify’s compare-at price. [Learn more](https://help.shopify.com/en/manual/products/details/product-pricing/sale-pricing)"
+        },
+        {
+          "visible_if": "{{ block.settings.show_discount_tag }}",
+          "type": "select",
+          "id": "discount_type",
+          "label": "Type",
+          "options": [
+            {
+              "value": "percentage",
+              "label": "Percentage"
+            },
+            {
+              "value": "amount",
+              "label": "Fixed-amount"
+            }
+          ],
+          "default": "percentage"
+        },
+        {
+          "visible_if": "{{ block.settings.show_discount_tag }}",
+          "type": "checkbox",
+          "id": "use_accent_color",
+          "label": "Use accent color"
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 1,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "variant_picker",
+      "name": "Variant picker",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "select",
+          "id": "option_style",
+          "label": "Options style",
+          "options": [
+            {
+              "value": "buttons",
+              "label": "Button"
+            },
+            {
+              "value": "text_underline",
+              "label": "Text with underline"
+            },
+            {
+              "value": "radio",
+              "label": "Radio"
+            },
+            {
+              "value": "drop_down",
+              "label": "Drop-down"
+            }
+          ],
+          "default": "buttons"
+        },
+        {
+          "type": "checkbox",
+          "id": "hide_option_labels",
+          "label": "Hide option labels"
+        },
+        {
+          "type": "checkbox",
+          "id": "hide_sold_out_variants",
+          "label": "Hide sold out variants",
+          "default": false
+        },
+        {
+          "type": "checkbox",
+          "id": "hide_unavailable_variants",
+          "label": "Hide unavailable variants",
+          "default": true
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "quantity_selector",
+      "name": "Quantity selector",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "select",
+          "id": "style",
+          "label": "Style",
+          "options": [
+            {
+              "value": "border",
+              "label": "Border"
+            },
+            {
+              "value": "underline",
+              "label": "Underline"
+            }
+          ],
+          "default": "border"
+        },
+        {
+          "visible_if": "{{ block.settings.style == 'border' }}",
+          "type": "checkbox",
+          "id": "full_width",
+          "label": "Fill column width",
+          "default": false
+        },
+        {
+          "type": "checkbox",
+          "id": "hide_label",
+          "label": "Hide label"
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "buy_buttons",
+      "name": "Buy buttons",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "show_payment_terms",
+          "label": "Show installments",
+          "info": "[Learn more](https://help.shopify.com/en/manual/payments/shop-pay-installments) about Shop Pay Installments",
+          "default": false
+        },
+        {
+          "type": "checkbox",
+          "id": "enable_payment_button",
+          "label": "Show dynamic checkout button",
+          "info": "Each customer will see their preferred payment method from those available on your store, such as PayPal or Apple Pay. [Learn more](https://help.shopify.com/manual/using-themes/change-the-layout/dynamic-checkout)",
+          "default": true
+        },
+        {
+          "type": "checkbox",
+          "id": "full_width",
+          "label": "Fill column width",
+          "info": " Visible when the column is wider than the button’s minimum width.",
+          "default": true
+        },
+        {
+          "type": "header",
+          "content": "Add to cart button"
+        },
+        {
+          "type": "checkbox",
+          "id": "show_atc_price",
+          "label": "Show total price",
+          "default": false,
+          "info": "Showing the price hides the default right arrow icon."
+        },
+        {
+          "type": "select",
+          "id": "atc_price_separator",
+          "label": "Character",
+          "options": [
+            {
+              "label": "·",
+              "value": "&middot;"
+            },
+            {
+              "label": "•",
+              "value": "&bullet;"
+            },
+            {
+              "label": "↑",
+              "value": "&uarr;"
+            },
+            {
+              "label": "→",
+              "value": "&rarr;"
+            },
+            {
+              "label": "↓",
+              "value": "&darr;"
+            },
+            {
+              "label": "←",
+              "value": "&larr;"
+            },
+            {
+              "label": "<",
+              "value": "&lt;"
+            },
+            {
+              "label": ">",
+              "value": "&gt;"
+            },
+            {
+              "label": "^",
+              "value": "^"
+            },
+            {
+              "label": "!",
+              "value": "!"
+            },
+            {
+              "label": "¡",
+              "value": "¡"
+            },
+            {
+              "label": "?",
+              "value": "?"
+            },
+            {
+              "label": "/",
+              "value": "/"
+            },
+            {
+              "label": "|",
+              "value": "|"
+            },
+            {
+              "label": "\\",
+              "value": "\\"
+            },
+            {
+              "label": ":",
+              "value": ":"
+            },
+            {
+              "label": "∞",
+              "value": "&infin;"
+            },
+            {
+              "label": "§",
+              "value": "&sect;"
+            },
+            {
+              "label": "#",
+              "value": "&num;"
+            },
+            {
+              "label": "%",
+              "value": "%"
+            },
+            {
+              "label": "@",
+              "value": "@"
+            },
+            {
+              "label": "№",
+              "value": "&numero;"
+            },
+            {
+              "label": "×",
+              "value": "&times;"
+            },
+            {
+              "label": "÷",
+              "value": "&divide;"
+            },
+            {
+              "label": "+",
+              "value": "&plus;"
+            },
+            {
+              "label": "−",
+              "value": "&minus;"
+            },
+            {
+              "label": "=",
+              "value": "&equals;"
+            },
+            {
+              "label": "~",
+              "value": "&tilde;"
+            },
+            {
+              "label": "–",
+              "value": "&ndash;"
+            },
+            {
+              "label": "—",
+              "value": "&mdash;"
+            },
+            {
+              "label": "&",
+              "value": "&amp;"
+            },
+            {
+              "label": "*",
+              "value": "&ast;"
+            },
+            {
+              "label": "✓",
+              "value": "&check;"
+            }
+          ],
+          "default": "&bullet;",
+          "info": "Separates add to cart text and price if enabled."
+        },
+        {
+          "type": "range",
+          "id": "atc_price_separator_repeats",
+          "label": "Repeat character",
+          "min": 1,
+          "max": 3,
+          "unit": "x",
+          "default": 1
+        },
+        {
+          "type": "header",
+          "content": "Pickup Availability"
+        },
+        {
+          "type": "checkbox",
+          "id": "show_pickup_availability",
+          "label": "Show pickup availability [Learn more](https://help.shopify.com/en/manual/sell-in-person/pos-classic/shopify-pos-from-admin/buy-online-pickup-in-store#show-pickup-availability-to-your-customers)",
+          "default": true
+        },
+        {
+          "visible_if": "{{ block.settings.show_pickup_availability }}",
+          "type": "range",
+          "id": "space_above_pickup_availability",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 1
+        },
+        {
+          "type": "header",
+          "content": "Gift card recipient"
+        },
+        {
+          "type": "checkbox",
+          "id": "show_gift_card_recipient",
+          "default": false,
+          "label": "Show recipient information form for gift card products",
+          "info": "Gift card products can optionally be sent direct to a recipient along with a personal message. [Learn more](https://help.shopify.com/manual/online-store/themes/customizing-themes/add-gift-card-recipient-fields)"
+        },
+        {
+          "type": "header",
+          "content": "Quantity"
+        },
+        {
+          "type": "checkbox",
+          "id": "show_quantity_selector",
+          "label": "Show quantity selector",
+          "default": false,
+          "info": "When enabled, do not include a separate quantity block in the product section."
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "inventory",
+      "name": "Inventory status",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "range",
+          "id": "low_inventory_threshold",
+          "min": 0,
+          "max": 100,
+          "step": 1,
+          "label": "Low inventory threshold",
+          "default": 5
+        },
+        {
+          "id": "show_inventory_quantity",
+          "type": "checkbox",
+          "label": "Show low inventory count"
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "location_inventory",
+      "name": "Location inventory status",
+      "settings": [
+        {
+          "type": "radio",
+          "id": "show_locations",
+          "label": "Locations to show",
+          "options": [
+            {
+              "value": "all",
+              "label": "All locations"
+            },
+            {
+              "value": "in_stock_only",
+              "label": "In stock locations only"
+            }
+          ]
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "complementary",
+      "name": "Complementary products",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "To select complementary products, add the Search & Discovery app. [Learn more](https://help.shopify.com/manual/online-store/search-and-discovery/product-recommendations)"
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "default": "Pairs well with",
+          "label": "Heading"
+        },
+        {
+          "type": "select",
+          "id": "heading_text_style",
+          "label": "Heading text style",
+          "options": [
+            {
+              "value": "heading",
+              "label": "Heading"
+            },
+            {
+              "value": "body",
+              "label": "Body"
+            }
+          ],
+          "default": "heading"
+        },
+        {
+          "id": "product_tile_type",
+          "type": "select",
+          "label": "Product tile type",
+          "options": [
+            {
+              "value": "standard",
+              "label": "Standard"
+            },
+            {
+              "value": "text_overlay",
+              "label": "Text overlay"
+            }
+          ],
+          "default": "standard"
+        },
+        {
+          "type": "range",
+          "id": "product_list_limit",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "default": 10,
+          "label": "Maximum products to show"
+        },
+        {
+          "type": "select",
+          "id": "products_per_row_desktop",
+          "label": "Products per row on widescreen",
+          "info": "Defaults to one column if both media and product form widths are set to “One half”.",
+          "default": "2",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            }
+          ]
+        },
+        {
+          "type": "select",
+          "id": "products_per_row_mobile",
+          "label": "Products per row on mobile",
+          "default": "1",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            }
+          ]
+        },
+        {
+          "type": "header",
+          "content": "Quick buy"
+        },
+        {
+          "type": "paragraph",
+          "content": "Only supported when product tile type is set to \"Standard\"."
+        },
+        {
+          "visible_if": "{{ block.settings.product_tile_type == 'standard' }}",
+          "type": "checkbox",
+          "id": "enable_quick_buy",
+          "label": "Enable quick buy"
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column or after a block with gridlines."
+        }
+      ]
+    },
+    {
+      "type": "title",
+      "name": "Title",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "radio",
+          "id": "desktop_column",
+          "label": "Desktop column",
+          "options": [
+            {
+              "value": "extra_info",
+              "label": "Extra information"
+            },
+            {
+              "value": "product_form",
+              "label": "Product form"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": "Title and adjacent vendor blocks in the extra info column display first on mobile, before product form content."
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 1,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "description",
+      "name": "Description",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "radio",
+          "id": "desktop_column",
+          "label": "Desktop column",
+          "options": [
+            {
+              "value": "extra_info",
+              "label": "Extra information"
+            },
+            {
+              "value": "product_form",
+              "label": "Product form"
+            }
+          ]
+        },
+        {
+          "type": "checkbox",
+          "id": "truncate_description",
+          "label": "Truncate description",
+          "default": false,
+          "info": "Suitable for products with variant media and large descriptions."
+        },
+        {
+          "visible_if": "{{ block.settings.truncate_description }}",
+          "type": "range",
+          "id": "max_words",
+          "min": 10,
+          "max": 100,
+          "step": 1,
+          "label": "Maximum words before truncation",
+          "default": 30
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "name": "Text",
+      "settings": [
+        {
+          "type": "radio",
+          "id": "desktop_column",
+          "label": "Desktop column",
+          "options": [
+            {
+              "value": "extra_info",
+              "label": "Extra information"
+            },
+            {
+              "value": "product_form",
+              "label": "Product form"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "default": "Text block",
+          "label": "Text"
+        },
+        {
+          "type": "select",
+          "id": "font",
+          "label": "Font",
+          "options": [
+            {
+              "value": "font-body",
+              "label": "Body"
+            },
+            {
+              "value": "font-subheading",
+              "label": "Subheading"
+            },
+            {
+              "value": "font-heading",
+              "label": "Heading"
+            }
+          ],
+          "default": "font-body"
+        },
+        {
+          "type": "select",
+          "id": "text_size",
+          "label": "Text size",
+          "options": [
+            {
+              "value": "text-base",
+              "label": "Body"
+            },
+            {
+              "value": "text-subheading",
+              "label": "Subheading"
+            },
+            {
+              "value": "text-heading-standard",
+              "label": "Standard heading"
+            },
+            {
+              "value": "text-heading-secondary",
+              "label": "Secondary heading"
+            }
+          ],
+          "default": "text-base"
+        },
+        {
+          "type": "select",
+          "id": "symbol",
+          "label": "Symbol",
+          "options": [
+            {
+              "value": "none",
+              "label": "None"
+            },
+            {
+              "value": "icon",
+              "label": "Icon"
+            },
+            {
+              "value": "subheading",
+              "label": "Subheading"
+            }
+          ],
+          "default": "none"
+        },
+        {
+          "visible_if": "{{ block.settings.symbol == 'icon' }}",
+          "type": "select",
+          "id": "icon",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "none",
+              "label": "None"
+            },
+            {
+              "value": "box",
+              "label": "Box"
+            },
+            {
+              "value": "chat-bubble",
+              "label": "Chat bubble"
+            },
+            {
+              "value": "check-mark",
+              "label": "Check mark"
+            },
+            {
+              "value": "coat-hanger",
+              "label": "Coat hanger"
+            },
+            {
+              "value": "dryer",
+              "label": "Dryer"
+            },
+            {
+              "value": "eye",
+              "label": "Eye"
+            },
+            {
+              "value": "globe",
+              "label": "Globe"
+            },
+            {
+              "value": "heart",
+              "label": "Heart"
+            },
+            {
+              "value": "iron",
+              "label": "Iron"
+            },
+            {
+              "value": "leaf",
+              "label": "Leaf"
+            },
+            {
+              "value": "leather",
+              "label": "Leather"
+            },
+            {
+              "value": "like",
+              "label": "Like"
+            },
+            {
+              "value": "lock",
+              "label": "Lock"
+            },
+            {
+              "value": "map-pin",
+              "label": "Map pin"
+            },
+            {
+              "value": "pants",
+              "label": "Pants"
+            },
+            {
+              "value": "person",
+              "label": "Person"
+            },
+            {
+              "value": "plane",
+              "label": "Plane"
+            },
+            {
+              "value": "price-tag",
+              "label": "Price tag"
+            },
+            {
+              "value": "question-mark",
+              "label": "Question mark"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "ruler",
+              "label": "Ruler"
+            },
+            {
+              "value": "shirt",
+              "label": "Shirt"
+            },
+            {
+              "value": "shoe",
+              "label": "Shoe"
+            },
+            {
+              "value": "star",
+              "label": "Star"
+            },
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "washing",
+              "label": "Washing"
+            }
+          ],
+          "default": "none"
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "richtext",
+      "name": "Rich text",
+      "settings": [
+        {
+          "type": "radio",
+          "id": "desktop_column",
+          "label": "Desktop column",
+          "options": [
+            {
+              "value": "extra_info",
+              "label": "Extra information"
+            },
+            {
+              "value": "product_form",
+              "label": "Product form"
+            }
+          ]
+        },
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "Text",
+          "default": "<p>Use this text to share information about your brand with your customers. Describe a product, share announcements, or welcome customers to your store.</p>"
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "information_list",
+      "name": "Information list",
+      "settings": [
+        {
+          "type": "radio",
+          "id": "desktop_column",
+          "label": "Desktop column",
+          "options": [
+            {
+              "value": "extra_info",
+              "label": "Extra information"
+            },
+            {
+              "value": "product_form",
+              "label": "Product form"
+            }
+          ]
+        },
+        {
+          "type": "richtext",
+          "id": "text",
+          "default": "<p>Label: Content</p><p>Label: Content</p><p>Label: Content</p>",
+          "label": "Text",
+          "info": "Place each row on its own line, add a label by adding a colon (:)"
+        },
+        {
+          "type": "select",
+          "id": "font",
+          "label": "Font",
+          "options": [
+            {
+              "value": "font-heading",
+              "label": "Heading"
+            },
+            {
+              "value": "font-body",
+              "label": "Body"
+            }
+          ],
+          "default": "font-body"
+        },
+        {
+          "type": "select",
+          "id": "text_size",
+          "label": "Text size",
+          "options": [
+            {
+              "value": "text-base",
+              "label": "Body"
+            },
+            {
+              "value": "text-heading-standard",
+              "label": "Standard heading"
+            },
+            {
+              "value": "text-heading-secondary",
+              "label": "Secondary heading"
+            }
+          ],
+          "default": "text-base"
+        },
+        {
+          "type": "select",
+          "id": "style",
+          "label": "Style",
+          "options": [
+            {
+              "value": "table",
+              "label": "Table"
+            },
+            {
+              "value": "table_with_gridlines",
+              "label": "Table with gridlines"
+            },
+            {
+              "value": "list",
+              "label": "List"
+            }
+          ],
+          "default": "table_with_gridlines",
+          "info": "Gridlines use border width in theme settings."
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column or after a block with gridlines."
+        }
+      ]
+    },
+    {
+      "type": "collapsible_tab",
+      "name": "Collapsible tab",
+      "settings": [
+        {
+          "type": "radio",
+          "id": "desktop_column",
+          "label": "Desktop column",
+          "options": [
+            {
+              "value": "extra_info",
+              "label": "Extra information"
+            },
+            {
+              "value": "product_form",
+              "label": "Product form"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "default": "Collapsible tab",
+          "label": "Heading",
+          "info": "Include a heading that expands the content"
+        },
+        {
+          "type": "select",
+          "id": "heading_text_style",
+          "label": "Heading text style",
+          "options": [
+            {
+              "value": "font-heading",
+              "label": "Heading"
+            },
+            {
+              "value": "font-body",
+              "label": "Body"
+            }
+          ],
+          "default": "font-heading"
+        },
+        {
+          "type": "richtext",
+          "id": "content",
+          "label": "Tab content"
+        },
+        {
+          "type": "page",
+          "id": "page",
+          "label": "Tab content from page"
+        },
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "none",
+              "label": "None"
+            },
+            {
+              "value": "box",
+              "label": "Box"
+            },
+            {
+              "value": "chat-bubble",
+              "label": "Chat bubble"
+            },
+            {
+              "value": "check-mark",
+              "label": "Check mark"
+            },
+            {
+              "value": "coat-hanger",
+              "label": "Coat hanger"
+            },
+            {
+              "value": "dryer",
+              "label": "Dryer"
+            },
+            {
+              "value": "eye",
+              "label": "Eye"
+            },
+            {
+              "value": "globe",
+              "label": "Globe"
+            },
+            {
+              "value": "heart",
+              "label": "Heart"
+            },
+            {
+              "value": "iron",
+              "label": "Iron"
+            },
+            {
+              "value": "leaf",
+              "label": "Leaf"
+            },
+            {
+              "value": "leather",
+              "label": "Leather"
+            },
+            {
+              "value": "like",
+              "label": "Like"
+            },
+            {
+              "value": "lock",
+              "label": "Lock"
+            },
+            {
+              "value": "map-pin",
+              "label": "Map pin"
+            },
+            {
+              "value": "pants",
+              "label": "Pants"
+            },
+            {
+              "value": "person",
+              "label": "Person"
+            },
+            {
+              "value": "plane",
+              "label": "Plane"
+            },
+            {
+              "value": "price-tag",
+              "label": "Price tag"
+            },
+            {
+              "value": "question-mark",
+              "label": "Question mark"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "ruler",
+              "label": "Ruler"
+            },
+            {
+              "value": "shirt",
+              "label": "Shirt"
+            },
+            {
+              "value": "shoe",
+              "label": "Shoe"
+            },
+            {
+              "value": "star",
+              "label": "Star"
+            },
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "washing",
+              "label": "Washing"
+            }
+          ],
+          "default": "none"
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column or after a block with gridlines."
+        }
+      ]
+    },
+    {
+      "type": "icon_list",
+      "name": "Icon list",
+      "settings": [
+        {
+          "type": "radio",
+          "id": "desktop_column",
+          "label": "Desktop column",
+          "options": [
+            {
+              "value": "extra_info",
+              "label": "Extra information"
+            },
+            {
+              "value": "product_form",
+              "label": "Product form"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "default": "Icon list",
+          "label": "Heading"
+        },
+        {
+          "type": "select",
+          "id": "text_color",
+          "label": "Text color",
+          "options": [
+            {
+              "value": "text",
+              "label": "Text"
+            },
+            {
+              "value": "secondary",
+              "label": "Secondary"
+            }
+          ],
+          "default": "secondary"
+        },
+        {
+          "type": "header",
+          "content": "Item 1"
+        },
+        {
+          "type": "text",
+          "id": "text_1",
+          "default": "List item",
+          "label": "Text"
+        },
+        {
+          "type": "select",
+          "id": "icon_1",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "none",
+              "label": "None"
+            },
+            {
+              "value": "box",
+              "label": "Box"
+            },
+            {
+              "value": "chat-bubble",
+              "label": "Chat bubble"
+            },
+            {
+              "value": "check-mark",
+              "label": "Check mark"
+            },
+            {
+              "value": "coat-hanger",
+              "label": "Coat hanger"
+            },
+            {
+              "value": "dryer",
+              "label": "Dryer"
+            },
+            {
+              "value": "eye",
+              "label": "Eye"
+            },
+            {
+              "value": "globe",
+              "label": "Globe"
+            },
+            {
+              "value": "heart",
+              "label": "Heart"
+            },
+            {
+              "value": "iron",
+              "label": "Iron"
+            },
+            {
+              "value": "leaf",
+              "label": "Leaf"
+            },
+            {
+              "value": "leather",
+              "label": "Leather"
+            },
+            {
+              "value": "like",
+              "label": "Like"
+            },
+            {
+              "value": "lock",
+              "label": "Lock"
+            },
+            {
+              "value": "map-pin",
+              "label": "Map pin"
+            },
+            {
+              "value": "pants",
+              "label": "Pants"
+            },
+            {
+              "value": "person",
+              "label": "Person"
+            },
+            {
+              "value": "plane",
+              "label": "Plane"
+            },
+            {
+              "value": "price-tag",
+              "label": "Price tag"
+            },
+            {
+              "value": "question-mark",
+              "label": "Question mark"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "ruler",
+              "label": "Ruler"
+            },
+            {
+              "value": "shirt",
+              "label": "Shirt"
+            },
+            {
+              "value": "shoe",
+              "label": "Shoe"
+            },
+            {
+              "value": "star",
+              "label": "Star"
+            },
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "washing",
+              "label": "Washing"
+            }
+          ],
+          "default": "box"
+        },
+        {
+          "type": "header",
+          "content": "Item 2"
+        },
+        {
+          "type": "text",
+          "id": "text_2",
+          "default": "List item",
+          "label": "Text"
+        },
+        {
+          "type": "select",
+          "id": "icon_2",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "none",
+              "label": "None"
+            },
+            {
+              "value": "box",
+              "label": "Box"
+            },
+            {
+              "value": "chat-bubble",
+              "label": "Chat bubble"
+            },
+            {
+              "value": "check-mark",
+              "label": "Check mark"
+            },
+            {
+              "value": "coat-hanger",
+              "label": "Coat hanger"
+            },
+            {
+              "value": "dryer",
+              "label": "Dryer"
+            },
+            {
+              "value": "eye",
+              "label": "Eye"
+            },
+            {
+              "value": "globe",
+              "label": "Globe"
+            },
+            {
+              "value": "heart",
+              "label": "Heart"
+            },
+            {
+              "value": "iron",
+              "label": "Iron"
+            },
+            {
+              "value": "leaf",
+              "label": "Leaf"
+            },
+            {
+              "value": "leather",
+              "label": "Leather"
+            },
+            {
+              "value": "like",
+              "label": "Like"
+            },
+            {
+              "value": "lock",
+              "label": "Lock"
+            },
+            {
+              "value": "map-pin",
+              "label": "Map pin"
+            },
+            {
+              "value": "pants",
+              "label": "Pants"
+            },
+            {
+              "value": "person",
+              "label": "Person"
+            },
+            {
+              "value": "plane",
+              "label": "Plane"
+            },
+            {
+              "value": "price-tag",
+              "label": "Price tag"
+            },
+            {
+              "value": "question-mark",
+              "label": "Question mark"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "ruler",
+              "label": "Ruler"
+            },
+            {
+              "value": "shirt",
+              "label": "Shirt"
+            },
+            {
+              "value": "shoe",
+              "label": "Shoe"
+            },
+            {
+              "value": "star",
+              "label": "Star"
+            },
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "washing",
+              "label": "Washing"
+            }
+          ],
+          "default": "ruler"
+        },
+        {
+          "type": "header",
+          "content": "Item 3"
+        },
+        {
+          "type": "text",
+          "id": "text_3",
+          "default": "List item",
+          "label": "Text"
+        },
+        {
+          "type": "select",
+          "id": "icon_3",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "none",
+              "label": "None"
+            },
+            {
+              "value": "box",
+              "label": "Box"
+            },
+            {
+              "value": "chat-bubble",
+              "label": "Chat bubble"
+            },
+            {
+              "value": "check-mark",
+              "label": "Check mark"
+            },
+            {
+              "value": "coat-hanger",
+              "label": "Coat hanger"
+            },
+            {
+              "value": "dryer",
+              "label": "Dryer"
+            },
+            {
+              "value": "eye",
+              "label": "Eye"
+            },
+            {
+              "value": "globe",
+              "label": "Globe"
+            },
+            {
+              "value": "heart",
+              "label": "Heart"
+            },
+            {
+              "value": "iron",
+              "label": "Iron"
+            },
+            {
+              "value": "leaf",
+              "label": "Leaf"
+            },
+            {
+              "value": "leather",
+              "label": "Leather"
+            },
+            {
+              "value": "like",
+              "label": "Like"
+            },
+            {
+              "value": "lock",
+              "label": "Lock"
+            },
+            {
+              "value": "map-pin",
+              "label": "Map pin"
+            },
+            {
+              "value": "pants",
+              "label": "Pants"
+            },
+            {
+              "value": "person",
+              "label": "Person"
+            },
+            {
+              "value": "plane",
+              "label": "Plane"
+            },
+            {
+              "value": "price-tag",
+              "label": "Price tag"
+            },
+            {
+              "value": "question-mark",
+              "label": "Question mark"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "ruler",
+              "label": "Ruler"
+            },
+            {
+              "value": "shirt",
+              "label": "Shirt"
+            },
+            {
+              "value": "shoe",
+              "label": "Shoe"
+            },
+            {
+              "value": "star",
+              "label": "Star"
+            },
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "washing",
+              "label": "Washing"
+            }
+          ],
+          "default": "globe"
+        },
+        {
+          "type": "header",
+          "content": "Item 4"
+        },
+        {
+          "type": "text",
+          "id": "text_4",
+          "default": "List item",
+          "label": "Text"
+        },
+        {
+          "type": "select",
+          "id": "icon_4",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "none",
+              "label": "None"
+            },
+            {
+              "value": "box",
+              "label": "Box"
+            },
+            {
+              "value": "chat-bubble",
+              "label": "Chat bubble"
+            },
+            {
+              "value": "check-mark",
+              "label": "Check mark"
+            },
+            {
+              "value": "coat-hanger",
+              "label": "Coat hanger"
+            },
+            {
+              "value": "dryer",
+              "label": "Dryer"
+            },
+            {
+              "value": "eye",
+              "label": "Eye"
+            },
+            {
+              "value": "globe",
+              "label": "Globe"
+            },
+            {
+              "value": "heart",
+              "label": "Heart"
+            },
+            {
+              "value": "iron",
+              "label": "Iron"
+            },
+            {
+              "value": "leaf",
+              "label": "Leaf"
+            },
+            {
+              "value": "leather",
+              "label": "Leather"
+            },
+            {
+              "value": "like",
+              "label": "Like"
+            },
+            {
+              "value": "lock",
+              "label": "Lock"
+            },
+            {
+              "value": "map-pin",
+              "label": "Map pin"
+            },
+            {
+              "value": "pants",
+              "label": "Pants"
+            },
+            {
+              "value": "person",
+              "label": "Person"
+            },
+            {
+              "value": "plane",
+              "label": "Plane"
+            },
+            {
+              "value": "price-tag",
+              "label": "Price tag"
+            },
+            {
+              "value": "question-mark",
+              "label": "Question mark"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "ruler",
+              "label": "Ruler"
+            },
+            {
+              "value": "shirt",
+              "label": "Shirt"
+            },
+            {
+              "value": "shoe",
+              "label": "Shoe"
+            },
+            {
+              "value": "star",
+              "label": "Star"
+            },
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "washing",
+              "label": "Washing"
+            }
+          ],
+          "default": "washing"
+        },
+        {
+          "type": "header",
+          "content": "Item 5"
+        },
+        {
+          "type": "text",
+          "id": "text_5",
+          "default": "List item",
+          "label": "Text"
+        },
+        {
+          "type": "select",
+          "id": "icon_5",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "none",
+              "label": "None"
+            },
+            {
+              "value": "box",
+              "label": "Box"
+            },
+            {
+              "value": "chat-bubble",
+              "label": "Chat bubble"
+            },
+            {
+              "value": "check-mark",
+              "label": "Check mark"
+            },
+            {
+              "value": "coat-hanger",
+              "label": "Coat hanger"
+            },
+            {
+              "value": "dryer",
+              "label": "Dryer"
+            },
+            {
+              "value": "eye",
+              "label": "Eye"
+            },
+            {
+              "value": "globe",
+              "label": "Globe"
+            },
+            {
+              "value": "heart",
+              "label": "Heart"
+            },
+            {
+              "value": "iron",
+              "label": "Iron"
+            },
+            {
+              "value": "leaf",
+              "label": "Leaf"
+            },
+            {
+              "value": "leather",
+              "label": "Leather"
+            },
+            {
+              "value": "like",
+              "label": "Like"
+            },
+            {
+              "value": "lock",
+              "label": "Lock"
+            },
+            {
+              "value": "map-pin",
+              "label": "Map pin"
+            },
+            {
+              "value": "pants",
+              "label": "Pants"
+            },
+            {
+              "value": "person",
+              "label": "Person"
+            },
+            {
+              "value": "plane",
+              "label": "Plane"
+            },
+            {
+              "value": "price-tag",
+              "label": "Price tag"
+            },
+            {
+              "value": "question-mark",
+              "label": "Question mark"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "ruler",
+              "label": "Ruler"
+            },
+            {
+              "value": "shirt",
+              "label": "Shirt"
+            },
+            {
+              "value": "shoe",
+              "label": "Shoe"
+            },
+            {
+              "value": "star",
+              "label": "Star"
+            },
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "washing",
+              "label": "Washing"
+            }
+          ],
+          "default": "truck"
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "popup",
+      "name": "Popup",
+      "settings": [
+        {
+          "type": "radio",
+          "id": "desktop_column",
+          "label": "Desktop column",
+          "options": [
+            {
+              "value": "extra_info",
+              "label": "Extra information"
+            },
+            {
+              "value": "product_form",
+              "label": "Product form"
+            }
+          ]
+        },
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "none",
+              "label": "None"
+            },
+            {
+              "value": "box",
+              "label": "Box"
+            },
+            {
+              "value": "chat-bubble",
+              "label": "Chat bubble"
+            },
+            {
+              "value": "check-mark",
+              "label": "Check mark"
+            },
+            {
+              "value": "coat-hanger",
+              "label": "Coat hanger"
+            },
+            {
+              "value": "dryer",
+              "label": "Dryer"
+            },
+            {
+              "value": "eye",
+              "label": "Eye"
+            },
+            {
+              "value": "globe",
+              "label": "Globe"
+            },
+            {
+              "value": "heart",
+              "label": "Heart"
+            },
+            {
+              "value": "iron",
+              "label": "Iron"
+            },
+            {
+              "value": "leaf",
+              "label": "Leaf"
+            },
+            {
+              "value": "leather",
+              "label": "Leather"
+            },
+            {
+              "value": "like",
+              "label": "Like"
+            },
+            {
+              "value": "lock",
+              "label": "Lock"
+            },
+            {
+              "value": "map-pin",
+              "label": "Map pin"
+            },
+            {
+              "value": "pants",
+              "label": "Pants"
+            },
+            {
+              "value": "person",
+              "label": "Person"
+            },
+            {
+              "value": "plane",
+              "label": "Plane"
+            },
+            {
+              "value": "price-tag",
+              "label": "Price tag"
+            },
+            {
+              "value": "question-mark",
+              "label": "Question mark"
+            },
+            {
+              "value": "return",
+              "label": "Return"
+            },
+            {
+              "value": "ruler",
+              "label": "Ruler"
+            },
+            {
+              "value": "shirt",
+              "label": "Shirt"
+            },
+            {
+              "value": "shoe",
+              "label": "Shoe"
+            },
+            {
+              "value": "star",
+              "label": "Star"
+            },
+            {
+              "value": "truck",
+              "label": "Truck"
+            },
+            {
+              "value": "washing",
+              "label": "Washing"
+            }
+          ],
+          "default": "none"
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "default": "Popup link text",
+          "label": "Link label"
+        },
+        {
+          "id": "page",
+          "type": "page",
+          "label": "Page"
+        },
+        {
+          "type": "select",
+          "id": "text_color",
+          "label": "Text color",
+          "options": [
+            {
+              "value": "text",
+              "label": "Text"
+            },
+            {
+              "value": "secondary",
+              "label": "Secondary"
+            }
+          ],
+          "default": "secondary"
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "share",
+      "name": "Share",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "radio",
+          "id": "desktop_column",
+          "label": "Desktop column",
+          "options": [
+            {
+              "value": "extra_info",
+              "label": "Extra information"
+            },
+            {
+              "value": "product_form",
+              "label": "Product form"
+            }
+          ]
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "custom_liquid",
+      "name": "Custom Liquid",
+      "settings": [
+        {
+          "type": "radio",
+          "id": "desktop_column",
+          "label": "Desktop column",
+          "options": [
+            {
+              "value": "extra_info",
+              "label": "Extra information"
+            },
+            {
+              "value": "product_form",
+              "label": "Product form"
+            }
+          ]
+        },
+        {
+          "type": "liquid",
+          "id": "custom_liquid",
+          "label": "Custom Liquid",
+          "info": "Add app snippets or other code to create advanced customizations. [Learn more](https://shopify.dev/docs/api/liquid)"
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "vendor",
+      "name": "Vendor",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "radio",
+          "id": "desktop_column",
+          "label": "Desktop column",
+          "options": [
+            {
+              "value": "extra_info",
+              "label": "Extra information"
+            },
+            {
+              "value": "product_form",
+              "label": "Product form"
+            }
+          ]
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 1,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    },
+    {
+      "type": "separator",
+      "name": "Separator",
+      "settings": [
+        {
+          "type": "radio",
+          "id": "desktop_column",
+          "label": "Desktop column",
+          "options": [
+            {
+              "value": "extra_info",
+              "label": "Extra information"
+            },
+            {
+              "value": "product_form",
+              "label": "Product form"
+            }
+          ]
+        },
+        {
+          "type": "header",
+          "content": "Layout"
+        },
+        {
+          "type": "range",
+          "id": "space_above",
+          "min": 0.5,
+          "max": 2,
+          "step": 0.5,
+          "unit": "x",
+          "label": "Space above",
+          "default": 2,
+          "info": "Setting is disabled if positioned at the top of the column."
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

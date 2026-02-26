@@ -1,0 +1,1726 @@
+{%- liquid
+  assign section_color = section.settings.color_scheme
+  assign hide_on_mobile = section.settings.hide_on_mobile
+  assign display = section.settings.display
+  assign link = section.settings.link
+-%}
+
+{%- if section.blocks.size == 1
+  and section.settings.home_page_only == false
+  or template.name == 'index'
+-%}
+  {% liquid
+    assign content_block = section.blocks | first
+
+    case content_block.type
+      when 'text'
+        assign content = content_block.settings.text | escape
+
+      when 'free_shipping'
+        comment
+          Threshold
+        endcomment
+
+        for threshold_rule in localization.market.metafields.switch.free_shipping_threshold.value
+          unless threshold_rule contains ':'
+            assign market_threshold = threshold_rule | strip
+          else
+            assign country_code = threshold_rule | split: ':' | first | strip
+
+            if localization.country.iso_code == country_code
+              assign country_threshold = threshold_rule | split: ':' | last | strip
+              break
+            endif
+          endunless
+        endfor
+
+        unless country_threshold == blank and market_threshold == blank
+          assign threshold = country_threshold | default: market_threshold | times: 100
+        else
+          assign threshold = settings.free_shipping_threshold | times: 100
+        endunless
+
+        comment
+          Subtotal
+        endcomment
+
+        assign subtotal = cart.items_subtotal_price
+
+        if subtotal < threshold
+          assign unformatted_amount = threshold | minus: subtotal
+
+          if settings.currency_code_enabled
+            assign amount = unformatted_amount | money_with_currency
+          else
+            assign amount = unformatted_amount | money
+          endif
+          if cart.item_count > 0
+            assign content_html = 'free_shipping_progress.not_achieved_html' | t: amount: amount
+          else
+            assign content_html = 'free_shipping_progress.not_started_html' | t: amount: amount
+          endif
+        else
+          assign content_html = 'free_shipping_progress.achieved' | t
+        endif
+
+        if threshold != 0 and threshold != blank
+          capture content
+            echo '<span data-mutating-content x-html-if-set="contentHTML">'
+            echo content_html
+            echo '</span>'
+          endcapture
+        endif
+
+      when 'countdown'
+        case content_block.settings.month
+          when '02'
+            assign day = content_block.settings.day_29
+          when '04', '06', '09', '11'
+            assign day = content_block.settings.day_30
+          when '01', '03', '05', '07', '08', '10', '12'
+            assign day = content_block.settings.day_31
+        endcase
+
+        assign year = 'now' | date: '%Y'
+
+        if content_block.settings.custom_year != blank and content_block.settings.use_current_year == false
+          assign year = content_block.settings.custom_year | plus: 0
+        endif
+
+        assign month = content_block.settings.month
+        assign hour = content_block.settings.hour
+        assign minute = content_block.settings.minute
+
+        assign target_date = year | append: '-' | append: month | append: '-' | append: day | append: 'T' | append: hour | append: ':' | append: minute | append: ' '
+        assign formatted_date = target_date | date: '%A %B %-d, %Y, %-l:%M %p'
+
+        assign anchor_tag_aria_label = 'sections.countdown_timer.countdown_timer_to' | t: formatted_date: formatted_date
+
+        if display == 'scrolling-text'
+          assign in_scrolling_text = true
+        else
+          assign in_scrolling_text = false
+        endif
+
+        capture content
+          render 'countdown-timer-announcement-block', block: content_block, in_scrolling_text: in_scrolling_text, year: year, month: month, day: day, hour: hour, minute: minute
+        endcapture
+    endcase
+  %}
+
+  {%- if content_block.type == 'free_shipping' -%}
+    <data-island class="contents" x-data="FreeShippingBar">
+  {%- endif -%}
+  {%- if display == 'static' -%}
+    <section
+      id="{{ section.id }}"
+      class="border-b-gridline border-gridline-color bg-scheme-background py-2 text-center text-scheme-text {% if section.settings.uppercase %}uppercase{% endif %} {% if hide_on_mobile %}hidden lg:block{% endif %}"
+      role="complementary"
+      data-color-scheme="{{ section_color }}"
+    >
+      {%- if link != blank -%}
+        <a
+          class="focus-inset px-section-horizontal-spacing py-2 hover:text-scheme-accent focus-visible:relative "
+          href="{{ link }}"
+        >
+          {{ content }}
+        </a>
+      {%- else -%}
+        {% if content_block.type != 'countdown' %}
+          <p class="px-section-horizontal-spacing">
+            {{ content }}
+          </p>
+        {% else %}
+          <div class="px-section-horizontal-spacing">
+            {{ content }}
+          </div>
+        {% endif %}
+      {%- endif -%}
+    </section>
+  {%- else -%}
+    <section
+      id="{{ section.id }}"
+      class="group border-b-gridline border-gridline-color bg-scheme-background text-scheme-text {% if section.settings.uppercase %}uppercase{% endif %} {% if hide_on_mobile %}hidden lg:block{% endif %}"
+      role="complementary"
+      data-color-scheme="{{ section_color }}"
+    >
+      {%- liquid
+        assign speed_setting = section.settings.speed | plus: 0
+        assign direction = section.settings.direction
+        assign repeat_text = section.settings.repeat_text
+        assign separator = section.settings.separator
+        assign separator_repeats = section.settings.separator_repeats
+        assign spacing_between_repeated_separators = section.settings.spacing_between_repeated_separators
+        assign spacing_between_repeated_text = section.settings.spacing_between_repeated_text
+        assign separator_type = section.settings.separator_type
+        assign inline_link_text = section.settings.inline_link_text
+        assign button_style = section.settings.button_style
+
+        render 'scrolling-text', id: section.id, speed_setting: speed_setting, link: link, text: content, section_color: section_color, direction: direction, repeat_text: repeat_text, separator: separator, separator_repeats: separator_repeats, spacing_between_repeated_separators: spacing_between_repeated_separators, spacing_between_repeated_text: spacing_between_repeated_text, separator_type: separator_type, inline_link_text: inline_link_text, button_style: button_style, anchor_tag_aria_label: anchor_tag_aria_label
+      -%}
+    </section>
+  {%- endif -%}
+  {%- if content_block.type == 'free_shipping' -%}
+    </data-island>
+  {%- endif -%}
+
+  {% if request.design_mode and content_block.type == 'countdown' %}
+    <div
+      class="contents"
+      id="{{ section.id }}-error-message"
+    ></div>
+  {% endif %}
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Announcement bar",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "home_page_only",
+      "label": "Home page only",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_on_mobile",
+      "label": "Hide on mobile",
+      "default": false
+    },
+    {
+      "visible_if": "{{ settings.body_copy_uppercase == false }}",
+      "type": "checkbox",
+      "id": "uppercase",
+      "label": "Uppercase",
+      "default": false
+    },
+    {
+      "type": "url",
+      "id": "link",
+      "label": "Link"
+    },
+    {
+      "type": "select",
+      "id": "display",
+      "label": "Display",
+      "options": [
+        {
+          "value": "scrolling-text",
+          "label": "Scrolling text"
+        },
+        {
+          "value": "static",
+          "label": "Static"
+        }
+      ],
+      "default": "scrolling-text"
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' }}",
+      "type": "header",
+      "content": "Scroll"
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' }}",
+      "type": "paragraph",
+      "content": "If a user has reduced motion enabled the scrolling text will not animate and display as a static banner as a fallback."
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' }}",
+      "type": "range",
+      "id": "speed",
+      "min": 20,
+      "max": 400,
+      "step": 10,
+      "label": "Speed",
+      "default": 180
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' }}",
+      "type": "select",
+      "id": "direction",
+      "label": "Direction",
+      "options": [
+        {
+          "value": "normal",
+          "label": "Right to left"
+        },
+        {
+          "value": "reverse",
+          "label": "Left to right"
+        }
+      ],
+      "default": "normal"
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' }}",
+      "type": "checkbox",
+      "id": "repeat_text",
+      "default": true,
+      "label": "Repeat text",
+      "info": "Automatically repeat text to create an infinity effect."
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' and section.settings.repeat_text }}",
+      "type": "header",
+      "content": "Repeat text separator"
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' and section.settings.repeat_text }}",
+      "type": "select",
+      "id": "spacing_between_repeated_text",
+      "label": "Spacing",
+      "options": [
+        {
+          "value": "gap-4 lg:gap-8",
+          "label": "S"
+        },
+        {
+          "value": "gap-10 lg:gap-20",
+          "label": "M"
+        },
+        {
+          "value": "gap-16 lg:gap-32",
+          "label": "L"
+        },
+        {
+          "value": "gap-32 lg:gap-64",
+          "label": "XL"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' and section.settings.repeat_text }}",
+      "type": "select",
+      "id": "separator_type",
+      "label": "Type",
+      "options": [
+        {
+          "value": "gap",
+          "label": "Gap"
+        },
+        {
+          "value": "symbol",
+          "label": "Character"
+        },
+        {
+          "value": "button",
+          "label": "Button"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' and section.settings.repeat_text and section.settings.separator_type == 'symbol' }}",
+      "type": "select",
+      "id": "separator",
+      "label": "Character",
+      "options": [
+        {
+          "label": "·",
+          "value": "&middot;"
+        },
+        {
+          "label": "•",
+          "value": "&bullet;"
+        },
+        {
+          "label": "↑",
+          "value": "&uarr;"
+        },
+        {
+          "label": "→",
+          "value": "&rarr;"
+        },
+        {
+          "label": "↓",
+          "value": "&darr;"
+        },
+        {
+          "label": "←",
+          "value": "&larr;"
+        },
+        {
+          "label": "<",
+          "value": "&lt;"
+        },
+        {
+          "label": ">",
+          "value": "&gt;"
+        },
+        {
+          "label": "^",
+          "value": "^"
+        },
+        {
+          "label": "!",
+          "value": "!"
+        },
+        {
+          "label": "¡",
+          "value": "¡"
+        },
+        {
+          "label": "?",
+          "value": "?"
+        },
+        {
+          "label": "/",
+          "value": "/"
+        },
+        {
+          "label": "|",
+          "value": "|"
+        },
+        {
+          "label": "\\",
+          "value": "\\"
+        },
+        {
+          "label": ":",
+          "value": ":"
+        },
+        {
+          "label": "∞",
+          "value": "&infin;"
+        },
+        {
+          "label": "§",
+          "value": "&sect;"
+        },
+        {
+          "label": "#",
+          "value": "&num;"
+        },
+        {
+          "label": "%",
+          "value": "%"
+        },
+        {
+          "label": "@",
+          "value": "@"
+        },
+        {
+          "label": "№",
+          "value": "&numero;"
+        },
+        {
+          "label": "×",
+          "value": "&times;"
+        },
+        {
+          "label": "÷",
+          "value": "&divide;"
+        },
+        {
+          "label": "+",
+          "value": "&plus;"
+        },
+        {
+          "label": "−",
+          "value": "&minus;"
+        },
+        {
+          "label": "=",
+          "value": "&equals;"
+        },
+        {
+          "label": "~",
+          "value": "&tilde;"
+        },
+        {
+          "label": "–",
+          "value": "&ndash;"
+        },
+        {
+          "label": "—",
+          "value": "&mdash;"
+        },
+        {
+          "label": "&",
+          "value": "&amp;"
+        },
+        {
+          "label": "*",
+          "value": "&ast;"
+        },
+        {
+          "label": "✓",
+          "value": "&check;"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' and section.settings.repeat_text and section.settings.separator_type == 'symbol' }}",
+      "type": "range",
+      "id": "separator_repeats",
+      "label": "Repeat character",
+      "min": 1,
+      "max": 6,
+      "unit": "x",
+      "default": 1
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' and section.settings.repeat_text and section.settings.separator_type == 'symbol' }}",
+      "type": "select",
+      "id": "spacing_between_repeated_separators",
+      "label": "Spacing between repeated characters",
+      "options": [
+        {
+          "label": "None",
+          "value": ""
+        },
+        {
+          "label": "Hair",
+          "value": "&hairsp;"
+        },
+        {
+          "label": "Thin",
+          "value": "&thinsp;"
+        },
+        {
+          "label": "Punctuation",
+          "value": "&puncsp;"
+        },
+        {
+          "label": "4-per-em",
+          "value": "&emsp14;"
+        },
+        {
+          "label": "3-per-em",
+          "value": "&emsp13;"
+        },
+        {
+          "label": "Figure",
+          "value": "&numsp;"
+        },
+        {
+          "label": "En",
+          "value": "&ensp;"
+        },
+        {
+          "label": "Em",
+          "value": "&emsp;"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' and section.settings.repeat_text and section.settings.separator_type == 'button' }}",
+      "type": "text",
+      "id": "inline_link_text",
+      "label": "Button label",
+      "info": "Provide a URL in the link setting above.",
+      "default": "Button label"
+    },
+    {
+      "visible_if": "{{ section.settings.display == 'scrolling-text' and section.settings.repeat_text and section.settings.separator_type == 'button' }}",
+      "type": "select",
+      "id": "button_style",
+      "label": "Button style",
+      "default": "secondary",
+      "options": [
+        {
+          "value": "primary",
+          "label": "Primary"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "max_blocks": 1,
+  "blocks": [
+    {
+      "type": "text",
+      "name": "Text",
+      "settings": [
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Text",
+          "default": "Announce something here"
+        }
+      ]
+    },
+    {
+      "type": "free_shipping",
+      "name": "Free shipping",
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "Configure the threshold in Theme Settings > Cart > Free shipping threshold. If the market is configured to have free shipping progress disabled, this section won’t show."
+        }
+      ]
+    },
+    {
+      "type": "countdown",
+      "name": "Countdown timer",
+      "settings": [
+        {
+          "type": "text",
+          "id": "text_before_timer",
+          "label": "Text before timer",
+          "default": "Coming soon"
+        },
+        {
+          "type": "text",
+          "id": "text_after_timer",
+          "label": "Text after timer",
+          "default": "Reserve yours now!"
+        },
+        {
+          "type": "text",
+          "id": "completion_text",
+          "label": "Text after completion",
+          "info": "This text will be shown once the target date is reached. If left blank, the timer will show crossed out zeros.",
+          "default": "Shop now"
+        },
+        {
+          "type": "select",
+          "id": "spacing_between_parts",
+          "label": "Spacing between timer and before and after text",
+          "options": [
+            {
+              "value": "",
+              "label": "None"
+            },
+            {
+              "value": "gap-1 lg:gap-2",
+              "label": "S"
+            },
+            {
+              "value": "gap-2 lg:gap-4",
+              "label": "M"
+            },
+            {
+              "value": "gap-4 lg:gap-8",
+              "label": "L"
+            }
+          ],
+          "default": ""
+        },
+        {
+          "visible_if": "{{ block.settings.spacing_between_parts != '' }}",
+          "type": "select",
+          "id": "separator_type",
+          "label": "Separator type",
+          "options": [
+            {
+              "value": "gap",
+              "label": "Gap"
+            },
+            {
+              "value": "symbol",
+              "label": "Character"
+            }
+          ]
+        },
+        {
+          "visible_if": "{{ block.settings.spacing_between_parts != '' and block.settings.separator_type == 'symbol' }}",
+          "type": "select",
+          "id": "separator",
+          "label": "Character",
+          "options": [
+            {
+              "label": "·",
+              "value": "&middot;"
+            },
+            {
+              "label": "•",
+              "value": "&bullet;"
+            },
+            {
+              "label": "↑",
+              "value": "&uarr;"
+            },
+            {
+              "label": "→",
+              "value": "&rarr;"
+            },
+            {
+              "label": "↓",
+              "value": "&darr;"
+            },
+            {
+              "label": "←",
+              "value": "&larr;"
+            },
+            {
+              "label": "<",
+              "value": "&lt;"
+            },
+            {
+              "label": ">",
+              "value": "&gt;"
+            },
+            {
+              "label": "^",
+              "value": "^"
+            },
+            {
+              "label": "!",
+              "value": "!"
+            },
+            {
+              "label": "¡",
+              "value": "¡"
+            },
+            {
+              "label": "?",
+              "value": "?"
+            },
+            {
+              "label": "/",
+              "value": "/"
+            },
+            {
+              "label": "|",
+              "value": "|"
+            },
+            {
+              "label": "\\",
+              "value": "\\"
+            },
+            {
+              "label": ":",
+              "value": ":"
+            },
+            {
+              "label": "∞",
+              "value": "&infin;"
+            },
+            {
+              "label": "§",
+              "value": "&sect;"
+            },
+            {
+              "label": "#",
+              "value": "&num;"
+            },
+            {
+              "label": "%",
+              "value": "%"
+            },
+            {
+              "label": "@",
+              "value": "@"
+            },
+            {
+              "label": "№",
+              "value": "&numero;"
+            },
+            {
+              "label": "×",
+              "value": "&times;"
+            },
+            {
+              "label": "÷",
+              "value": "&divide;"
+            },
+            {
+              "label": "+",
+              "value": "&plus;"
+            },
+            {
+              "label": "−",
+              "value": "&minus;"
+            },
+            {
+              "label": "=",
+              "value": "&equals;"
+            },
+            {
+              "label": "~",
+              "value": "&tilde;"
+            },
+            {
+              "label": "–",
+              "value": "&ndash;"
+            },
+            {
+              "label": "—",
+              "value": "&mdash;"
+            },
+            {
+              "label": "&",
+              "value": "&amp;"
+            },
+            {
+              "label": "*",
+              "value": "&ast;"
+            },
+            {
+              "label": "✓",
+              "value": "&check;"
+            }
+          ]
+        },
+        {
+          "visible_if": "{{ block.settings.spacing_between_parts != '' and block.settings.separator_type == 'symbol' }}",
+          "type": "range",
+          "id": "separator_repeats",
+          "label": "Repeat character",
+          "min": 1,
+          "max": 6,
+          "unit": "x",
+          "default": 1
+        },
+        {
+          "visible_if": "{{ block.settings.spacing_between_parts != '' and block.settings.separator_type == 'symbol' }}",
+          "type": "select",
+          "id": "spacing_between_repeated_separators",
+          "label": "Spacing between repeated characters",
+          "options": [
+            {
+              "label": "None",
+              "value": ""
+            },
+            {
+              "label": "Hair",
+              "value": "&hairsp;"
+            },
+            {
+              "label": "Thin",
+              "value": "&thinsp;"
+            },
+            {
+              "label": "Punctuation",
+              "value": "&puncsp;"
+            },
+            {
+              "label": "4-per-em",
+              "value": "&emsp14;"
+            },
+            {
+              "label": "3-per-em",
+              "value": "&emsp13;"
+            },
+            {
+              "label": "Figure",
+              "value": "&numsp;"
+            },
+            {
+              "label": "En",
+              "value": "&ensp;"
+            },
+            {
+              "label": "Em",
+              "value": "&emsp;"
+            }
+          ]
+        },
+        {
+          "type": "header",
+          "content": "Countdown timer"
+        },
+        {
+          "type": "paragraph",
+          "content": "The time is set in [your store’s time zone](/admin/settings/general)"
+        },
+        {
+          "type": "checkbox",
+          "id": "use_current_year",
+          "label": "Use current year",
+          "default": true
+        },
+        {
+          "visible_if": "{{ block.settings.use_current_year == false }}",
+          "type": "number",
+          "id": "custom_year",
+          "label": "Year",
+          "info": "Use 4 digits, e.g. 2029"
+        },
+        {
+          "type": "select",
+          "id": "month",
+          "label": "Month",
+          "options": [
+            {
+              "value": "01",
+              "label": "1 – January"
+            },
+            {
+              "value": "02",
+              "label": "2 – February"
+            },
+            {
+              "value": "03",
+              "label": "3 – March"
+            },
+            {
+              "value": "04",
+              "label": "4 – April"
+            },
+            {
+              "value": "05",
+              "label": "5 – May"
+            },
+            {
+              "value": "06",
+              "label": "6 – June"
+            },
+            {
+              "value": "07",
+              "label": "7 – July"
+            },
+            {
+              "value": "08",
+              "label": "8 – August"
+            },
+            {
+              "value": "09",
+              "label": "9 – September"
+            },
+            {
+              "value": "10",
+              "label": "10 – October"
+            },
+            {
+              "value": "11",
+              "label": "11 – November"
+            },
+            {
+              "value": "12",
+              "label": "12 – December"
+            }
+          ],
+          "default": "07"
+        },
+        {
+          "visible_if": "{{ block.settings.month == '02' }}",
+          "type": "select",
+          "id": "day_29",
+          "label": "Day",
+          "options": [
+            {
+              "value": "01",
+              "label": "1"
+            },
+            {
+              "value": "02",
+              "label": "2"
+            },
+            {
+              "value": "03",
+              "label": "3"
+            },
+            {
+              "value": "04",
+              "label": "4"
+            },
+            {
+              "value": "05",
+              "label": "5"
+            },
+            {
+              "value": "06",
+              "label": "6"
+            },
+            {
+              "value": "07",
+              "label": "7"
+            },
+            {
+              "value": "08",
+              "label": "8"
+            },
+            {
+              "value": "09",
+              "label": "9"
+            },
+            {
+              "value": "10",
+              "label": "10"
+            },
+            {
+              "value": "11",
+              "label": "11"
+            },
+            {
+              "value": "12",
+              "label": "12"
+            },
+            {
+              "value": "13",
+              "label": "13"
+            },
+            {
+              "value": "14",
+              "label": "14"
+            },
+            {
+              "value": "15",
+              "label": "15"
+            },
+            {
+              "value": "16",
+              "label": "16"
+            },
+            {
+              "value": "17",
+              "label": "17"
+            },
+            {
+              "value": "18",
+              "label": "18"
+            },
+            {
+              "value": "19",
+              "label": "19"
+            },
+            {
+              "value": "20",
+              "label": "20"
+            },
+            {
+              "value": "21",
+              "label": "21"
+            },
+            {
+              "value": "22",
+              "label": "22"
+            },
+            {
+              "value": "23",
+              "label": "23"
+            },
+            {
+              "value": "24",
+              "label": "24"
+            },
+            {
+              "value": "25",
+              "label": "25"
+            },
+            {
+              "value": "26",
+              "label": "26"
+            },
+            {
+              "value": "27",
+              "label": "27"
+            },
+            {
+              "value": "28",
+              "label": "28"
+            },
+            {
+              "value": "29",
+              "label": "29"
+            }
+          ],
+          "default": "01"
+        },
+        {
+          "visible_if": "{{ block.settings.month == '04' or block.settings.month == '06' or block.settings.month == '09' or block.settings.month == '11' }}",
+          "type": "select",
+          "id": "day_30",
+          "label": "Day",
+          "options": [
+            {
+              "value": "01",
+              "label": "1"
+            },
+            {
+              "value": "02",
+              "label": "2"
+            },
+            {
+              "value": "03",
+              "label": "3"
+            },
+            {
+              "value": "04",
+              "label": "4"
+            },
+            {
+              "value": "05",
+              "label": "5"
+            },
+            {
+              "value": "06",
+              "label": "6"
+            },
+            {
+              "value": "07",
+              "label": "7"
+            },
+            {
+              "value": "08",
+              "label": "8"
+            },
+            {
+              "value": "09",
+              "label": "9"
+            },
+            {
+              "value": "10",
+              "label": "10"
+            },
+            {
+              "value": "11",
+              "label": "11"
+            },
+            {
+              "value": "12",
+              "label": "12"
+            },
+            {
+              "value": "13",
+              "label": "13"
+            },
+            {
+              "value": "14",
+              "label": "14"
+            },
+            {
+              "value": "15",
+              "label": "15"
+            },
+            {
+              "value": "16",
+              "label": "16"
+            },
+            {
+              "value": "17",
+              "label": "17"
+            },
+            {
+              "value": "18",
+              "label": "18"
+            },
+            {
+              "value": "19",
+              "label": "19"
+            },
+            {
+              "value": "20",
+              "label": "20"
+            },
+            {
+              "value": "21",
+              "label": "21"
+            },
+            {
+              "value": "22",
+              "label": "22"
+            },
+            {
+              "value": "23",
+              "label": "23"
+            },
+            {
+              "value": "24",
+              "label": "24"
+            },
+            {
+              "value": "25",
+              "label": "25"
+            },
+            {
+              "value": "26",
+              "label": "26"
+            },
+            {
+              "value": "27",
+              "label": "27"
+            },
+            {
+              "value": "28",
+              "label": "28"
+            },
+            {
+              "value": "29",
+              "label": "29"
+            },
+            {
+              "value": "30",
+              "label": "30"
+            }
+          ],
+          "default": "01"
+        },
+        {
+          "visible_if": "{{ block.settings.month == '01' or block.settings.month == '03' or block.settings.month == '05' or block.settings.month == '07' or block.settings.month == '08' or block.settings.month == '10' or block.settings.month == '12' }}",
+          "type": "select",
+          "id": "day_31",
+          "label": "Day",
+          "options": [
+            {
+              "value": "01",
+              "label": "1"
+            },
+            {
+              "value": "02",
+              "label": "2"
+            },
+            {
+              "value": "03",
+              "label": "3"
+            },
+            {
+              "value": "04",
+              "label": "4"
+            },
+            {
+              "value": "05",
+              "label": "5"
+            },
+            {
+              "value": "06",
+              "label": "6"
+            },
+            {
+              "value": "07",
+              "label": "7"
+            },
+            {
+              "value": "08",
+              "label": "8"
+            },
+            {
+              "value": "09",
+              "label": "9"
+            },
+            {
+              "value": "10",
+              "label": "10"
+            },
+            {
+              "value": "11",
+              "label": "11"
+            },
+            {
+              "value": "12",
+              "label": "12"
+            },
+            {
+              "value": "13",
+              "label": "13"
+            },
+            {
+              "value": "14",
+              "label": "14"
+            },
+            {
+              "value": "15",
+              "label": "15"
+            },
+            {
+              "value": "16",
+              "label": "16"
+            },
+            {
+              "value": "17",
+              "label": "17"
+            },
+            {
+              "value": "18",
+              "label": "18"
+            },
+            {
+              "value": "19",
+              "label": "19"
+            },
+            {
+              "value": "20",
+              "label": "20"
+            },
+            {
+              "value": "21",
+              "label": "21"
+            },
+            {
+              "value": "22",
+              "label": "22"
+            },
+            {
+              "value": "23",
+              "label": "23"
+            },
+            {
+              "value": "24",
+              "label": "24"
+            },
+            {
+              "value": "25",
+              "label": "25"
+            },
+            {
+              "value": "26",
+              "label": "26"
+            },
+            {
+              "value": "27",
+              "label": "27"
+            },
+            {
+              "value": "28",
+              "label": "28"
+            },
+            {
+              "value": "29",
+              "label": "29"
+            },
+            {
+              "value": "30",
+              "label": "30"
+            },
+            {
+              "value": "31",
+              "label": "31"
+            }
+          ],
+          "default": "01"
+        },
+        {
+          "type": "select",
+          "id": "hour",
+          "label": "Hour (24-hour time)",
+          "options": [
+            {
+              "value": "00",
+              "label": "00 (12 a.m. / midnight)"
+            },
+            {
+              "value": "01",
+              "label": "01 (1 a.m.)"
+            },
+            {
+              "value": "02",
+              "label": "02 (2 a.m.)"
+            },
+            {
+              "value": "03",
+              "label": "03 (3 a.m.)"
+            },
+            {
+              "value": "04",
+              "label": "04 (4 a.m.)"
+            },
+            {
+              "value": "05",
+              "label": "05 (5 a.m.)"
+            },
+            {
+              "value": "06",
+              "label": "06 (6 a.m.)"
+            },
+            {
+              "value": "07",
+              "label": "07 (7 a.m.)"
+            },
+            {
+              "value": "08",
+              "label": "08 (8 a.m.)"
+            },
+            {
+              "value": "09",
+              "label": "09 (9 a.m.)"
+            },
+            {
+              "value": "10",
+              "label": "10 (10 a.m.)"
+            },
+            {
+              "value": "11",
+              "label": "11 (11 a.m.)"
+            },
+            {
+              "value": "12",
+              "label": "12 (12 p.m. / noon)"
+            },
+            {
+              "value": "13",
+              "label": "13 (1 p.m.)"
+            },
+            {
+              "value": "14",
+              "label": "14 (2 p.m.)"
+            },
+            {
+              "value": "15",
+              "label": "15 (3 p.m.)"
+            },
+            {
+              "value": "16",
+              "label": "16 (4 p.m.)"
+            },
+            {
+              "value": "17",
+              "label": "17 (5 p.m.)"
+            },
+            {
+              "value": "18",
+              "label": "18 (6 p.m.)"
+            },
+            {
+              "value": "19",
+              "label": "19 (7 p.m.)"
+            },
+            {
+              "value": "20",
+              "label": "20 (8 p.m.)"
+            },
+            {
+              "value": "21",
+              "label": "21 (9 p.m.)"
+            },
+            {
+              "value": "22",
+              "label": "22 (10 p.m.)"
+            },
+            {
+              "value": "23",
+              "label": "23 (11 p.m.)"
+            }
+          ],
+          "default": "12"
+        },
+        {
+          "type": "select",
+          "id": "minute",
+          "label": "Minute",
+          "options": [
+            {
+              "value": "00",
+              "label": "00"
+            },
+            {
+              "value": "01",
+              "label": "01"
+            },
+            {
+              "value": "02",
+              "label": "02"
+            },
+            {
+              "value": "03",
+              "label": "03"
+            },
+            {
+              "value": "04",
+              "label": "04"
+            },
+            {
+              "value": "05",
+              "label": "05"
+            },
+            {
+              "value": "06",
+              "label": "06"
+            },
+            {
+              "value": "07",
+              "label": "07"
+            },
+            {
+              "value": "08",
+              "label": "08"
+            },
+            {
+              "value": "09",
+              "label": "09"
+            },
+            {
+              "value": "10",
+              "label": "10"
+            },
+            {
+              "value": "11",
+              "label": "11"
+            },
+            {
+              "value": "12",
+              "label": "12"
+            },
+            {
+              "value": "13",
+              "label": "13"
+            },
+            {
+              "value": "14",
+              "label": "14"
+            },
+            {
+              "value": "15",
+              "label": "15"
+            },
+            {
+              "value": "16",
+              "label": "16"
+            },
+            {
+              "value": "17",
+              "label": "17"
+            },
+            {
+              "value": "18",
+              "label": "18"
+            },
+            {
+              "value": "19",
+              "label": "19"
+            },
+            {
+              "value": "20",
+              "label": "20"
+            },
+            {
+              "value": "21",
+              "label": "21"
+            },
+            {
+              "value": "22",
+              "label": "22"
+            },
+            {
+              "value": "23",
+              "label": "23"
+            },
+            {
+              "value": "24",
+              "label": "24"
+            },
+            {
+              "value": "25",
+              "label": "25"
+            },
+            {
+              "value": "26",
+              "label": "26"
+            },
+            {
+              "value": "27",
+              "label": "27"
+            },
+            {
+              "value": "28",
+              "label": "28"
+            },
+            {
+              "value": "29",
+              "label": "29"
+            },
+            {
+              "value": "30",
+              "label": "30"
+            },
+            {
+              "value": "31",
+              "label": "31"
+            },
+            {
+              "value": "32",
+              "label": "32"
+            },
+            {
+              "value": "33",
+              "label": "33"
+            },
+            {
+              "value": "34",
+              "label": "34"
+            },
+            {
+              "value": "35",
+              "label": "35"
+            },
+            {
+              "value": "36",
+              "label": "36"
+            },
+            {
+              "value": "37",
+              "label": "37"
+            },
+            {
+              "value": "38",
+              "label": "38"
+            },
+            {
+              "value": "39",
+              "label": "39"
+            },
+            {
+              "value": "40",
+              "label": "40"
+            },
+            {
+              "value": "41",
+              "label": "41"
+            },
+            {
+              "value": "42",
+              "label": "42"
+            },
+            {
+              "value": "43",
+              "label": "43"
+            },
+            {
+              "value": "44",
+              "label": "44"
+            },
+            {
+              "value": "45",
+              "label": "45"
+            },
+            {
+              "value": "46",
+              "label": "46"
+            },
+            {
+              "value": "47",
+              "label": "47"
+            },
+            {
+              "value": "48",
+              "label": "48"
+            },
+            {
+              "value": "49",
+              "label": "49"
+            },
+            {
+              "value": "50",
+              "label": "50"
+            },
+            {
+              "value": "51",
+              "label": "51"
+            },
+            {
+              "value": "52",
+              "label": "52"
+            },
+            {
+              "value": "53",
+              "label": "53"
+            },
+            {
+              "value": "54",
+              "label": "54"
+            },
+            {
+              "value": "55",
+              "label": "55"
+            },
+            {
+              "value": "56",
+              "label": "56"
+            },
+            {
+              "value": "57",
+              "label": "57"
+            },
+            {
+              "value": "58",
+              "label": "58"
+            },
+            {
+              "value": "59",
+              "label": "59"
+            }
+          ],
+          "default": "00"
+        },
+        {
+          "type": "select",
+          "id": "style",
+          "label": "Style",
+          "options": [
+            {
+              "value": "sentence",
+              "label": "Sentence"
+            },
+            {
+              "value": "timer",
+              "label": "Timer"
+            }
+          ],
+          "default": "sentence"
+        },
+        {
+          "visible_if": "{{ block.settings.style == 'timer' }}",
+          "type": "checkbox",
+          "id": "flash_separators",
+          "label": "Flash separators",
+          "default": true
+        },
+        {
+          "visible_if": "{{ block.settings.style == 'timer' }}",
+          "type": "select",
+          "id": "labels",
+          "label": "Labels",
+          "options": [
+            {
+              "value": "full",
+              "label": "Full"
+            },
+            {
+              "value": "abbreviated",
+              "label": "Abbreviated"
+            }
+          ],
+          "default": "abbreviated"
+        },
+        {
+          "visible_if": "{{ block.settings.style == 'timer' }}",
+          "type": "checkbox",
+          "id": "hide_labels_if_only_time",
+          "label": "Hide labels if only time parts are visible",
+          "info": "This will switch to a simple timer without labels if there are no days, months, or years remaining, leaving a simple HH:MM:SS timer format.",
+          "default": false
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Announcement bar",
+      "category": "Announcements",
+      "blocks": [
+        {
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "name": "Free shipping bar",
+      "category": "Announcements",
+      "blocks": [
+        {
+          "type": "free_shipping"
+        }
+      ]
+    },
+    {
+      "name": "Countdown timer bar",
+      "category": "Announcements",
+      "blocks": [
+        {
+          "type": "countdown"
+        }
+      ]
+    }
+  ],
+  "enabled_on": {
+    "groups": [
+      "header"
+    ]
+  }
+}
+{% endschema %}

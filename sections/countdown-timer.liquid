@@ -1,0 +1,2037 @@
+{% liquid
+  assign rich_text_block = section.blocks | where: 'type', 'rich_text' | first
+  assign has_feature_cta_block = section.blocks | has: 'type', 'feature_cta'
+
+  assign first_column_span = section.settings.first_column_width | plus: 0
+  assign second_column_span = 12 | minus: first_column_span
+
+  assign col_spans = first_column_span | append: ',' | append: second_column_span | split: ','
+
+  if rich_text_block and rich_text_block.settings.title != blank
+    assign sr_title = rich_text_block.settings.title
+  else
+    assign sr_title = null
+  endif
+
+  assign sizes = '(min-width: 1024px) calc(100vw / 12 * [COLS]), 100vw'
+
+  assign columns_used = section.blocks | map: 'settings' | map: 'column' | uniq | size
+
+  assign number_of_blocks_in_first_column = section.blocks | map: 'settings' | where: 'column', '1' | size
+  assign number_of_blocks_in_second_column = section.blocks | map: 'settings' | where: 'column', '2' | size
+%}
+
+<section
+  class="border-b-gridline border-gridline-color bg-scheme-background text-scheme-text has-[[data-metafield-is-blank]]:hidden has-[[data-hidden-due-to-error]]:hidden{% if section.blocks.size == 0 %} hidden{% endif %}"
+  data-color-scheme="{{ section.settings.color_scheme }}"
+>
+  <div class="lg:grid lg:grid-cols-12 lg:gap-gridline lg:bg-gridline-color {% if columns_used == 1 %}max-lg:-mb-gridline{% endif %}">
+    {% for column in (1..2) %}
+      {% assign column_index = forloop.index %}
+      <div
+        class="lg:col-span-var lg:flex lg:flex-col lg:bg-scheme-background"
+        style="--col-span: {{ col_spans[forloop.index0] }}"
+      >
+        {% for block in section.blocks %}
+          {% liquid
+            assign block_column = block.settings.column | plus: 0
+            assign deep_inset = block.settings.deep_inset
+            assign block_classes = ''
+
+            if block_column != column_index
+              continue
+            endif
+
+            assign fill = false
+            assign only_block_in_column = false
+            assign other_column_has_blocks = false
+            assign block_classes = 'border-b-gridline border-gridline-color overflow-hidden'
+
+            if column == 1
+              if number_of_blocks_in_first_column == 1
+                assign block_classes = block_classes | append: ' lg:-mb-gridline'
+
+                if block.type == 'video' or block.type == 'image'
+                  if block.settings.fill
+                    assign block_classes = block_classes | append: ' lg:border-b-0'
+                  endif
+                endif
+              else
+                assign block_classes = block_classes | append: ' lg:last:-mb-gridline'
+              endif
+            endif
+
+            if column == 2
+              if number_of_blocks_in_second_column == 1
+                assign block_classes = block_classes | append: ' -mb-gridline'
+
+                if block.type == 'video' or block.type == 'image'
+                  if block.settings.fill
+                    assign block_classes = block_classes | append: ' lg:border-b-0'
+                  endif
+                endif
+              else
+                assign block_classes = block_classes | append: ' last:-mb-gridline max-lg:[:has(.max-lg\:hidden:last-of-type)_>_&:nth-last-child(2)]:-mb-gridline'
+              endif
+            endif
+
+            if block.type == 'image' or block.type == 'video'
+              if column == 1 and number_of_blocks_in_first_column == 1
+                assign only_block_in_column = true
+              elsif column == 2 and number_of_blocks_in_second_column == 1
+                assign only_block_in_column = true
+              endif
+
+              if columns_used > 1
+                assign other_column_has_blocks = true
+              endif
+
+              if block.settings.fill and only_block_in_column and other_column_has_blocks
+                assign fill = true
+              endif
+            endif
+
+            unless block.type == 'countdown_timer' or block.type == 'video' or block.type == 'image'
+              assign block_classes = block_classes | append: ' px-section-horizontal-spacing py-section-vertical-spacing'
+            endunless
+
+            if block.type == 'countdown_timer' and block.settings.style != 'grid'
+              assign block_classes = block_classes | append: ' ' | append: block.settings.size
+            elsif block.type == 'video' or block.type == 'image'
+              if deep_inset
+                assign block_classes = block_classes | append: ' p-deep-inset-media'
+              else
+                assign block_classes = block_classes | append: ' p-grid-media'
+              endif
+            endif
+          %}
+
+          <div
+            class="{{ block_classes }}{% if fill %} h-full{% endif %}{% if block.type == 'spacer' %} max-lg:hidden lg:flex-[1_0_auto]{% endif %}"
+            {{ block.shopify_attributes }}
+          >
+            {% if fill %}
+              <div class="relative h-full">
+            {% endif %}
+            {% liquid
+              case block.type
+                when 'video', 'image'
+                  assign ratio = block.settings.media_crop | plus: 0.0
+
+                  assign loading = 'lazy'
+                  assign preload = false
+
+                  if column_index == 1 and forloop.index == 1
+                    if section.index == 1
+                      assign preload = true
+                    else
+                      assign preload = false
+                    endif
+
+                    if section.index <= 3
+                      assign loading = 'eager'
+                    endif
+                  endif
+
+                  assign sizes = sizes | replace: '[COLS]', col_spans[forloop.index0]
+
+                  case block.type
+                    when 'video'
+                      assign video = block.settings.video
+                      assign mode = block.settings.mode
+
+                      if ratio == 0
+                        assign ratio = video.aspect_ratio | default: 1.33
+                      endif
+
+                      render 'video', video: video, poster_preload: preload, poster_loading: loading, sizes: sizes, mode: mode, container_id: section.id, ratio: ratio, fill: fill, fill_only_on_desktop: true, is_deep_inset: deep_inset
+
+                    when 'image'
+                      assign image = block.settings.image
+
+                      if fill
+                        echo '<div class="hidden lg:block">'
+                        if image
+                          render 'image-fill', image: block.settings.image, preload: preload, loading: loading, sizes: sizes, is_deep_inset: deep_inset
+                        else
+                          render 'image-fill-placeholder', is_deep_inset: deep_inset
+                        endif
+                        echo '</div>'
+
+                        echo '<div class="lg:hidden">'
+                        if image
+                          render 'image', image: block.settings.image, preload: preload, loading: loading, sizes: sizes, is_deep_inset: deep_inset
+                        else
+                          render 'image-crop-placeholder', ratio: 1.3, is_deep_inset: deep_inset
+                        endif
+                        echo '</div>'
+
+                      else
+                        if ratio == 0.0
+                          if image
+                            render 'image', image: block.settings.image, preload: preload, loading: loading, sizes: sizes, is_deep_inset: deep_inset
+                          else
+                            render 'image-crop-placeholder', ratio: 1.3, is_deep_inset: deep_inset
+                          endif
+                        else
+                          if image
+                            render 'image-crop', image: block.settings.image, ratio: ratio, preload: preload, loading: loading, sizes: sizes, is_deep_inset: deep_inset
+                          else
+                            render 'image-crop-placeholder', ratio: ratio, is_deep_inset: deep_inset
+                          endif
+                        endif
+                      endif
+                  endcase
+                when 'rich_text', 'feature_text'
+                  if has_feature_cta_block
+                    assign cta_link = blank
+                    assign cta_text = ''
+                    assign cta_style = null
+                  else
+                    assign cta_link = block.settings.cta_link
+                    assign cta_text = block.settings.cta_text
+                    assign cta_style = block.settings.cta_style
+                    assign cta_button_style = block.settings.cta_button_style
+                  endif
+
+                  case block.type
+                    when 'rich_text'
+                      render 'rich-text', text_align: block.settings.text_alignment, desktop_alignment: block.settings.desktop_alignment, desktop_width: block.settings.desktop_width, title: block.settings.title, text: block.settings.text, subheading: block.settings.subheading, cta_link: cta_link, cta_text: cta_text, cta_style: cta_style, cta_button_style: cta_button_style
+                    when 'feature_text'
+                      render 'feature-text', text_align: block.settings.text_alignment, desktop_alignment: block.settings.desktop_alignment, desktop_width: block.settings.desktop_width, font: block.settings.font, mobile_text_scale: block.settings.mobile_text_scale, desktop_text_scale: block.settings.desktop_text_scale, text: block.settings.text, subheading: block.settings.subheading, cta_link: cta_link, cta_text: cta_text, cta_style: cta_style, cta_button_style: cta_button_style
+                  endcase
+                when 'feature_cta'
+                  render 'feature-cta', top_margin_class: 'mt-0', font: block.settings.font, mobile_text_scale: block.settings.mobile_text_scale, desktop_text_scale: block.settings.desktop_text_scale, text_align: block.settings.text_alignment, desktop_alignment: block.settings.desktop_alignment, desktop_width: block.settings.desktop_width, cta_link: block.settings.cta_link, cta_text: block.settings.cta_text, cta_style: block.settings.cta_style, cta_button_style: block.settings.cta_button_style
+                when 'countdown_timer'
+                  case block.settings.month
+                    when '02'
+                      assign day = block.settings.day_29
+                    when '04', '06', '09', '11'
+                      assign day = block.settings.day_30
+                    when '01', '03', '05', '07', '08', '10', '12'
+                      assign day = block.settings.day_31
+                  endcase
+
+                  assign year = 'now' | date: '%Y'
+                  if block.settings.custom_year != blank and block.settings.use_current_year == false
+                    assign year = block.settings.custom_year | plus: 0
+                  endif
+
+                  render 'countdown-timer', sr_title: sr_title, year: year, month: block.settings.month, day: day, hour: block.settings.hour, minute: block.settings.minute, font: block.settings.font, style: block.settings.style, number_padding: block.settings.number_padding, flash_separators: block.settings.flash_separators, minimum_shown_parts: block.settings.minimum_shown_parts, metafield_ns_and_key: block.settings.metafield_ns_and_key
+                when 'newsletter'
+                  render 'newsletter', text_size_class: 'text-base', is_a_block: true, text: block.settings.text, horizontal_position: block.settings.horizontal_position, form_position: block.settings.vertical_position, form_id: section.id
+              endcase
+            %}
+            {% if fill %}
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% if request.design_mode %}
+  <div
+    class="contents"
+    id="{{ section.id }}-error-message"
+  ></div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Countdown timer",
+  "disabled_on": {
+    "groups": [
+      "header",
+      "footer",
+      "aside"
+    ]
+  },
+  "settings": [
+    {
+      "type": "select",
+      "id": "first_column_width",
+      "label": "Width of first column",
+      "default": "6",
+      "options": [
+        {
+          "value": "4",
+          "label": "One third"
+        },
+        {
+          "value": "5",
+          "label": "Two fifths"
+        },
+        {
+          "value": "6",
+          "label": "One half"
+        },
+        {
+          "value": "7",
+          "label": "Three fifths"
+        },
+        {
+          "value": "8",
+          "label": "Two thirds"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "image",
+      "name": "Image",
+      "settings": [
+        {
+          "id": "column",
+          "type": "select",
+          "label": "Column",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            }
+          ],
+          "default": "1"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image",
+          "info": "Square JPG of at least 4,000 × 4,000 pixels recommended"
+        },
+        {
+          "type": "checkbox",
+          "id": "deep_inset",
+          "label": "Deep inset",
+          "default": false
+        },
+        {
+          "type": "select",
+          "id": "media_crop",
+          "label": "Crop",
+          "options": [
+            {
+              "value": "0",
+              "label": "No crop"
+            },
+            {
+              "value": "1.3",
+              "label": "Landscape"
+            },
+            {
+              "value": "1",
+              "label": "Square"
+            },
+            {
+              "value": "0.8",
+              "label": "Portrait"
+            }
+          ],
+          "default": "1"
+        },
+        {
+          "type": "checkbox",
+          "id": "fill",
+          "label": "Fill space",
+          "info": "Only applies if only block in column. Will override “Crop” setting."
+        }
+      ]
+    },
+    {
+      "type": "video",
+      "name": "Video",
+      "settings": [
+        {
+          "id": "column",
+          "type": "select",
+          "label": "Column",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            }
+          ],
+          "default": "1"
+        },
+        {
+          "type": "video",
+          "id": "video",
+          "label": "Video"
+        },
+        {
+          "type": "select",
+          "id": "mode",
+          "label": "Mode",
+          "options": [
+            {
+              "value": "preview",
+              "label": "Preview"
+            },
+            {
+              "value": "autoplay",
+              "label": "Autoplay"
+            }
+          ],
+          "default": "preview",
+          "info": "Autoplay will not play sound or show controls."
+        },
+        {
+          "type": "checkbox",
+          "id": "deep_inset",
+          "label": "Deep inset",
+          "default": false
+        },
+        {
+          "type": "select",
+          "id": "media_crop",
+          "label": "Crop",
+          "options": [
+            {
+              "value": "0",
+              "label": "No crop"
+            },
+            {
+              "value": "1.3",
+              "label": "Landscape"
+            },
+            {
+              "value": "1",
+              "label": "Square"
+            },
+            {
+              "value": "0.8",
+              "label": "Portrait"
+            }
+          ],
+          "default": "1"
+        },
+        {
+          "type": "checkbox",
+          "id": "fill",
+          "label": "Fill space",
+          "info": "Only applies if only block in column. Will override “Crop” setting"
+        }
+      ]
+    },
+    {
+      "type": "rich_text",
+      "name": "Rich text",
+      "limit": 1,
+      "settings": [
+        {
+          "id": "column",
+          "type": "select",
+          "label": "Column",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            }
+          ],
+          "default": "1"
+        },
+        {
+          "visible_if": "{{ block.settings.title != blank }}",
+          "type": "text",
+          "id": "subheading",
+          "label": "Subheading"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Heading"
+        },
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "Text",
+          "default": "<p>Use this text to share information about your brand with your customers. Describe a product, share announcements, or welcome customers to your store.</p>"
+        },
+        {
+          "type": "select",
+          "id": "text_alignment",
+          "label": "Text alignment",
+          "options": [
+            {
+              "value": "text-left",
+              "label": "Left"
+            },
+            {
+              "value": "text-center",
+              "label": "Center"
+            },
+            {
+              "value": "text-right",
+              "label": "Right"
+            }
+          ],
+          "default": "text-left"
+        },
+        {
+          "type": "header",
+          "content": "Call to action"
+        },
+        {
+          "type": "url",
+          "id": "cta_link",
+          "label": "Link"
+        },
+        {
+          "type": "text",
+          "id": "cta_text",
+          "label": "Text",
+          "default": "Shop now"
+        },
+        {
+          "type": "select",
+          "id": "cta_style",
+          "label": "Style",
+          "options": [
+            {
+              "value": "link",
+              "label": "Link"
+            },
+            {
+              "value": "button",
+              "label": "Button"
+            }
+          ],
+          "default": "link"
+        },
+        {
+          "visible_if": "{{ block.settings.cta_style == 'button' }}",
+          "type": "select",
+          "id": "cta_button_style",
+          "label": "Button style",
+          "default": "secondary",
+          "options": [
+            {
+              "value": "primary",
+              "label": "Primary"
+            },
+            {
+              "value": "secondary",
+              "label": "Secondary"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": "Adding a “Call to action” block will override the call to action in this block."
+        },
+        {
+          "type": "header",
+          "content": "Desktop layout"
+        },
+        {
+          "type": "select",
+          "id": "desktop_width",
+          "label": "Width",
+          "options": [
+            {
+              "value": "full",
+              "label": "Full"
+            },
+            {
+              "value": "two_thirds",
+              "label": "Two thirds"
+            },
+            {
+              "value": "half",
+              "label": "Half"
+            }
+          ],
+          "default": "full"
+        },
+        {
+          "type": "select",
+          "id": "desktop_alignment",
+          "label": "Position",
+          "options": [
+            {
+              "value": "left",
+              "label": "Left"
+            },
+            {
+              "value": "center",
+              "label": "Center"
+            },
+            {
+              "value": "right",
+              "label": "Right"
+            }
+          ],
+          "default": "left",
+          "info": "Does not apply when width is set to full."
+        }
+      ]
+    },
+    {
+      "type": "feature_text",
+      "name": "Feature text",
+      "settings": [
+        {
+          "id": "column",
+          "type": "select",
+          "label": "Column",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            }
+          ],
+          "default": "1"
+        },
+        {
+          "type": "text",
+          "id": "subheading",
+          "label": "Subheading"
+        },
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "Text",
+          "default": "<p>Use this text to share information about your brand with your customers. Describe a product, share announcements, or welcome customers to your store.</p>"
+        },
+        {
+          "type": "range",
+          "id": "mobile_text_scale",
+          "min": -2,
+          "max": 4,
+          "step": 1,
+          "label": "Mobile font size scale",
+          "default": 2
+        },
+        {
+          "type": "range",
+          "id": "desktop_text_scale",
+          "min": -2,
+          "max": 9,
+          "step": 1,
+          "label": "Desktop font size scale",
+          "default": 7
+        },
+        {
+          "type": "select",
+          "id": "font",
+          "label": "Font",
+          "options": [
+            {
+              "value": "font-heading",
+              "label": "Heading"
+            },
+            {
+              "value": "rte font-body",
+              "label": "Body"
+            }
+          ],
+          "default": "font-heading"
+        },
+        {
+          "type": "select",
+          "id": "text_alignment",
+          "label": "Text alignment",
+          "options": [
+            {
+              "value": "text-left",
+              "label": "Left"
+            },
+            {
+              "value": "text-center",
+              "label": "Center"
+            },
+            {
+              "value": "text-right",
+              "label": "Right"
+            }
+          ],
+          "default": "text-left"
+        },
+        {
+          "type": "header",
+          "content": "Call to action"
+        },
+        {
+          "type": "url",
+          "id": "cta_link",
+          "label": "Link"
+        },
+        {
+          "type": "text",
+          "id": "cta_text",
+          "label": "Text",
+          "default": "Shop now"
+        },
+        {
+          "type": "select",
+          "id": "cta_style",
+          "label": "Style",
+          "options": [
+            {
+              "value": "link",
+              "label": "Link"
+            },
+            {
+              "value": "button",
+              "label": "Button"
+            }
+          ],
+          "default": "link"
+        },
+        {
+          "visible_if": "{{ block.settings.cta_style == 'button' }}",
+          "type": "select",
+          "id": "cta_button_style",
+          "label": "Button style",
+          "default": "secondary",
+          "options": [
+            {
+              "value": "primary",
+              "label": "Primary"
+            },
+            {
+              "value": "secondary",
+              "label": "Secondary"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": "Adding a “Call to action” block will override the call to action in this block."
+        },
+        {
+          "type": "header",
+          "content": "Desktop layout"
+        },
+        {
+          "type": "select",
+          "id": "desktop_width",
+          "label": "Width",
+          "options": [
+            {
+              "value": "full",
+              "label": "Full"
+            },
+            {
+              "value": "two_thirds",
+              "label": "Two thirds"
+            },
+            {
+              "value": "half",
+              "label": "Half"
+            }
+          ],
+          "default": "full"
+        },
+        {
+          "type": "select",
+          "id": "desktop_alignment",
+          "label": "Position",
+          "options": [
+            {
+              "value": "left",
+              "label": "Left"
+            },
+            {
+              "value": "center",
+              "label": "Center"
+            },
+            {
+              "value": "right",
+              "label": "Right"
+            }
+          ],
+          "default": "left",
+          "info": "Does not apply when width is set to full."
+        }
+      ]
+    },
+    {
+      "type": "feature_cta",
+      "name": "Call to action",
+      "limit": 1,
+      "settings": [
+        {
+          "id": "column",
+          "type": "select",
+          "label": "Column",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            }
+          ],
+          "default": "1"
+        },
+        {
+          "type": "paragraph",
+          "content": "This block will override any calls to action in other blocks."
+        },
+        {
+          "type": "range",
+          "id": "mobile_text_scale",
+          "min": -2,
+          "max": 4,
+          "step": 1,
+          "label": "Mobile font size scale",
+          "default": 2
+        },
+        {
+          "type": "range",
+          "id": "desktop_text_scale",
+          "min": -2,
+          "max": 9,
+          "step": 1,
+          "label": "Desktop font size scale",
+          "default": 7
+        },
+        {
+          "type": "select",
+          "id": "font",
+          "label": "Font",
+          "options": [
+            {
+              "value": "font-heading",
+              "label": "Heading"
+            },
+            {
+              "value": "rte font-body",
+              "label": "Body"
+            }
+          ],
+          "default": "font-heading"
+        },
+        {
+          "type": "select",
+          "id": "text_alignment",
+          "label": "Text alignment",
+          "options": [
+            {
+              "value": "text-left",
+              "label": "Left"
+            },
+            {
+              "value": "text-center",
+              "label": "Center"
+            },
+            {
+              "value": "text-right",
+              "label": "Right"
+            }
+          ],
+          "default": "text-left"
+        },
+        {
+          "type": "header",
+          "content": "Call to action"
+        },
+        {
+          "type": "url",
+          "id": "cta_link",
+          "label": "Link"
+        },
+        {
+          "type": "text",
+          "id": "cta_text",
+          "label": "Text",
+          "default": "Shop now"
+        },
+        {
+          "type": "select",
+          "id": "cta_style",
+          "label": "Style",
+          "options": [
+            {
+              "value": "link",
+              "label": "Link"
+            },
+            {
+              "value": "button",
+              "label": "Button"
+            }
+          ],
+          "default": "link"
+        },
+        {
+          "visible_if": "{{ block.settings.cta_style == 'button' }}",
+          "type": "select",
+          "id": "cta_button_style",
+          "label": "Button style",
+          "default": "secondary",
+          "options": [
+            {
+              "value": "primary",
+              "label": "Primary"
+            },
+            {
+              "value": "secondary",
+              "label": "Secondary"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "countdown_timer",
+      "name": "Countdown timer",
+      "limit": 1,
+      "settings": [
+        {
+          "id": "column",
+          "type": "select",
+          "label": "Column",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            }
+          ],
+          "default": "1"
+        },
+        {
+          "type": "paragraph",
+          "content": "The time is set in [your store’s time zone](/admin/settings/general)"
+        },
+        {
+          "type": "checkbox",
+          "id": "use_current_year",
+          "label": "Use current year",
+          "default": true
+        },
+        {
+          "visible_if": "{{ block.settings.use_current_year == false }}",
+          "type": "number",
+          "id": "custom_year",
+          "label": "Year",
+          "info": "Use 4 digits, e.g. 2029"
+        },
+        {
+          "type": "select",
+          "id": "month",
+          "label": "Month",
+          "options": [
+            {
+              "value": "01",
+              "label": "1 – January"
+            },
+            {
+              "value": "02",
+              "label": "2 – February"
+            },
+            {
+              "value": "03",
+              "label": "3 – March"
+            },
+            {
+              "value": "04",
+              "label": "4 – April"
+            },
+            {
+              "value": "05",
+              "label": "5 – May"
+            },
+            {
+              "value": "06",
+              "label": "6 – June"
+            },
+            {
+              "value": "07",
+              "label": "7 – July"
+            },
+            {
+              "value": "08",
+              "label": "8 – August"
+            },
+            {
+              "value": "09",
+              "label": "9 – September"
+            },
+            {
+              "value": "10",
+              "label": "10 – October"
+            },
+            {
+              "value": "11",
+              "label": "11 – November"
+            },
+            {
+              "value": "12",
+              "label": "12 – December"
+            }
+          ],
+          "default": "07"
+        },
+        {
+          "visible_if": "{{ block.settings.month == '02' }}",
+          "type": "select",
+          "id": "day_29",
+          "label": "Day",
+          "options": [
+            {
+              "value": "01",
+              "label": "1"
+            },
+            {
+              "value": "02",
+              "label": "2"
+            },
+            {
+              "value": "03",
+              "label": "3"
+            },
+            {
+              "value": "04",
+              "label": "4"
+            },
+            {
+              "value": "05",
+              "label": "5"
+            },
+            {
+              "value": "06",
+              "label": "6"
+            },
+            {
+              "value": "07",
+              "label": "7"
+            },
+            {
+              "value": "08",
+              "label": "8"
+            },
+            {
+              "value": "09",
+              "label": "9"
+            },
+            {
+              "value": "10",
+              "label": "10"
+            },
+            {
+              "value": "11",
+              "label": "11"
+            },
+            {
+              "value": "12",
+              "label": "12"
+            },
+            {
+              "value": "13",
+              "label": "13"
+            },
+            {
+              "value": "14",
+              "label": "14"
+            },
+            {
+              "value": "15",
+              "label": "15"
+            },
+            {
+              "value": "16",
+              "label": "16"
+            },
+            {
+              "value": "17",
+              "label": "17"
+            },
+            {
+              "value": "18",
+              "label": "18"
+            },
+            {
+              "value": "19",
+              "label": "19"
+            },
+            {
+              "value": "20",
+              "label": "20"
+            },
+            {
+              "value": "21",
+              "label": "21"
+            },
+            {
+              "value": "22",
+              "label": "22"
+            },
+            {
+              "value": "23",
+              "label": "23"
+            },
+            {
+              "value": "24",
+              "label": "24"
+            },
+            {
+              "value": "25",
+              "label": "25"
+            },
+            {
+              "value": "26",
+              "label": "26"
+            },
+            {
+              "value": "27",
+              "label": "27"
+            },
+            {
+              "value": "28",
+              "label": "28"
+            },
+            {
+              "value": "29",
+              "label": "29"
+            }
+          ],
+          "default": "01"
+        },
+        {
+          "visible_if": "{{ block.settings.month == '04' or block.settings.month == '06' or block.settings.month == '09' or block.settings.month == '11' }}",
+          "type": "select",
+          "id": "day_30",
+          "label": "Day",
+          "options": [
+            {
+              "value": "01",
+              "label": "1"
+            },
+            {
+              "value": "02",
+              "label": "2"
+            },
+            {
+              "value": "03",
+              "label": "3"
+            },
+            {
+              "value": "04",
+              "label": "4"
+            },
+            {
+              "value": "05",
+              "label": "5"
+            },
+            {
+              "value": "06",
+              "label": "6"
+            },
+            {
+              "value": "07",
+              "label": "7"
+            },
+            {
+              "value": "08",
+              "label": "8"
+            },
+            {
+              "value": "09",
+              "label": "9"
+            },
+            {
+              "value": "10",
+              "label": "10"
+            },
+            {
+              "value": "11",
+              "label": "11"
+            },
+            {
+              "value": "12",
+              "label": "12"
+            },
+            {
+              "value": "13",
+              "label": "13"
+            },
+            {
+              "value": "14",
+              "label": "14"
+            },
+            {
+              "value": "15",
+              "label": "15"
+            },
+            {
+              "value": "16",
+              "label": "16"
+            },
+            {
+              "value": "17",
+              "label": "17"
+            },
+            {
+              "value": "18",
+              "label": "18"
+            },
+            {
+              "value": "19",
+              "label": "19"
+            },
+            {
+              "value": "20",
+              "label": "20"
+            },
+            {
+              "value": "21",
+              "label": "21"
+            },
+            {
+              "value": "22",
+              "label": "22"
+            },
+            {
+              "value": "23",
+              "label": "23"
+            },
+            {
+              "value": "24",
+              "label": "24"
+            },
+            {
+              "value": "25",
+              "label": "25"
+            },
+            {
+              "value": "26",
+              "label": "26"
+            },
+            {
+              "value": "27",
+              "label": "27"
+            },
+            {
+              "value": "28",
+              "label": "28"
+            },
+            {
+              "value": "29",
+              "label": "29"
+            },
+            {
+              "value": "30",
+              "label": "30"
+            }
+          ],
+          "default": "01"
+        },
+        {
+          "visible_if": "{{ block.settings.month == '01' or block.settings.month == '03' or block.settings.month == '05' or block.settings.month == '07' or block.settings.month == '08' or block.settings.month == '10' or block.settings.month == '12' }}",
+          "type": "select",
+          "id": "day_31",
+          "label": "Day",
+          "options": [
+            {
+              "value": "01",
+              "label": "1"
+            },
+            {
+              "value": "02",
+              "label": "2"
+            },
+            {
+              "value": "03",
+              "label": "3"
+            },
+            {
+              "value": "04",
+              "label": "4"
+            },
+            {
+              "value": "05",
+              "label": "5"
+            },
+            {
+              "value": "06",
+              "label": "6"
+            },
+            {
+              "value": "07",
+              "label": "7"
+            },
+            {
+              "value": "08",
+              "label": "8"
+            },
+            {
+              "value": "09",
+              "label": "9"
+            },
+            {
+              "value": "10",
+              "label": "10"
+            },
+            {
+              "value": "11",
+              "label": "11"
+            },
+            {
+              "value": "12",
+              "label": "12"
+            },
+            {
+              "value": "13",
+              "label": "13"
+            },
+            {
+              "value": "14",
+              "label": "14"
+            },
+            {
+              "value": "15",
+              "label": "15"
+            },
+            {
+              "value": "16",
+              "label": "16"
+            },
+            {
+              "value": "17",
+              "label": "17"
+            },
+            {
+              "value": "18",
+              "label": "18"
+            },
+            {
+              "value": "19",
+              "label": "19"
+            },
+            {
+              "value": "20",
+              "label": "20"
+            },
+            {
+              "value": "21",
+              "label": "21"
+            },
+            {
+              "value": "22",
+              "label": "22"
+            },
+            {
+              "value": "23",
+              "label": "23"
+            },
+            {
+              "value": "24",
+              "label": "24"
+            },
+            {
+              "value": "25",
+              "label": "25"
+            },
+            {
+              "value": "26",
+              "label": "26"
+            },
+            {
+              "value": "27",
+              "label": "27"
+            },
+            {
+              "value": "28",
+              "label": "28"
+            },
+            {
+              "value": "29",
+              "label": "29"
+            },
+            {
+              "value": "30",
+              "label": "30"
+            },
+            {
+              "value": "31",
+              "label": "31"
+            }
+          ],
+          "default": "01"
+        },
+        {
+          "type": "select",
+          "id": "hour",
+          "label": "Hour (24-hour time)",
+          "options": [
+            {
+              "value": "00",
+              "label": "00 (12 a.m. / midnight)"
+            },
+            {
+              "value": "01",
+              "label": "01 (1 a.m.)"
+            },
+            {
+              "value": "02",
+              "label": "02 (2 a.m.)"
+            },
+            {
+              "value": "03",
+              "label": "03 (3 a.m.)"
+            },
+            {
+              "value": "04",
+              "label": "04 (4 a.m.)"
+            },
+            {
+              "value": "05",
+              "label": "05 (5 a.m.)"
+            },
+            {
+              "value": "06",
+              "label": "06 (6 a.m.)"
+            },
+            {
+              "value": "07",
+              "label": "07 (7 a.m.)"
+            },
+            {
+              "value": "08",
+              "label": "08 (8 a.m.)"
+            },
+            {
+              "value": "09",
+              "label": "09 (9 a.m.)"
+            },
+            {
+              "value": "10",
+              "label": "10 (10 a.m.)"
+            },
+            {
+              "value": "11",
+              "label": "11 (11 a.m.)"
+            },
+            {
+              "value": "12",
+              "label": "12 (12 p.m. / noon)"
+            },
+            {
+              "value": "13",
+              "label": "13 (1 p.m.)"
+            },
+            {
+              "value": "14",
+              "label": "14 (2 p.m.)"
+            },
+            {
+              "value": "15",
+              "label": "15 (3 p.m.)"
+            },
+            {
+              "value": "16",
+              "label": "16 (4 p.m.)"
+            },
+            {
+              "value": "17",
+              "label": "17 (5 p.m.)"
+            },
+            {
+              "value": "18",
+              "label": "18 (6 p.m.)"
+            },
+            {
+              "value": "19",
+              "label": "19 (7 p.m.)"
+            },
+            {
+              "value": "20",
+              "label": "20 (8 p.m.)"
+            },
+            {
+              "value": "21",
+              "label": "21 (9 p.m.)"
+            },
+            {
+              "value": "22",
+              "label": "22 (10 p.m.)"
+            },
+            {
+              "value": "23",
+              "label": "23 (11 p.m.)"
+            }
+          ],
+          "default": "12"
+        },
+        {
+          "type": "select",
+          "id": "minute",
+          "label": "Minute",
+          "options": [
+            {
+              "value": "00",
+              "label": "00"
+            },
+            {
+              "value": "01",
+              "label": "01"
+            },
+            {
+              "value": "02",
+              "label": "02"
+            },
+            {
+              "value": "03",
+              "label": "03"
+            },
+            {
+              "value": "04",
+              "label": "04"
+            },
+            {
+              "value": "05",
+              "label": "05"
+            },
+            {
+              "value": "06",
+              "label": "06"
+            },
+            {
+              "value": "07",
+              "label": "07"
+            },
+            {
+              "value": "08",
+              "label": "08"
+            },
+            {
+              "value": "09",
+              "label": "09"
+            },
+            {
+              "value": "10",
+              "label": "10"
+            },
+            {
+              "value": "11",
+              "label": "11"
+            },
+            {
+              "value": "12",
+              "label": "12"
+            },
+            {
+              "value": "13",
+              "label": "13"
+            },
+            {
+              "value": "14",
+              "label": "14"
+            },
+            {
+              "value": "15",
+              "label": "15"
+            },
+            {
+              "value": "16",
+              "label": "16"
+            },
+            {
+              "value": "17",
+              "label": "17"
+            },
+            {
+              "value": "18",
+              "label": "18"
+            },
+            {
+              "value": "19",
+              "label": "19"
+            },
+            {
+              "value": "20",
+              "label": "20"
+            },
+            {
+              "value": "21",
+              "label": "21"
+            },
+            {
+              "value": "22",
+              "label": "22"
+            },
+            {
+              "value": "23",
+              "label": "23"
+            },
+            {
+              "value": "24",
+              "label": "24"
+            },
+            {
+              "value": "25",
+              "label": "25"
+            },
+            {
+              "value": "26",
+              "label": "26"
+            },
+            {
+              "value": "27",
+              "label": "27"
+            },
+            {
+              "value": "28",
+              "label": "28"
+            },
+            {
+              "value": "29",
+              "label": "29"
+            },
+            {
+              "value": "30",
+              "label": "30"
+            },
+            {
+              "value": "31",
+              "label": "31"
+            },
+            {
+              "value": "32",
+              "label": "32"
+            },
+            {
+              "value": "33",
+              "label": "33"
+            },
+            {
+              "value": "34",
+              "label": "34"
+            },
+            {
+              "value": "35",
+              "label": "35"
+            },
+            {
+              "value": "36",
+              "label": "36"
+            },
+            {
+              "value": "37",
+              "label": "37"
+            },
+            {
+              "value": "38",
+              "label": "38"
+            },
+            {
+              "value": "39",
+              "label": "39"
+            },
+            {
+              "value": "40",
+              "label": "40"
+            },
+            {
+              "value": "41",
+              "label": "41"
+            },
+            {
+              "value": "42",
+              "label": "42"
+            },
+            {
+              "value": "43",
+              "label": "43"
+            },
+            {
+              "value": "44",
+              "label": "44"
+            },
+            {
+              "value": "45",
+              "label": "45"
+            },
+            {
+              "value": "46",
+              "label": "46"
+            },
+            {
+              "value": "47",
+              "label": "47"
+            },
+            {
+              "value": "48",
+              "label": "48"
+            },
+            {
+              "value": "49",
+              "label": "49"
+            },
+            {
+              "value": "50",
+              "label": "50"
+            },
+            {
+              "value": "51",
+              "label": "51"
+            },
+            {
+              "value": "52",
+              "label": "52"
+            },
+            {
+              "value": "53",
+              "label": "53"
+            },
+            {
+              "value": "54",
+              "label": "54"
+            },
+            {
+              "value": "55",
+              "label": "55"
+            },
+            {
+              "value": "56",
+              "label": "56"
+            },
+            {
+              "value": "57",
+              "label": "57"
+            },
+            {
+              "value": "58",
+              "label": "58"
+            },
+            {
+              "value": "59",
+              "label": "59"
+            }
+          ],
+          "default": "00"
+        },
+        {
+          "type": "select",
+          "id": "style",
+          "label": "Style",
+          "options": [
+            {
+              "value": "numbers",
+              "label": "Numbers"
+            },
+            {
+              "value": "timer",
+              "label": "Timer"
+            },
+            {
+              "value": "grid",
+              "label": "Grid"
+            }
+          ],
+          "default": "timer"
+        },
+        {
+          "type": "select",
+          "id": "number_padding",
+          "label": "Number padding",
+          "options": [
+            {
+              "value": "1.5vw",
+              "label": "S"
+            },
+            {
+              "value": "2vw",
+              "label": "M"
+            },
+            {
+              "value": "2.67vw",
+              "label": "L"
+            },
+            {
+              "value": "3.67vw",
+              "label": "XL"
+            }
+          ],
+          "default": "2vw"
+        },
+        {
+          "type": "select",
+          "id": "size",
+          "label": "Size",
+          "info": "Does not apply in “Grid” style",
+          "options": [
+            {
+              "value": "px-[5.36vw]",
+              "label": "S"
+            },
+            {
+              "value": "px-[3.3vw]",
+              "label": "M"
+            },
+            {
+              "value": "px-[1.72vw]",
+              "label": "L"
+            },
+            {
+              "value": "px-[0.62vw]",
+              "label": "XL"
+            },
+            {
+              "value": "px-0",
+              "label": "Full"
+            }
+          ],
+          "default": "px-[0.62vw]"
+        },
+        {
+          "visible_if": "{{ block.settings.style == 'timer' }}",
+          "type": "checkbox",
+          "id": "flash_separators",
+          "label": "Flash separators",
+          "default": true
+        },
+        {
+          "type": "select",
+          "id": "font",
+          "label": "Font",
+          "options": [
+            {
+              "value": "font-heading",
+              "label": "Heading"
+            },
+            {
+              "value": "font-body",
+              "label": "Body"
+            }
+          ],
+          "default": "font-body"
+        },
+        {
+          "type": "select",
+          "id": "minimum_shown_parts",
+          "label": "Always show",
+          "info": "As the timer counts down, numbers that reach zero will be hidden, unless specified otherwise here.",
+          "options": [
+            {
+              "value": "2",
+              "label": "Minutes, seconds"
+            },
+            {
+              "value": "3",
+              "label": "Hours, minutes, seconds"
+            },
+            {
+              "value": "4",
+              "label": "Days, hours, minutes, seconds"
+            },
+            {
+              "value": "5",
+              "label": "Months, days, hours, minutes, seconds"
+            },
+            {
+              "value": "6",
+              "label": "Years, months, days, hours, minutes, seconds"
+            }
+          ],
+          "default": "3"
+        },
+        {
+          "type": "header",
+          "content": "Date metafield"
+        },
+        {
+          "type": "text",
+          "id": "metafield_ns_and_key",
+          "label": "Metafield namespace and key",
+          "info": "This will override the date set in the section settings above. Supported on Products, Collections, Blogs, Articles, and Pages."
+        }
+      ]
+    },
+    {
+      "type": "spacer",
+      "name": "Spacer",
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "Only appears on desktop"
+        },
+        {
+          "id": "column",
+          "type": "select",
+          "label": "Column",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            }
+          ],
+          "default": "1"
+        }
+      ]
+    },
+    {
+      "type": "newsletter",
+      "name": "Newsletter",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "Any customers who sign up will have an account created for them in Shopify. [View customers](/admin/customers?query=&accepts_marketing=1)"
+        },
+        {
+          "id": "column",
+          "type": "select",
+          "label": "Column",
+          "options": [
+            {
+              "value": "1",
+              "label": "1"
+            },
+            {
+              "value": "2",
+              "label": "2"
+            }
+          ],
+          "default": "1"
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Text",
+          "default": "Sign up for launch updates."
+        },
+        {
+          "type": "header",
+          "content": "Desktop form position"
+        },
+        {
+          "type": "select",
+          "id": "horizontal_position",
+          "label": "Horizontal",
+          "info": "Only applies when text is empty.",
+          "options": [
+            {
+              "value": "justify-start",
+              "label": "Left"
+            },
+            {
+              "value": "justify-center",
+              "label": "Center"
+            },
+            {
+              "value": "justify-end",
+              "label": "Right"
+            }
+          ],
+          "default": "justify-end"
+        },
+        {
+          "type": "select",
+          "id": "vertical_position",
+          "label": "Vertical",
+          "options": [
+            {
+              "value": "lg:self-start",
+              "label": "Top"
+            },
+            {
+              "value": "lg:self-center",
+              "label": "Center"
+            },
+            {
+              "value": "lg:self-end",
+              "label": "Bottom"
+            }
+          ],
+          "default": "lg:self-end"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Countdown timer with image",
+      "category": "Editorial",
+      "blocks": [
+        {
+          "type": "image",
+          "settings": {
+            "column": "1",
+            "deep_inset": false,
+            "media_crop": "0",
+            "fill": true
+          }
+        },
+        {
+          "type": "countdown_timer",
+          "settings": {
+            "column": "2",
+            "style": "timer",
+            "number_padding": "px-[2.67vw]",
+            "size": "px-[3.3vw]",
+            "font": "font-heading",
+            "minimum_shown_parts": "3"
+          }
+        },
+        {
+          "type": "feature_text",
+          "settings": {
+            "column": "2",
+            "mobile_text_scale": 1,
+            "desktop_text_scale": 2,
+            "font": "font-heading",
+            "text_alignment": "text-left",
+            "cta_link": "",
+            "desktop_width": "full",
+            "desktop_alignment": "left"
+          }
+        },
+        {
+          "type": "feature_cta",
+          "settings": {
+            "column": "2",
+            "font": "font-heading",
+            "mobile_text_scale": 0,
+            "desktop_text_scale": 1,
+            "text_alignment": "text-center",
+            "cta_link": "shopify://collections/all",
+            "cta_text": "Reserve now",
+            "cta_style": "button"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

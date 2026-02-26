@@ -1,0 +1,463 @@
+{% liquid
+  assign speed_setting = section.settings.speed | plus: 0
+  assign link = section.settings.link
+  assign text = section.settings.text
+  assign font = section.settings.font
+  assign section_color = section.settings.color_scheme
+  assign direction = section.settings.direction
+  assign repeat_text = section.settings.repeat_text
+  assign separator = section.settings.separator
+  assign separator_repeats = section.settings.separator_repeats
+  assign spacing_between_repeated_separators = section.settings.spacing_between_repeated_separators
+  assign mobile_text_scale = section.settings.mobile_text_scale
+  assign desktop_text_scale = section.settings.desktop_text_scale
+  assign spacing_between_repeated_text = section.settings.spacing_between_repeated_text
+  assign separator_type = section.settings.separator_type
+  assign inline_link_text = section.settings.inline_link_text
+  assign button_style = section.settings.button_style
+  assign html_tag = section.settings.html_tag
+
+  capture text_size_class
+    render 'type-scale-classes', mobile_text_scale: mobile_text_scale, desktop_text_scale: desktop_text_scale
+  endcapture
+%}
+
+<section
+  class="scrolling-text group border-b-gridline border-gridline-color bg-scheme-background text-scheme-text"
+  data-color-scheme="{{ section_color }}"
+>
+  {% render 'scrolling-text',
+    text_size_class: text_size_class,
+    mobile_text_scale: mobile_text_scale,
+    desktop_text_scale: desktop_text_scale,
+    speed_setting: speed_setting,
+    link: link,
+    text: text,
+    font: font,
+    section_color: section_color,
+    direction: direction,
+    repeat_text: repeat_text,
+    separator: separator,
+    separator_repeats: separator_repeats,
+    spacing_between_repeated_separators: spacing_between_repeated_separators,
+    spacing_between_repeated_text: spacing_between_repeated_text,
+    separator_type: separator_type,
+    inline_link_text: inline_link_text,
+    button_style: button_style,
+    html_tag: html_tag
+  %}
+</section>
+
+{% schema %}
+{
+  "name": "Scrolling text",
+  "disabled_on": {
+    "groups": [
+      "aside"
+    ]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "text",
+      "label": "Text",
+      "default": "Use this text to share information about your brand with your customers."
+    },
+    {
+      "type": "url",
+      "id": "link",
+      "label": "Link"
+    },
+    {
+      "type": "range",
+      "id": "mobile_text_scale",
+      "min": -2,
+      "max": 4,
+      "step": 1,
+      "label": "Mobile font size scale",
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "desktop_text_scale",
+      "min": -2,
+      "max": 9,
+      "step": 1,
+      "label": "Desktop font size scale",
+      "default": 7
+    },
+    {
+      "type": "select",
+      "id": "font",
+      "label": "Font",
+      "options": [
+        {
+          "value": "font-heading",
+          "label": "Heading"
+        },
+        {
+          "value": "font-body",
+          "label": "Body"
+        }
+      ],
+      "default": "font-heading"
+    },
+    {
+      "type": "header",
+      "content": "Scroll"
+    },
+    {
+      "type": "paragraph",
+      "content": "If a user has reduced motion enabled the scrolling text will not animate and display as a static banner as a fallback."
+    },
+    {
+      "type": "range",
+      "id": "speed",
+      "min": 20,
+      "max": 400,
+      "step": 10,
+      "label": "Speed",
+      "default": 180
+    },
+    {
+      "type": "select",
+      "id": "direction",
+      "label": "Direction",
+      "options": [
+        {
+          "value": "normal",
+          "label": "Right to left"
+        },
+        {
+          "value": "reverse",
+          "label": "Left to right"
+        }
+      ],
+      "default": "normal"
+    },
+    {
+      "type": "checkbox",
+      "id": "repeat_text",
+      "default": true,
+      "label": "Repeat text",
+      "info": "Automatically repeat text to create an infinity effect."
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text }}",
+      "type": "header",
+      "content": "Repeat text separator"
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text }}",
+      "type": "select",
+      "id": "spacing_between_repeated_text",
+      "label": "Spacing",
+      "options": [
+        {
+          "value": "gap-4 lg:gap-8",
+          "label": "S"
+        },
+        {
+          "value": "gap-10 lg:gap-20",
+          "label": "M"
+        },
+        {
+          "value": "gap-16 lg:gap-32",
+          "label": "L"
+        },
+        {
+          "value": "gap-32 lg:gap-64",
+          "label": "XL"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text }}",
+      "type": "select",
+      "id": "separator_type",
+      "label": "Type",
+      "options": [
+        {
+          "value": "gap",
+          "label": "Gap"
+        },
+        {
+          "value": "symbol",
+          "label": "Character"
+        },
+        {
+          "value": "button",
+          "label": "Button"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text and section.settings.separator_type == 'symbol' }}",
+      "type": "select",
+      "id": "separator",
+      "label": "Character",
+      "options": [
+        {
+          "label": "·",
+          "value": "&middot;"
+        },
+        {
+          "label": "•",
+          "value": "&bullet;"
+        },
+        {
+          "label": "↑",
+          "value": "&uarr;"
+        },
+        {
+          "label": "→",
+          "value": "&rarr;"
+        },
+        {
+          "label": "↓",
+          "value": "&darr;"
+        },
+        {
+          "label": "←",
+          "value": "&larr;"
+        },
+        {
+          "label": "<",
+          "value": "&lt;"
+        },
+        {
+          "label": ">",
+          "value": "&gt;"
+        },
+        {
+          "label": "^",
+          "value": "^"
+        },
+        {
+          "label": "!",
+          "value": "!"
+        },
+        {
+          "label": "¡",
+          "value": "¡"
+        },
+        {
+          "label": "?",
+          "value": "?"
+        },
+        {
+          "label": "/",
+          "value": "/"
+        },
+        {
+          "label": "|",
+          "value": "|"
+        },
+        {
+          "label": "\\",
+          "value": "\\"
+        },
+        {
+          "label": ":",
+          "value": ":"
+        },
+        {
+          "label": "∞",
+          "value": "&infin;"
+        },
+        {
+          "label": "§",
+          "value": "&sect;"
+        },
+        {
+          "label": "#",
+          "value": "&num;"
+        },
+        {
+          "label": "%",
+          "value": "%"
+        },
+        {
+          "label": "@",
+          "value": "@"
+        },
+        {
+          "label": "№",
+          "value": "&numero;"
+        },
+        {
+          "label": "×",
+          "value": "&times;"
+        },
+        {
+          "label": "÷",
+          "value": "&divide;"
+        },
+        {
+          "label": "+",
+          "value": "&plus;"
+        },
+        {
+          "label": "−",
+          "value": "&minus;"
+        },
+        {
+          "label": "=",
+          "value": "&equals;"
+        },
+        {
+          "label": "~",
+          "value": "&tilde;"
+        },
+        {
+          "label": "–",
+          "value": "&ndash;"
+        },
+        {
+          "label": "—",
+          "value": "&mdash;"
+        },
+        {
+          "label": "&",
+          "value": "&amp;"
+        },
+        {
+          "label": "*",
+          "value": "&ast;"
+        },
+        {
+          "label": "✓",
+          "value": "&check;"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text and section.settings.separator_type == 'symbol' }}",
+      "type": "range",
+      "id": "separator_repeats",
+      "label": "Repeat character",
+      "min": 1,
+      "max": 6,
+      "unit": "x",
+      "default": 1
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text and section.settings.separator_type == 'symbol' }}",
+      "type": "select",
+      "id": "spacing_between_repeated_separators",
+      "label": "Spacing between repeated characters",
+      "options": [
+        {
+          "label": "None",
+          "value": ""
+        },
+        {
+          "label": "Hair",
+          "value": "&hairsp;"
+        },
+        {
+          "label": "Thin",
+          "value": "&thinsp;"
+        },
+        {
+          "label": "Punctuation",
+          "value": "&puncsp;"
+        },
+        {
+          "label": "4-per-em",
+          "value": "&emsp14;"
+        },
+        {
+          "label": "3-per-em",
+          "value": "&emsp13;"
+        },
+        {
+          "label": "Figure",
+          "value": "&numsp;"
+        },
+        {
+          "label": "En",
+          "value": "&ensp;"
+        },
+        {
+          "label": "Em",
+          "value": "&emsp;"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text and section.settings.separator_type == 'button' }}",
+      "type": "text",
+      "id": "inline_link_text",
+      "label": "Button label",
+      "info": "Provide a URL in the link setting above.",
+      "default": "Button label"
+    },
+    {
+      "visible_if": "{{ section.settings.repeat_text and section.settings.separator_type == 'button' }}",
+      "type": "select",
+      "id": "button_style",
+      "label": "Button style",
+      "default": "secondary",
+      "options": [
+        {
+          "value": "primary",
+          "label": "Primary"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "HTML tag"
+    },
+    {
+      "type": "paragraph",
+      "content": "When using scrolling text for a page heading, set the appropriate heading tag."
+    },
+    {
+      "type": "select",
+      "id": "html_tag",
+      "label": "HTML tag",
+      "options": [
+        {
+          "value": "",
+          "label": "None"
+        },
+        {
+          "value": "h1",
+          "label": "H1"
+        },
+        {
+          "value": "h2",
+          "label": "H2"
+        },
+        {
+          "value": "h3",
+          "label": "H3"
+        }
+      ],
+      "default": ""
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Scrolling text",
+      "category": "Text"
+    }
+  ]
+}
+{% endschema %}

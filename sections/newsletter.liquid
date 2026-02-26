@@ -1,0 +1,128 @@
+{% render 'newsletter',
+  section_color: section.settings.color_scheme,
+  text_size_class: section.settings.text_size,
+  title_text_size_class: section.settings.title_text_size,
+  title: section.settings.newsletter_title,
+  text: section.settings.newsletter_text,
+  subheading: section.settings.newsletter_subheading,
+  section_id: section.id,
+  form_position: section.settings.form_position
+%}
+
+{% schema %}
+{
+  "name": "Newsletter",
+  "disabled_on": {
+    "groups": [
+      "header",
+      "footer",
+      "aside"
+    ]
+  },
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Any customers who sign up will have an account created for them in Shopify. [View customers](/admin/customers?query=&accepts_marketing=1)"
+    },
+    {
+      "visible_if": "{{ section.settings.newsletter_title != blank }}",
+      "type": "text",
+      "id": "newsletter_subheading",
+      "label": "Subheading"
+    },
+    {
+      "type": "text",
+      "id": "newsletter_title",
+      "label": "Heading"
+    },
+    {
+      "visible_if": "{{ section.settings.newsletter_title != blank }}",
+      "type": "select",
+      "id": "title_text_size",
+      "label": "Heading text size",
+      "options": [
+        {
+          "value": "text-heading-standard",
+          "label": "Standard heading"
+        },
+        {
+          "value": "text-heading-feature",
+          "label": "Feature heading"
+        },
+        {
+          "value": "text-heading-secondary",
+          "label": "Secondary heading"
+        }
+      ],
+      "default": "text-heading-standard"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "newsletter_text",
+      "label": "Text",
+      "default": "Receive special offers and first look at new products."
+    },
+    {
+      "visible_if": "{{ section.settings.newsletter_text != blank }}",
+      "type": "select",
+      "id": "text_size",
+      "label": "Text size",
+      "options": [
+        {
+          "value": "text-sm",
+          "label": "S"
+        },
+        {
+          "value": "text-base",
+          "label": "M"
+        },
+        {
+          "value": "text-lg",
+          "label": "L"
+        },
+        {
+          "value": "text-xl",
+          "label": "XL"
+        }
+      ],
+      "default": "text-base"
+    },
+    {
+      "type": "select",
+      "id": "form_position",
+      "label": "Vertical position on desktop",
+      "options": [
+        {
+          "value": "lg:self-start",
+          "label": "Top"
+        },
+        {
+          "value": "lg:self-center",
+          "label": "Center"
+        },
+        {
+          "value": "lg:self-end",
+          "label": "Bottom"
+        }
+      ],
+      "default": "lg:self-end"
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Newsletter",
+      "category": "Forms"
+    }
+  ]
+}
+{% endschema %}

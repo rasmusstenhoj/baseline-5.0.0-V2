@@ -1,0 +1,186 @@
+<section
+  class="overflow-hidden border-b-gridline border-gridline-color bg-scheme-background text-scheme-text"
+  data-color-scheme="{{ section.settings.color_scheme }}"
+>
+  <div class="px-section-horizontal-spacing py-section-vertical-spacing {% if section.settings.section_header_space_above %}pt-theme-double{% endif %}">
+    {% render 'rich-text',
+      text_align: section.settings.text_alignment,
+      desktop_alignment: section.settings.desktop_alignment,
+      desktop_width: section.settings.desktop_width,
+      title: section.settings.title,
+      text: section.settings.text,
+      cta_link: section.settings.cta_link,
+      cta_text: section.settings.cta_text,
+      cta_style: section.settings.cta_style,
+      cta_button_style: section.settings.cta_button_style,
+      subheading: section.settings.subheading
+    %}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Rich text",
+  "disabled_on": {
+    "groups": [
+      "header",
+      "footer",
+      "aside"
+    ]
+  },
+  "settings": [
+    {
+      "visible_if": "{{ section.settings.title != blank }}",
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading"
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Text",
+      "default": "<p>Use this text to share information about your brand with your customers. Describe a product, share announcements, or welcome customers to your store.</p>"
+    },
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "label": "Text alignment",
+      "options": [
+        {
+          "value": "text-left",
+          "label": "Left"
+        },
+        {
+          "value": "text-center",
+          "label": "Center"
+        },
+        {
+          "value": "text-right",
+          "label": "Right"
+        }
+      ],
+      "default": "text-left"
+    },
+    {
+      "type": "checkbox",
+      "id": "section_header_space_above",
+      "label": "Add space above",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Call to action"
+    },
+    {
+      "type": "url",
+      "id": "cta_link",
+      "label": "Link"
+    },
+    {
+      "type": "text",
+      "id": "cta_text",
+      "label": "Text",
+      "default": "Shop now"
+    },
+    {
+      "type": "select",
+      "id": "cta_style",
+      "label": "Style",
+      "options": [
+        {
+          "value": "link",
+          "label": "Link"
+        },
+        {
+          "value": "button",
+          "label": "Button"
+        }
+      ],
+      "default": "link"
+    },
+    {
+      "visible_if": "{{ section.settings.cta_style == 'button' }}",
+      "type": "select",
+      "id": "cta_button_style",
+      "label": "Button style",
+      "default": "secondary",
+      "options": [
+        {
+          "value": "primary",
+          "label": "Primary"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Desktop layout"
+    },
+    {
+      "type": "select",
+      "id": "desktop_width",
+      "label": "Width",
+      "options": [
+        {
+          "value": "full",
+          "label": "Full"
+        },
+        {
+          "value": "two_thirds",
+          "label": "Two thirds"
+        },
+        {
+          "value": "half",
+          "label": "Half"
+        }
+      ],
+      "default": "full"
+    },
+    {
+      "type": "select",
+      "id": "desktop_alignment",
+      "label": "Position",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "left",
+      "info": "Does not apply when width is set to full."
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Rich text",
+      "category": "Text"
+    }
+  ]
+}
+{% endschema %}

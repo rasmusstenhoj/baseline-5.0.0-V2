@@ -1,0 +1,370 @@
+{% render 'featured-links',
+  section_color: section.settings.color_scheme,
+  height: section.settings.height,
+  content_alignment: section.settings.content_alignment,
+  product_list: section.settings.product_list,
+  display: section.settings.display,
+  paragraph_separator: section.settings.paragraph_separator,
+  text_align: section.settings.text_alignment,
+  show_media_on_hover: section.settings.show_media_on_hover,
+  hover_media_position: 'under',
+  enable_default_media: section.settings.enable_default_media,
+  dim_nonhovered_links: section.settings.dim_nonhovered_links,
+  show_index_as_superscript: section.settings.show_index_as_superscript,
+  section_media_type: section.settings.section_media_type,
+  section_image: section.settings.image,
+  section_video: section.settings.video,
+  display_link_as_button: section.settings.display_link_as_button,
+  uppercase_link_title: section.settings.uppercase_link_title,
+  mobile_text_scale: section.settings.mobile_text_scale,
+  desktop_text_scale: section.settings.desktop_text_scale,
+  button_style: section.settings.button_style,
+  desktop_width: section.settings.desktop_width,
+  use_color_scheme_override: section.settings.use_color_scheme_override,
+  color_scheme_override: section.settings.color_scheme_override
+%}
+
+{% schema %}
+{
+  "name": "Product links over image",
+  "disabled_on": {
+    "groups": [
+      "header",
+      "footer",
+      "aside"
+    ]
+  },
+  "settings": [
+    {
+      "type": "select",
+      "id": "height",
+      "label": "Minimum height",
+      "options": [
+        {
+          "value": "natural",
+          "label": "Natural",
+          "group": "No cropping"
+        },
+        {
+          "value": "full_screen",
+          "label": "Full screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "three_quarters_screen",
+          "label": "3/4 screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "two_thirds_screen",
+          "label": "2/3 screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "half_screen",
+          "label": "1/2 screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "600px",
+          "label": "600px",
+          "group": "Fixed height"
+        },
+        {
+          "value": "700px",
+          "label": "700px",
+          "group": "Fixed height"
+        },
+        {
+          "value": "800px",
+          "label": "800px",
+          "group": "Fixed height"
+        },
+        {
+          "value": "standard",
+          "label": "Standard (4:3)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "widescreen",
+          "label": "Widescreen (16:9)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "cinema",
+          "label": "Cinema (1.85:1)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "ultrawide",
+          "label": "Ultrawide (2.35:1)",
+          "group": "Aspect ratios"
+        }
+      ],
+      "default": "full_screen"
+    },
+    {
+      "type": "select",
+      "id": "content_alignment",
+      "label": "Align content",
+      "options": [
+        {
+          "value": "justify-start",
+          "label": "Top"
+        },
+        {
+          "value": "justify-center",
+          "label": "Center"
+        },
+        {
+          "value": "justify-end",
+          "label": "Bottom"
+        }
+      ],
+      "default": "justify-start"
+    },
+    {
+      "type": "product_list",
+      "id": "product_list",
+      "label": "Products"
+    },
+    {
+      "type": "range",
+      "id": "mobile_text_scale",
+      "min": -2,
+      "max": 4,
+      "step": 1,
+      "label": "Mobile font size scale",
+      "default": 2
+    },
+    {
+      "type": "range",
+      "id": "desktop_text_scale",
+      "min": -2,
+      "max": 9,
+      "step": 1,
+      "label": "Desktop font size scale",
+      "default": 7
+    },
+    {
+      "type": "select",
+      "id": "display",
+      "label": "Display",
+      "options": [
+        {
+          "value": "list",
+          "label": "List"
+        },
+        {
+          "value": "paragraph",
+          "label": "Paragraph"
+        },
+        {
+          "value": "list_mobile_paragraph_desktop",
+          "label": "List mobile, paragraph desktop"
+        }
+      ],
+      "default": "list"
+    },
+    {
+      "visible_if": "{{ section.settings.display != 'list' }}",
+      "type": "select",
+      "id": "paragraph_separator",
+      "label": "Paragraph word separator",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "hyphen",
+          "label": "Hyphen"
+        },
+        {
+          "value": "emdash",
+          "label": "Emdash"
+        },
+        {
+          "value": "dot",
+          "label": "Dot"
+        },
+        {
+          "value": "bullet",
+          "label": "Bullet"
+        }
+      ],
+      "default": "emdash"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_index_as_superscript",
+      "label": "Show index as superscript",
+      "default": false
+    },
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "label": "Text alignment",
+      "options": [
+        {
+          "value": "text-left",
+          "label": "Left"
+        },
+        {
+          "value": "text-center",
+          "label": "Center"
+        },
+        {
+          "value": "text-right",
+          "label": "Right"
+        }
+      ],
+      "default": "text-left"
+    },
+    {
+      "type": "select",
+      "id": "desktop_width",
+      "label": "Maximum desktop width",
+      "info": "Applies to display \"Paragraph\"",
+      "options": [
+        {
+          "value": "lg:w-9/12",
+          "label": "9/12"
+        },
+        {
+          "value": "lg:w-10/12",
+          "label": "10/12"
+        },
+        {
+          "value": "lg:w-11/12",
+          "label": "11/12"
+        },
+        {
+          "value": "lg:w-full",
+          "label": "Full"
+        }
+      ],
+      "default": "lg:w-full"
+    },
+    {
+      "visible_if": "{{ settings.heading_uppercase == false }}",
+      "type": "checkbox",
+      "id": "uppercase_link_title",
+      "label": "Uppercase",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "show_media_on_hover",
+      "label": "Show product image on hover",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "dim_nonhovered_links",
+      "label": "Dim other links on hover",
+      "info": "Does not apply to links as buttons with accent background color",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Default media"
+    },
+    {
+      "visible_if": "{{ section.settings.show_media_on_hover }}",
+      "type": "paragraph",
+      "content": "Visible until a link is hovered"
+    },
+    {
+      "id": "enable_default_media",
+      "label": "Enable default media",
+      "type": "checkbox",
+      "default": true
+    },
+    {
+      "id": "section_media_type",
+      "type": "select",
+      "label": "Type",
+      "options": [
+        {
+          "value": "image",
+          "label": "Image"
+        },
+        {
+          "value": "video",
+          "label": "Video"
+        }
+      ]
+    },
+    {
+      "visible_if": "{{ section.settings.section_media_type == 'image' }}",
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image"
+    },
+    {
+      "visible_if": "{{ section.settings.section_media_type == 'video' }}",
+      "type": "video",
+      "id": "video",
+      "label": "Video"
+    },
+    {
+      "type": "header",
+      "content": "Buttons"
+    },
+    {
+      "type": "checkbox",
+      "id": "display_link_as_button",
+      "label": "Show links as buttons",
+      "default": false
+    },
+    {
+      "visible_if": "{{ section.settings.display_link_as_button }}",
+      "type": "select",
+      "id": "button_style",
+      "label": "Button style",
+      "default": "secondary",
+      "options": [
+        {
+          "value": "primary",
+          "label": "Primary"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    },
+    {
+      "visible_if": "{{ section.settings.enable_default_media == false and section.settings.show_media_on_hover == true }}",
+      "type": "checkbox",
+      "id": "use_color_scheme_override",
+      "label": "Use custom color scheme when media is visible",
+      "default": false
+    },
+    {
+      "visible_if": "{{ section.settings.enable_default_media == false and section.settings.show_media_on_hover == true }}",
+      "type": "color_scheme",
+      "id": "color_scheme_override",
+      "default": "scheme2",
+      "label": "Custom color scheme"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Product links over image",
+      "category": "Products"
+    }
+  ]
+}
+{% endschema %}

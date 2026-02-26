@@ -1,0 +1,556 @@
+{%- liquid
+  assign section_color = section.settings.color_scheme
+  assign content_color_scheme = section.settings.content_color_scheme
+  assign content_position = section.settings.content_position
+  assign image = section.settings.image
+  assign image_mobile = section.settings.image_mobile
+  assign image_position = section.settings.image_position
+  assign deep_inset = section.settings.deep_inset
+  assign title = section.settings.title
+  assign text = section.settings.text
+  assign subheading = section.settings.subheading
+  assign text_alignment = section.settings.text_alignment
+  assign content_width_desktop = section.settings.content_width_desktop
+  assign cta_link = section.settings.cta_link
+  assign cta_text = section.settings.cta_text
+  assign cta_style = section.settings.cta_style
+  assign cta_button_style = section.settings.cta_button_style
+  assign product_list = section.settings.product_list
+  assign enable_quick_buy = section.settings.enable_quick_buy
+  assign product_tile_type = section.settings.product_tile_type
+  assign grid_width_desktop = section.settings.grid_width_desktop
+
+  assign counter = ''
+
+  if section.index == 1
+    assign preload = true
+  else
+    assign preload = false
+  endif
+
+  assign loading = 'lazy'
+  if section.index <= 3
+    assign loading = 'eager'
+  endif
+
+  assign grid_classes = 'col-start-1 row-start-1 h-full w-full'
+  assign text_inset_class = 'p-grid-media'
+
+  if deep_inset
+    assign image_inset_class = 'p-deep-inset-media'
+  else
+    assign image_inset_class = 'p-grid-media'
+  endif
+
+  if product_list.count == 4 or product_list.count == 0
+    assign product_grid_cols_class = 'lg:grid-cols-2'
+  else
+    assign product_grid_cols_class = 'lg:grid-cols-1'
+  endif
+
+  if image_position == 'right'
+    if grid_width_desktop == 'half'
+      assign image_col_position_desktop = 'lg:col-start-7 lg:col-end-13'
+    else
+      if product_list.count == 4 or product_list.count == 0
+        assign image_col_position_desktop = 'lg:col-start-9 lg:col-end-13'
+      else
+        assign image_col_position_desktop = 'lg:col-start-5 lg:col-end-13'
+      endif
+    endif
+  endif
+
+  if grid_width_desktop == 'half'
+    assign image_cols_class = 'lg:col-span-6'
+    assign product_container_cols_class = 'lg:col-span-6'
+    assign sizes = '(min-width: 1024px) calc(100vw / 2), 100vw'
+    if product_list.count == 4 or product_list.count == 0
+      assign product_tile_sizes = '(min-width: 1024px) calc(100vw / 4), 100vw'
+    else
+      assign product_tile_sizes = '(min-width: 1024px) calc(100vw / 2), 100vw'
+    endif
+  else
+    assign product_tile_sizes = '(min-width: 1024px) calc(100vw / 3), 100vw'
+    if product_list.count == 4 or product_list.count == 0
+      assign image_cols_class = 'lg:col-span-4'
+      assign product_container_cols_class = 'lg:col-span-8'
+      assign sizes = '(min-width: 1024px) calc(100vw / 3), 100vw'
+    else
+      assign image_cols_class = 'lg:col-span-8'
+      assign product_container_cols_class = 'lg:col-span-4'
+      assign sizes = '(min-width: 1024px) calc(100vw * 2 / 3), 100vw'
+    endif
+  endif
+
+  if product_tile_type == 'standard'
+    unless settings.product_standard_tile_image_crop == 'natural'
+      assign ratio = settings.product_standard_tile_image_crop | plus: 0
+    endunless
+  else
+    unless settings.product_overlay_tile_image_crop == 'natural'
+      assign ratio = settings.product_overlay_tile_image_crop | plus: 0
+    endunless
+  endif
+-%}
+
+<section
+  class="grid grid-flow-row-dense grid-cols-1 gap-gutter overflow-hidden border-b-gridline border-gridline-color bg-gridline-color lg:grid-cols-12"
+  data-color-scheme="{{ section_color }}"
+>
+  <div
+    class="relative grid grid-cols-1 grid-rows-1 bg-scheme-background text-scheme-text {{ image_col_position_desktop }} {{ image_cols_class }} {% if cta_link != blank %}group/zoom{% endif %}"
+  >
+    <div
+      class="{{ grid_classes }} {{ image_inset_class }}"
+    >
+      <div
+        class="relative w-full lg:h-full "
+      >
+        {% if image != blank %}
+          <!-- Desktop Image -->
+          <div class="hidden lg:block lg:h-full lg:w-full">
+            {% render 'image-fill',
+              image: image,
+              loading: loading,
+              preload: preload,
+              sizes: sizes,
+              contain: false,
+              is_deep_inset: deep_inset
+            %}
+          </div>
+
+          <!-- Mobile Image -->
+          <div class="block h-auto w-full lg:hidden">
+            {% if image_mobile != blank %}
+              {% assign image = image_mobile %}
+            {% endif %}
+            {% render 'image',
+              image: image,
+              loading: loading,
+              preload: preload,
+              sizes: sizes,
+              contain: false,
+              is_deep_inset: deep_inset
+            %}
+          </div>
+        {% else %}
+          {%- render 'image-fill-placeholder',
+            is_deep_inset: deep_inset,
+            type: 'lifestyle-1'
+          -%}
+        {% endif %}
+      </div>
+    </div>
+
+    <div
+      class="z-10 text-scheme-text {{ grid_classes }} {{ text_inset_class }}"
+      data-color-scheme="{{ content_color_scheme }}"
+    >
+      {% if cta_link != blank %}
+        <a
+          href="{{ cta_link }}"
+          class="group absolute inset-0 z-11 cursor-pointer"
+        >
+      {% endif %}
+      <div class="flex h-full w-full p-media-content-less-grid-media {{ content_position }}">
+        <div
+          class="{{ content_width_desktop }} {{ text_alignment }}"
+        >
+          {% render 'section-content',
+            title: title,
+            title_size_class: section.settings.heading_size,
+            subheading: subheading,
+            text: text
+          %}
+
+          {% if cta_link != blank and cta_text != '' %}
+            <div class="mt-cta text-0">
+              {%- case cta_style -%}
+                {%- when 'link' -%}
+                  <span
+                    class="theme-link inline-block text-scheme-text group-hover:text-scheme-accent"
+                  >
+                    {{- cta_text -}}
+                  </span>
+                {%- when 'button' -%}
+                  <span
+                    class="theme-button {% if cta_button_style == 'secondary' %}theme-button--secondary{% endif %} theme-button--in-group inline-block"
+                  >
+                    {{- cta_text -}}
+                  </span>
+              {%- endcase -%}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      {% if cta_link != blank %}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div
+    class="grid bg-scheme-background text-scheme-text {{ product_container_cols_class }}"
+  >
+    <ul class="grid {{ product_grid_cols_class }} -mb-gridline gap-gutter bg-gridline-color">
+      {%- for product in product_list -%}
+        {% liquid
+          assign counter = counter | plus: 1
+
+          if section.index <= 3
+            assign loading = 'eager'
+          else
+            assign loading = 'lazy'
+          endif
+
+          if section.index == 1 and forloop.first
+            assign preload = true
+          else
+            assign preload = false
+          endif
+        %}
+
+        <li class="bg-scheme-background text-scheme-text">
+          {% if product_tile_type == 'text_overlay' %}
+            {%- render 'product-tile-text-overlay',
+              product: product,
+              sizes: product_tile_sizes,
+              preload: preload,
+              loading: loading,
+              section_color: section_color,
+              product_tile_type: product_tile_type
+            -%}
+          {% else %}
+            {%- render 'product-tile-standard',
+              product: product,
+              sizes: product_tile_sizes,
+              preload: preload,
+              loading: loading,
+              section_color: section_color,
+              enable_quick_buy: enable_quick_buy,
+              product_tile_type: product_tile_type
+            -%}
+          {% endif %}
+        </li>
+      {%- else -%}
+        {% for i in (1..4) %}
+          <li class="bg-scheme-background text-scheme-text">
+            {% capture current %}{% cycle 1, 2, 3, 4, 5, 6 %}{% endcapture %}
+            {%- render 'product-tile-placeholder',
+              product_tile_type: product_tile_type,
+              current: current,
+              ratio: ratio
+            -%}
+          </li>
+        {% endfor %}
+      {%- endfor -%}
+    </ul>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Image with product grid",
+  "disabled_on": {
+    "groups": [
+      "header",
+      "footer",
+      "aside"
+    ]
+  },
+  "settings": [
+    {
+      "id": "image",
+      "type": "image_picker",
+      "info": "Image height will adapt to the product grid height on desktop.",
+      "label": "Image"
+    },
+    {
+      "id": "image_mobile",
+      "type": "image_picker",
+      "label": "Mobile image"
+    },
+    {
+      "type": "select",
+      "id": "image_position",
+      "label": "Image position on desktop",
+      "default": "left",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "deep_inset",
+      "label": "Deep inset",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Products"
+    },
+    {
+      "type": "product_list",
+      "id": "product_list",
+      "label": "Product list",
+      "limit": 4
+    },
+    {
+      "id": "product_tile_type",
+      "type": "select",
+      "label": "Tile type",
+      "options": [
+        {
+          "value": "standard",
+          "label": "Standard"
+        },
+        {
+          "value": "text_overlay",
+          "label": "Text overlay"
+        }
+      ],
+      "default": "standard"
+    },
+    {
+      "type": "select",
+      "id": "grid_width_desktop",
+      "label": "Grid width on desktop",
+      "default": "half",
+      "options": [
+        {
+          "value": "half",
+          "label": "Half"
+        },
+        {
+          "value": "thirds",
+          "label": "One third (1–3 products) / Two thirds (4 products)"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Quick buy"
+    },
+    {
+      "type": "paragraph",
+      "content": "Only supported when product tile type is set to \"Standard\"."
+    },
+    {
+      "visible_if": "{{ section.settings.product_tile_type == 'standard' }}",
+      "type": "checkbox",
+      "id": "enable_quick_buy",
+      "label": "Enable quick buy"
+    },
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "visible_if": "{{ section.settings.title != blank }}",
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "Heading"
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Text",
+      "default": "<p>Use this text to share information about your brand with your customers. Describe a product, share announcements, or welcome customers to your store.</p>"
+    },
+    {
+      "type": "select",
+      "id": "heading_size",
+      "label": "Heading size",
+      "options": [
+        {
+          "value": "text-base",
+          "label": "Body"
+        },
+        {
+          "value": "text-heading-standard",
+          "label": "Standard heading"
+        },
+        {
+          "value": "text-heading-feature",
+          "label": "Feature heading"
+        },
+        {
+          "value": "text-heading-secondary",
+          "label": "Secondary heading"
+        }
+      ],
+      "default": "text-heading-secondary"
+    },
+    {
+      "type": "select",
+      "id": "content_position",
+      "label": "Position",
+      "options": [
+        {
+          "value": "justify-start items-start text-left",
+          "label": "Top left"
+        },
+        {
+          "value": "justify-center items-start text-center",
+          "label": "Top center"
+        },
+        {
+          "value": "justify-end items-start text-right",
+          "label": "Top right"
+        },
+        {
+          "value": "justify-start items-center text-left",
+          "label": "Left"
+        },
+        {
+          "value": "justify-center items-center text-center",
+          "label": "Center"
+        },
+        {
+          "value": "justify-end items-center text-right",
+          "label": "Right"
+        },
+        {
+          "value": "justify-start items-end text-left",
+          "label": "Bottom left"
+        },
+        {
+          "value": "justify-center items-end text-center",
+          "label": "Bottom center"
+        },
+        {
+          "value": "justify-end items-end text-right",
+          "label": "Bottom right"
+        }
+      ],
+      "default": "justify-start items-start text-left"
+    },
+    {
+      "type": "select",
+      "id": "content_width_desktop",
+      "label": "Width on desktop",
+      "default": "lg:w-2/3",
+      "options": [
+        {
+          "value": "lg:w-1/3",
+          "label": "One third"
+        },
+        {
+          "value": "lg:w-1/2",
+          "label": "One half"
+        },
+        {
+          "value": "lg:w-2/3",
+          "label": "Two thirds"
+        },
+        {
+          "value": "lg:w-full",
+          "label": "Full width"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "label": "Text alignment",
+      "options": [
+        {
+          "value": "text-left",
+          "label": "Left"
+        },
+        {
+          "value": "text-center",
+          "label": "Center"
+        },
+        {
+          "value": "text-right",
+          "label": "Right"
+        }
+      ],
+      "default": "text-left"
+    },
+    {
+      "type": "color_scheme",
+      "id": "content_color_scheme",
+      "label": "Content color scheme",
+      "default": "scheme1"
+    },
+    {
+      "type": "header",
+      "content": "Call to action"
+    },
+    {
+      "type": "url",
+      "id": "cta_link",
+      "label": "Link"
+    },
+    {
+      "type": "text",
+      "id": "cta_text",
+      "label": "Text"
+    },
+    {
+      "type": "select",
+      "id": "cta_style",
+      "label": "Style",
+      "options": [
+        {
+          "value": "link",
+          "label": "Link"
+        },
+        {
+          "value": "button",
+          "label": "Button"
+        }
+      ],
+      "default": "link"
+    },
+    {
+      "visible_if": "{{ section.settings.cta_style == 'button' }}",
+      "type": "select",
+      "id": "cta_button_style",
+      "label": "Button style",
+      "default": "secondary",
+      "options": [
+        {
+          "value": "primary",
+          "label": "Primary"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Image with product grid",
+      "category": "Products"
+    }
+  ]
+}
+{% endschema %}

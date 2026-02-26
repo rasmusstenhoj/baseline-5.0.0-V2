@@ -1,0 +1,202 @@
+{% comment %}theme-check-disable MissingTemplate{% endcomment %}
+{%- liquid
+  assign section_color = section.settings.color_scheme | default: 'scheme1'
+  assign video = section.settings.video
+  assign deep_inset = section.settings.deep_inset
+  assign video_ratio = video.aspect_ratio | default: '1.777'
+
+  assign poster_preload = false
+  assign poster_loading = 'lazy'
+
+  if section.index == 1
+    assign poster_preload = true
+  endif
+
+  if section.index <= 3
+    assign poster_loading = 'eager'
+  endif
+
+  if deep_inset
+    assign media_padding_class = 'p-deep-inset-media'
+  else
+    assign media_padding_class = 'p-grid-media'
+  endif
+
+  capture size_classes
+    render 'banner-media-classes', image_size: section.settings.height
+  endcapture
+-%}
+
+<section
+  class="video overflow-hidden border-b-gridline border-gridline-color bg-scheme-background text-scheme-text"
+  data-color-scheme="{{ section_color }}"
+  style="--media-aspect-ratio: {{ video_ratio }};"
+>
+  {% if section.settings.title != '' %}
+    {%- render 'section-header',
+      title: section.settings.title,
+      section_color: section_color,
+      subheading: section.settings.subheading
+    -%}
+  {% endif %}
+
+  <div
+    class="{{ media_padding_class }}"
+  >
+    <div class="relative {{ size_classes }}">
+      {%- render 'video',
+        video: video,
+        mode: section.settings.mode,
+        container_id: section.id,
+        fill: true,
+        height: section.settings.height,
+        poster_preload: poster_preload,
+        poster_loading: poster_loading,
+        is_deep_inset: deep_inset
+      -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Video",
+  "disabled_on": {
+    "groups": [
+      "header",
+      "footer",
+      "aside"
+    ]
+  },
+  "settings": [
+    {
+      "id": "video",
+      "type": "video",
+      "label": "Video",
+      "info": "If set, will be used instead of the embedded video option. Offers improved performance."
+    },
+    {
+      "type": "checkbox",
+      "id": "deep_inset",
+      "label": "Deep inset",
+      "default": false
+    },
+    {
+      "type": "select",
+      "id": "mode",
+      "label": "Mode",
+      "options": [
+        {
+          "value": "preview",
+          "label": "Preview"
+        },
+        {
+          "value": "autoplay",
+          "label": "Autoplay"
+        }
+      ],
+      "default": "preview",
+      "info": "Autoplay will not play sound or show controls."
+    },
+    {
+      "type": "select",
+      "id": "height",
+      "label": "Height",
+      "options": [
+        {
+          "value": "natural",
+          "label": "Natural",
+          "group": "No cropping"
+        },
+        {
+          "value": "full_screen",
+          "label": "Full screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "three_quarters_screen",
+          "label": "3/4 screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "two_thirds_screen",
+          "label": "2/3 screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "half_screen",
+          "label": "1/2 screen",
+          "group": "Screen height"
+        },
+        {
+          "value": "600px",
+          "label": "600px",
+          "group": "Fixed height"
+        },
+        {
+          "value": "700px",
+          "label": "700px",
+          "group": "Fixed height"
+        },
+        {
+          "value": "800px",
+          "label": "800px",
+          "group": "Fixed height"
+        },
+        {
+          "value": "standard",
+          "label": "Standard (4:3)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "widescreen",
+          "label": "Widescreen (16:9)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "cinema",
+          "label": "Cinema (1.85:1)",
+          "group": "Aspect ratios"
+        },
+        {
+          "value": "ultrawide",
+          "label": "Ultrawide (2.35:1)",
+          "group": "Aspect ratios"
+        }
+      ],
+      "default": "widescreen"
+    },
+    {
+      "type": "header",
+      "content": "Header"
+    },
+    {
+      "visible_if": "{{ section.settings.title != blank }}",
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading"
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Video",
+      "category": "Editorial"
+    }
+  ]
+}
+{% endschema %}

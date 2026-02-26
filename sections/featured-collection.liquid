@@ -1,0 +1,294 @@
+{%- liquid
+  assign section_color = section.settings.color_scheme
+  assign collection = section.settings.collection
+  assign product_limit = section.settings.grid | times: section.settings.rows
+  assign products_per_row = section.settings.grid
+  assign products_per_row_mobile = section.settings.grid_mobile | plus: 0
+  assign show_view_all = section.settings.show_view_all
+  assign view_all_position = settings.view_all_position
+  assign enable_quick_buy = section.settings.enable_quick_buy
+  assign product_tile_type = section.settings.product_tile_type
+  assign view_all_text = 'collections.general.view_all' | t
+  assign counter = 0
+  assign grid_cols = 12
+
+  case products_per_row
+    when 2
+      assign desktop_col_span = 'lg:col-span-6'
+      assign sizes = '(min-width: 1024px) calc(100vw / 12 * 6)'
+    when 3
+      assign desktop_col_span = 'lg:col-span-4'
+      assign sizes = '(min-width: 1024px) calc(100vw / 12 * 4)'
+    when 4
+      assign desktop_col_span = 'lg:col-span-3'
+      assign sizes = '(min-width: 1024px) calc(100vw / 12 * 3)'
+    when 5
+      assign grid_cols = 10
+      assign desktop_col_span = 'lg:col-span-2'
+      assign sizes = '(min-width: 1024px) calc(100vw / 10 * 2)'
+  endcase
+
+  case products_per_row_mobile
+    when 1
+      assign mobile_col_span = 'col-span-2'
+      assign sizes = sizes | append: ', 50vw'
+    when 2
+      assign mobile_col_span = 'col-span-1'
+      assign sizes = sizes | append: ', 100vw'
+  endcase
+
+  assign desktop_grid_class = 'lg:grid-cols-' | append: grid_cols
+
+  assign has_view_all_button_top = false
+  assign has_view_all_button_bottom = false
+
+  if show_view_all and settings.section_title_align == 'center'
+    if view_all_position == 'top'
+      assign has_view_all_button_top = true
+    else
+      assign has_view_all_button_bottom = true
+    endif
+  endif
+-%}
+
+<section
+  class="featured-collection border-b-gridline border-gridline-color"
+  data-color-scheme="{{ section_color }}"
+>
+  {% liquid
+    if section.settings.title != ''
+      render 'section-header', title: section.settings.title, show_link: show_view_all, link_text: view_all_text, link_url: collection.url, section_color: section_color, show_collection_count: section.settings.show_collection_count, products_count: collection.products_count, subheading: section.settings.subheading, has_view_all_button_top: has_view_all_button_top
+    endif
+  %}
+
+  <div class="bg-scheme-background">
+    <ul class="grid grid-cols-2 {{ desktop_grid_class }} gap-gutter bg-gridline-color">
+      {% for product in collection.products limit: product_limit %}
+        {% liquid
+          assign counter = counter | plus: 1
+
+          if section.index <= 3 and forloop.index <= products_per_row_mobile
+            assign loading = 'eager'
+          else
+            assign loading = 'lazy'
+          endif
+
+          if section.index == 1 and forloop.first
+            assign preload = true
+          else
+            assign preload = false
+          endif
+        %}
+        <li class="{{ mobile_col_span }} {{ desktop_col_span }} bg-scheme-background text-scheme-text">
+          {% if product_tile_type == 'text_overlay' %}
+            {%- render 'product-tile-text-overlay',
+              product: product,
+              sizes: sizes,
+              preload: preload,
+              loading: loading,
+              section_color: section_color,
+              products_per_row_mobile: products_per_row_mobile,
+              product_tile_type: product_tile_type
+            -%}
+          {% else %}
+            {%- render 'product-tile-standard',
+              product: product,
+              sizes: sizes,
+              preload: preload,
+              loading: loading,
+              section_color: section_color,
+              products_per_row_mobile: products_per_row_mobile,
+              enable_quick_buy: enable_quick_buy,
+              product_tile_type: product_tile_type
+            -%}
+          {% endif %}
+        </li>
+      {% else %}
+        {%- liquid
+          if product_tile_type == 'standard'
+            unless settings.product_standard_tile_image_crop == 'natural'
+              assign ratio = settings.product_standard_tile_image_crop | plus: 0
+            endunless
+          else
+            unless settings.product_overlay_tile_image_crop == 'natural'
+              assign ratio = settings.product_overlay_tile_image_crop | plus: 0
+            endunless
+          endif
+        -%}
+        {% for i in (1..product_limit) %}
+          <li class="{{ mobile_col_span }} {{ desktop_col_span }} bg-scheme-background text-scheme-text">
+            {% capture current %}{% cycle 1, 2, 3, 4, 5, 6 %}{% endcapture %}
+            {%- render 'product-tile-placeholder',
+              product_tile_type: product_tile_type,
+              current: current,
+              ratio: ratio
+            -%}
+          </li>
+        {% endfor %}
+      {% endfor %}
+      {%- if collection.products.size > 0 -%}
+        {%- liquid
+          assign items_on_last_row = counter | modulo: products_per_row
+          assign col_span = grid_cols | divided_by: products_per_row
+          assign placeholder_width = products_per_row | minus: items_on_last_row | times: col_span
+          assign items_on_last_row_mobile = counter | modulo: products_per_row_mobile
+          assign col_span_mobile = 2 | divided_by: products_per_row_mobile
+          assign placeholder_width_mobile = products_per_row_mobile | minus: items_on_last_row_mobile | times: col_span_mobile
+        -%}
+        {%- if items_on_last_row != 0 -%}
+          <li
+            style="--placeholder-width: {{ placeholder_width }};"
+            class="absolute hidden bg-scheme-background lg:static lg:col-span-placeholder-width lg:block"
+            aria-hidden="true"
+            role="presentation"
+          ></li>
+        {%- endif -%}
+        {%- if items_on_last_row_mobile != 0 -%}
+          <li
+            style="--placeholder-width-mobile: {{ placeholder_width_mobile }};"
+            class="col-span-placeholder-width-mobile block bg-scheme-background lg:absolute lg:hidden"
+            aria-hidden="true"
+            role="presentation"
+          ></li>
+        {%- endif -%}
+      {%- endif -%}
+    </ul>
+  </div>
+
+  {% if has_view_all_button_bottom %}
+    {%- render 'view-all',
+      title: section.settings.title,
+      show_link: show_view_all,
+      link_text: view_all_text,
+      link_url: collection.url,
+      section_color: section_color
+    -%}
+  {% endif %}
+</section>
+
+{% schema %}
+{
+  "name": "Featured collection",
+  "disabled_on": {
+    "groups": [
+      "header",
+      "footer",
+      "aside"
+    ]
+  },
+  "settings": [
+    {
+      "id": "collection",
+      "type": "collection",
+      "label": "Collection"
+    },
+    {
+      "id": "product_tile_type",
+      "type": "select",
+      "label": "Product tile type",
+      "options": [
+        {
+          "value": "standard",
+          "label": "Standard"
+        },
+        {
+          "value": "text_overlay",
+          "label": "Text overlay"
+        }
+      ],
+      "default": "standard"
+    },
+    {
+      "type": "range",
+      "id": "grid",
+      "label": "Products per row",
+      "min": 2,
+      "max": 5,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "rows",
+      "label": "Rows",
+      "min": 1,
+      "max": 5,
+      "step": 1,
+      "default": 2
+    },
+    {
+      "type": "select",
+      "id": "grid_mobile",
+      "label": "Products per row on mobile",
+      "options": [
+        {
+          "value": "1",
+          "label": "1"
+        },
+        {
+          "value": "2",
+          "label": "2"
+        }
+      ],
+      "default": "1"
+    },
+    {
+      "type": "header",
+      "content": "Quick buy"
+    },
+    {
+      "type": "paragraph",
+      "content": "Only supported when product tile type is set to \"Standard\"."
+    },
+    {
+      "visible_if": "{{ section.settings.product_tile_type == 'standard' }}",
+      "type": "checkbox",
+      "id": "enable_quick_buy",
+      "label": "Enable quick buy"
+    },
+    {
+      "type": "header",
+      "content": "Header"
+    },
+    {
+      "visible_if": "{{ section.settings.title != blank }}",
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "Featured collection"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_view_all",
+      "label": "Show “View all” link",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "show_collection_count",
+      "label": "Show collection products count as superscript"
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Featured collection",
+      "category": "Collections"
+    }
+  ]
+}
+{% endschema %}

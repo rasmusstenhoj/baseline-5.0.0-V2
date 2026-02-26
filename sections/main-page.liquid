@@ -1,0 +1,143 @@
+{%- liquid
+  assign section_color = section.settings.color_scheme
+
+  case section.settings.desktop_width
+    when 'two_thirds'
+      assign desktop_width = 'lg:w-2/3'
+    when 'half'
+      assign desktop_width = 'lg:w-1/2'
+    else
+      assign desktop_width = 'lg:max-w-full'
+  endcase
+
+  case section.settings.desktop_alignment
+    when 'left'
+      assign desktop_alignment = 'lg:justify-start'
+    when 'right'
+      assign desktop_alignment = 'lg:justify-end'
+    else
+      assign desktop_alignment = 'lg:justify-center'
+  endcase
+
+  case section.settings.text_alignment
+    when 'text-left'
+      assign text_alignment = 'text-left'
+    when 'text-right'
+      assign text_alignment = 'text-right'
+    else
+      assign text_alignment = 'text-center'
+  endcase
+-%}
+
+<section
+  class="border-b-gridline border-gridline-color bg-scheme-background text-scheme-text"
+  data-color-scheme="{{ section_color }}"
+>
+  <div class="flex px-section-horizontal-spacing py-section-vertical-spacing {{ desktop_alignment }}">
+    <div class="w-full {{ desktop_width }} {{ text_alignment }}">
+      <h1 class="font-heading break-word text-heading-feature">
+        {{ page.title }}
+      </h1>
+
+      <data-island class="rte mt-4" x-data="RTE">
+        {{ page.content }}
+      </data-island>
+    </div>
+  </div>
+</section>
+
+{%- if section.settings.override_header_footer_color_scheme -%}
+  {%- render 'header-footer-color-scheme-override',
+    section_color: section_color
+  -%}
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Pages",
+  "settings": [
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "label": "Text alignment",
+      "options": [
+        {
+          "value": "text-left",
+          "label": "Left"
+        },
+        {
+          "value": "text-center",
+          "label": "Center"
+        },
+        {
+          "value": "text-right",
+          "label": "Right"
+        }
+      ],
+      "default": "text-left"
+    },
+    {
+      "type": "header",
+      "content": "Desktop layout"
+    },
+    {
+      "type": "select",
+      "id": "desktop_width",
+      "label": "Width",
+      "options": [
+        {
+          "value": "full",
+          "label": "Full"
+        },
+        {
+          "value": "two_thirds",
+          "label": "Two thirds"
+        },
+        {
+          "value": "half",
+          "label": "Half"
+        }
+      ],
+      "default": "full"
+    },
+    {
+      "type": "select",
+      "id": "desktop_alignment",
+      "label": "Position",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "left",
+      "info": "Does not apply when width is set to full."
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    },
+    {
+      "type": "checkbox",
+      "id": "override_header_footer_color_scheme",
+      "label": "Use this color scheme for header and footer",
+      "info": "This will only apply to the page template",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

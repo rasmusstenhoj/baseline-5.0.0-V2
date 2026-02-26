@@ -1,0 +1,130 @@
+{% liquid
+  assign section_color = settings.modal_color_scheme
+  assign current_variant = product.selected_or_first_available_variant
+  assign featured_media = current_variant.featured_media | default: product.featured_media
+
+  assign preselect_variant = settings.quick_buy_preselect_variant
+
+  if product.media.size > 0
+    assign has_media = true
+  else
+    assign has_media = false
+  endif
+
+  if has_media
+    if preselect_variant
+      assign current_media = current_variant.featured_media | default: product.featured_media
+    else
+      assign current_media = product.selected_variant.featured_media | default: product.featured_media
+    endif
+  endif
+
+  assign show_isolated_quantity = false
+  assign show_inline_quantity = false
+
+  if settings.quick_buy_show_quantity_selector
+    if settings.quick_buy_quantity_style == 'inline'
+      assign show_inline_quantity = true
+    else
+      assign show_isolated_quantity = true
+    endif
+  endif
+%}
+
+<div class="contents" data-quick-buy-root>
+  <data-island
+    class="bg-scheme-background text-scheme-text"
+    data-color-scheme="{{ section_color }}"
+    id="{{ section.id }}"
+    x-data="
+      Product({
+        product: {
+          id: {{ product.id | json }},
+          url: {{ product.url | json | escape }},
+        },
+        featuredMediaId: {% if featured_media %}{{ featured_media.id }}{% else %}null{% endif %},
+        optionsWithValues: {{ product.options_with_values | json | escape }},
+        shouldUpdateHistoryState: false,
+        preselectVariant: {{ preselect_variant }},
+        templateType: 'quick-buy',
+      })
+    "
+    src="product"
+    role="banner"
+    data-product-root="{{ section.id }}"
+  >
+    <div class="product-block-area flex flex-col gap-8 px-section-horizontal-spacing py-section-vertical-spacing">
+      <div
+        class="grid grid-cols-5 items-center gap-4"
+        data-variant-fragment="media"
+      >
+        {% if has_media and current_media %}
+          {% liquid
+            assign ratio = settings.quick_buy_product_media_crop | plus: 0
+            assign widths = '50, 100, 150, 200, 300, 600'
+            assign sizes = '(min-width: 1024px) calc(min(24rem, 92vw) / 5),  10vw'
+          %}
+          <div class="col-span-1">
+            {% render 'image-crop',
+              ratio: ratio,
+              image: current_media,
+              sizes: sizes,
+              widths: widths,
+              loading: 'eager'
+            %}
+          </div>
+        {% endif %}
+        <div class="{% if has_media %}col-span-4{% else %}col-span-full{% endif %}">
+          <h1
+            class="product-title-block font-heading break-word mb-2 text-heading-secondary"
+            data-product-title
+          >
+            <a
+              href="{{ product.url }}"
+              :href="currentVariant ? `${product.url}?variant=${currentVariant.id}` : product.url"
+            >
+              {{ product.title }}
+            </a>
+          </h1>
+          {% render 'product-form-component-price',
+            variant_fragment_id: 'quick-buy-price',
+            current_variant: current_variant,
+            price_text_size: 'text-base',
+            show_discount_tag: settings.show_discount_tag,
+            discount_type: settings.discount_type,
+            use_accent_color: settings.use_accent_color
+          %}
+        </div>
+      </div>
+      {% liquid
+        assign product_form_id = 'product-form-' | append: section.id
+
+        if settings.quick_buy_group_metafield_key != blank
+          render 'product-form-component-product-group', group_metafield_setting: settings.quick_buy_group_metafield_key, section_id: section.id, block_id: 'quick-buy-product-group', group_product_display_title_setting: settings.quick_buy_group_product_display_title_metafield_key, option_style: settings.quick_buy_product_group_option_style, full_width_buttons: settings.quick_buy_product_group_full_width_buttons, spread_options: settings.quick_buy_product_group_spread_options, hide_label: settings.quick_buy_product_group_hide_label, show_value_label: settings.quick_buy_product_group_show_value_label, is_in_quick_buy: true
+        endif
+
+        render 'product-form-component-variant-picker', variant_fragment_id: 'quick-buy-variant-picker', section_id: section.id, option_style: settings.quick_buy_variant_picker_option_style, full_width_buttons: settings.quick_buy_variant_picker_full_width_buttons, spread_options: settings.quick_buy_variant_picker_spread_options, hide_option_labels: settings.quick_buy_variant_picker_hide_option_labels, hide_sold_out_variants: settings.quick_buy_variant_picker_hide_sold_out_variants, hide_unavailable_variants: settings.quick_buy_variant_picker_hide_unavailable_variants, preselect_variant: preselect_variant
+
+        if show_isolated_quantity
+          render 'product-form-component-quantity-selector', product_form_id: product_form_id, style: settings.quick_buy_quantity_style, full_width: settings.quick_buy_quantity_full_width, hide_label: settings.quick_buy_quantity_hide_label
+        endif
+
+        render 'product-form-component-buy-buttons', product_form_id: product_form_id, current_variant: current_variant, variant_fragment_id: 'quick-buy-buy-buttons', quick_buy: true, quick_buy_drawer: true, show_payment_terms: false, show_gift_card_recipient: false, enable_payment_button: false, show_pickup_availability: false, show_quantity_selector: show_inline_quantity, preselect_variant: preselect_variant, show_atc_price: settings.show_atc_price, atc_price_separator: settings.atc_price_separator, atc_price_separator_repeats: settings.atc_price_separator_repeats, quick_buy_button_style: settings.quick_buy_button_style
+      %}
+    </div>
+
+    <div data-variant-fragment="current-variant" hidden>
+      {% if current_variant %}
+        <script data-current-variant type="application/json">
+          {{ current_variant | json }}
+        </script>
+      {% endif %}
+    </div>
+  </data-island>
+</div>
+
+{% schema %}
+{
+  "name": "Product quick buy"
+}
+{% endschema %}

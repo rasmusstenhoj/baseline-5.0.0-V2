@@ -1,0 +1,311 @@
+{%- liquid
+  assign section_color = section.settings.color_scheme
+  assign mobile_text_scale = section.settings.mobile_text_scale
+  assign desktop_text_scale = section.settings.desktop_text_scale
+  assign show_collection_count = section.settings.show_collection_count
+
+  assign list_item_class = 'flex items-center gap-2'
+  assign link_class = 'text-scheme-text hover:text-scheme-accent'
+  assign active_link_class = 'text-scheme-secondary hover:text-scheme-accent'
+
+  capture text_size_class
+    render 'type-scale-classes', mobile_text_scale: mobile_text_scale, desktop_text_scale: desktop_text_scale
+  endcapture
+
+  case section.settings.text_alignment
+    when 'left'
+      assign text_alignment_class = 'justify-start'
+      assign list_item_class = list_item_class | append: ' text-left'
+    when 'right'
+      assign text_alignment_class = 'justify-end'
+      assign list_item_class = list_item_class | append: ' text-right'
+    else
+      assign text_alignment_class = 'justify-center'
+      assign list_item_class = list_item_class | append: ' text-center'
+  endcase
+-%}
+
+{%- unless template == 'index' or template == 'cart' or template == '404' -%}
+  {%- liquid
+    assign t = template | split: '.' | first
+
+    if t == 'collection' and collection.handle
+      assign t = 'collection_with_handle'
+    endif
+  -%}
+  {%- capture separator -%}
+  <span class="inline-block" role="presentation" aria-hidden="true">{{ section.settings.separator }}</span>
+  {%- endcapture -%}
+
+  {%- capture product_count_superscript -%}
+    {% if show_collection_count %}
+      <sup
+        class="-ml-inline-sup"
+        aria-label="{{ collection.products_count }} {{ 'general.search.products' | t }}"
+      >
+        {{- collection.products_count -}}
+      </sup>
+    {% endif %}
+  {%- endcapture -%}
+
+  <section
+    class="border-b-gridline border-gridline-color bg-scheme-background py-section-vertical-spacing-half text-scheme-text"
+    data-color-scheme="{{ section_color }}"
+  >
+    <div class="px-section-horizontal-spacing">
+      <nav
+        role="navigation"
+        aria-label="breadcrumbs"
+        class="breadcrumbs {% if settings.nav_uppercase %}uppercase{% endif %}"
+      >
+        <ol class="flex flex-wrap items-center {{ text_alignment_class }} {{ text_size_class }} gap-2">
+          <li class="{{ list_item_class  }}">
+            <a class="{{ link_class }}" href="{{ routes.root_url }}">
+              {{- 'general.breadcrumbs.home' | t -}}
+            </a>
+            {{ separator }}
+          </li>
+          {%- case t -%}
+            {%- when 'page' -%}
+              <li class="{{ list_item_class  }}">
+                <a
+                  href="{{ page.url }}"
+                  class="{{ active_link_class }}"
+                  aria-current="page"
+                >
+                  {{- page.title -}}
+                </a>
+              </li>
+            {%- when 'product' -%}
+              {%- if collection.url -%}
+                <li class="{{ list_item_class  }}">
+                  {{
+                    collection.title
+                    | link_to: collection.url, class: link_class
+                  }}
+                  {{ separator }}
+                </li>
+              {%- endif -%}
+              <li class="{{ list_item_class  }}">
+                <a
+                  href="{{ product.url }}"
+                  class="{{ active_link_class }}"
+                  aria-current="page"
+                >
+                  {{- product.title -}}
+                </a>
+              </li>
+            {%- when 'collection_with_handle' -%}
+              {%- if current_tags -%}
+                <li class="{{ list_item_class }} {{ link_class }}">
+                  <a
+                    href="{{ collection.url }}"
+                    class="{{ active_link_class }}"
+                    aria-current="page"
+                  >
+                    <span>
+                      {{- collection.title -}}
+                    </span>
+                    {% if show_collection_count %}
+                      {% comment %} Shows all products count on a filtered collection page {% endcomment %}
+                      <sup
+                        class="-ml-inline-sup"
+                        aria-label="{{ collection.all_products_count }} {{ 'general.search.products' | t }}"
+                      >
+                        {{- collection.all_products_count -}}
+                      </sup>
+                    {% endif %}
+                  </a>
+                  {{ separator }}
+                </li>
+                <li>
+                  {%- capture tag_url -%}{{ collection.url }}/{{ current_tags | join: "+"}}{%- endcapture -%}
+                  <a
+                    href="{{ tag_url }}"
+                    class="{{ active_link_class }}"
+                    aria-current="page"
+                  >
+                    <span>{{- current_tags | join: ' + ' -}}</span>
+                    {{ product_count_superscript }}
+                  </a>
+                </li>
+              {%- else -%}
+                <li class="{{ list_item_class }}">
+                  <a
+                    href="{{ collection.url }}"
+                    class="{{ active_link_class }}"
+                    aria-current="page"
+                  >
+                    <span>{{- collection.title -}}</span>
+                    {{ product_count_superscript }}
+                  </a>
+                </li>
+              {%- endif -%}
+            {%- when 'blog' -%}
+              {%- if current_tags -%}
+                <li class="{{ list_item_class  }}">
+                  {{ blog.title | link_to: blog.url, class: link_class }}
+                  {{ separator }}
+                </li>
+                <li class="{{ list_item_class  }}">
+                  {%- capture tag_url -%}{{blog.url}}/tagged/{{ current_tags | join: "+" }}{%- endcapture -%}
+                  <a
+                    href="{{ tag_url }}"
+                    class="{{ active_link_class }}"
+                    aria-current="page"
+                  >
+                    {{- current_tags | join: ' + ' -}}
+                  </a>
+                </li>
+              {%- else -%}
+                <li class="{{ list_item_class  }}">
+                  <a
+                    href="{{ blog.url }}"
+                    class="{{ active_link_class }}"
+                    aria-current="page"
+                  >
+                    {{- blog.title -}}
+                  </a>
+                </li>
+              {%- endif -%}
+            {%- when 'article' -%}
+              <li class="{{ list_item_class  }}">
+                {{ blog.title | link_to: blog.url, class: link_class }}
+                {{ separator }}
+              </li>
+              <li class="{{ list_item_class  }}">
+                <a
+                  href="{{ article.url }}"
+                  class="{{ active_link_class }}"
+                  aria-current="page"
+                >
+                  {{- article.title -}}
+                </a>
+              </li>
+            {%- else -%}
+              <li class="{{ list_item_class  }}">
+                <a
+                  href="{{ request.path }}"
+                  class="{{ active_link_class }}"
+                  aria-current="page"
+                >
+                  {{- page_title -}}
+                </a>
+              </li>
+          {%- endcase -%}
+        </ol>
+      </nav>
+    </div>
+  </section>
+{%- endunless -%}
+{% schema %}
+{
+  "name": "Breadcrumbs",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Does not display on home page."
+    },
+    {
+      "type": "select",
+      "label": "Separator",
+      "id": "separator",
+      "default": "&mdash;",
+      "options": [
+        {
+          "label": "/",
+          "value": "/"
+        },
+        {
+          "label": "·",
+          "value": "&middot;"
+        },
+        {
+          "label": "•",
+          "value": "&bullet;"
+        },
+        {
+          "label": "→",
+          "value": "&rarr;"
+        },
+        {
+          "label": "<",
+          "value": "&lt;"
+        },
+        {
+          "label": ">",
+          "value": "&gt;"
+        },
+        {
+          "label": "|",
+          "value": "|"
+        },
+        {
+          "label": "–",
+          "value": "&ndash;"
+        },
+        {
+          "label": "—",
+          "value": "&mdash;"
+        }
+      ]
+    },
+    {
+      "type": "text_alignment",
+      "id": "text_alignment",
+      "label": "Text alignment",
+      "default": "center"
+    },
+    {
+      "type": "range",
+      "id": "mobile_text_scale",
+      "min": -2,
+      "max": 4,
+      "step": 1,
+      "label": "Mobile font size scale",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "desktop_text_scale",
+      "min": -2,
+      "max": 9,
+      "step": 1,
+      "label": "Desktop font size scale",
+      "default": 0
+    },
+    {
+      "type": "checkbox",
+      "id": "show_collection_count",
+      "label": "Show collection products count as superscript"
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Breadcrumbs",
+      "category": "Navigation"
+    }
+  ],
+  "disabled_on": {
+    "templates": [
+      "index",
+      "cart",
+      "list-collections",
+      "404"
+    ],
+    "groups": [
+      "aside"
+    ]
+  }
+}
+{% endschema %}

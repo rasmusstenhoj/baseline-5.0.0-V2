@@ -1,0 +1,271 @@
+{%- liquid
+  assign section_color = section.settings.color_scheme
+  assign testimonials_per_row = section.settings.testimonials_per_row_desktop
+  case testimonials_per_row
+    when '2'
+      assign grid_col_class = 'lg:col-span-6'
+    when '3'
+      assign grid_col_class = 'lg:col-span-4'
+    when '4'
+      assign grid_col_class = 'lg:col-span-3'
+  endcase
+
+  if section.settings.show_grid_border
+  endif
+-%}
+
+<section
+  class="border-b-gridline border-gridline-color bg-gridline-color"
+  data-color-scheme="{{ section_color }}"
+>
+  {% if section.settings.title != '' %}
+    {%- render 'section-header',
+      title: section.settings.title,
+      section_color: section_color,
+      subheading: section.settings.subheading
+    -%}
+  {% endif %}
+
+  <div class="grid {% if section.settings.show_grid_border %}gap-gridline{% endif %} text-scheme-text lg:grid-cols-12 {% if section.settings.show_grid_border %}gap-gridline{% else %}bg-scheme-background{% endif %}">
+    {%- for block in section.blocks -%}
+      <blockquote class="flex-1 {{ section.settings.text_align }} {{ grid_col_class }} bg-scheme-background px-section-horizontal-spacing py-section-vertical-spacing ">
+        <div class="flex flex-col items-start gap-2">
+          {%- if section.settings.show_quotation_mark -%}
+            <div class="h-[1ch] w-full {{ section.settings.text_align }} {{ section.settings.quotation_mark_font }} {% render 'type-scale-classes', mobile_text_scale: section.settings.quotation_mark_mobile_text_scale, desktop_text_scale: section.settings.quotation_mark_desktop_text_scale %}">
+              “
+            </div>
+          {%- endif -%}
+          <div class="w-full grow">
+            <div class="{{ section.settings.font }} {{ section.settings.text_size }} [&_a[href]]:underline [&_a[href]]:hover:text-scheme-accent">
+              {{ block.settings.quote }}
+            </div>
+            {% if block.settings.source != blank %}
+              <footer class="font-secondary mt-5 text-base">
+                - {{ block.settings.source }}
+              </footer>
+            {% endif %}
+          </div>
+        </div>
+      </blockquote>
+    {%- endfor -%}
+    {%- liquid
+      assign items_on_last_row = section.blocks.size | modulo: testimonials_per_row
+      assign col_span = 12 | divided_by: testimonials_per_row
+      assign placeholder_width = testimonials_per_row | minus: items_on_last_row | times: col_span
+    -%}
+    {%- if items_on_last_row != 0 -%}
+      <div
+        style="--placeholder-width: {{ placeholder_width }};"
+        class="none absolute bg-scheme-background lg:static lg:col-span-placeholder-width lg:block"
+        aria-hidden="true"
+        role="presentation"
+      ></div>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Testimonials",
+  "disabled_on": {
+    "groups": [
+      "header",
+      "footer",
+      "aside"
+    ]
+  },
+  "settings": [
+    {
+      "type": "select",
+      "id": "font",
+      "label": "Text style",
+      "options": [
+        {
+          "value": "font-heading",
+          "label": "Heading"
+        },
+        {
+          "value": "font-body",
+          "label": "Body"
+        }
+      ],
+      "default": "font-heading"
+    },
+    {
+      "type": "select",
+      "id": "text_size",
+      "label": "Testimonial text size",
+      "options": [
+        {
+          "value": "text-base",
+          "label": "Body"
+        },
+        {
+          "value": "text-heading-standard",
+          "label": "Standard heading"
+        },
+        {
+          "value": "text-heading-feature",
+          "label": "Feature heading"
+        },
+        {
+          "value": "text-heading-secondary",
+          "label": "Secondary heading"
+        }
+      ],
+      "default": "text-heading-standard"
+    },
+    {
+      "type": "select",
+      "id": "text_align",
+      "label": "Text align",
+      "default": "text-left",
+      "options": [
+        {
+          "value": "text-left",
+          "label": "Left"
+        },
+        {
+          "value": "text-center",
+          "label": "Center"
+        }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "testimonials_per_row_desktop",
+      "label": "Testimonials per row on desktop",
+      "default": "2",
+      "options": [
+        {
+          "value": "2",
+          "label": "2"
+        },
+        {
+          "value": "3",
+          "label": "3"
+        },
+        {
+          "value": "4",
+          "label": "4"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "show_grid_border",
+      "label": "Show grid border",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Quotation mark"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_quotation_mark",
+      "label": "Show quotation mark",
+      "default": true
+    },
+    {
+      "visible_if": "{{ section.settings.show_quotation_mark }}",
+      "type": "select",
+      "id": "quotation_mark_font",
+      "label": "Font",
+      "options": [
+        {
+          "value": "font-heading",
+          "label": "Heading"
+        },
+        {
+          "value": "font-body",
+          "label": "Body"
+        }
+      ],
+      "default": "font-heading"
+    },
+    {
+      "visible_if": "{{ section.settings.show_quotation_mark }}",
+      "type": "range",
+      "id": "quotation_mark_mobile_text_scale",
+      "min": -2,
+      "max": 7,
+      "step": 1,
+      "label": "Mobile font size scale",
+      "default": 3
+    },
+    {
+      "visible_if": "{{ section.settings.show_quotation_mark }}",
+      "type": "range",
+      "id": "quotation_mark_desktop_text_scale",
+      "min": -2,
+      "max": 9,
+      "step": 1,
+      "label": "Desktop font size scale",
+      "default": 7
+    },
+    {
+      "type": "header",
+      "content": "Header"
+    },
+    {
+      "visible_if": "{{ section.settings.title != blank }}",
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading"
+    },
+    {
+      "type": "header",
+      "content": "Color"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "default": "scheme1",
+      "label": "Color scheme"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "testimonial",
+      "name": "Testimonial",
+      "settings": [
+        {
+          "type": "richtext",
+          "id": "quote",
+          "label": "Quote",
+          "default": "<p>A quote from a customer or staff member can help show off your products’ unique selling points.</p>"
+        },
+        {
+          "type": "text",
+          "id": "source",
+          "label": "Source",
+          "default": "Source"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Testimonials",
+      "category": "Editorial",
+      "blocks": [
+        {
+          "type": "testimonial"
+        },
+        {
+          "type": "testimonial"
+        },
+        {
+          "type": "testimonial"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
