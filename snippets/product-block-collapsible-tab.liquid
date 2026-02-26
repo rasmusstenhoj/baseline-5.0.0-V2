@@ -29,7 +29,7 @@
               {{ block.settings.heading }}
             </div>
           </div>
-          <span class="font-heading text-base leading-none" x-text="open ? '−' : '+'"></span>
+         <span class="collapsible-tab-icon font-heading text-base leading-none" x-text="open ? '−' : '+'"></span>
         </button>
       </h2>
       <div
@@ -52,4 +52,14 @@
       {{ block.settings.page.content }}
     </div>
   </noscript>
+
+<style>
+  .collapsible-tab button:hover .collapsible-tab-icon::before {
+    content: '(';
+  }
+  .collapsible-tab button:hover .collapsible-tab-icon::after {
+    content: ')';
+  }
+</style>
+
 </div>
