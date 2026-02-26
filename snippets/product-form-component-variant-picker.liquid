@@ -1,0 +1,468 @@
+{% doc %}
+  Renders a variant picker component for product forms.
+
+  @param {object} [product] - The product object (required for "Featured product" sections, optional for product pages where it's globally available)
+  @param {string} [section_id] - Section ID for generating unique element IDs
+  @param {string} [variant_fragment_id] - Fragment ID for variant change updates (typically block.id, must be unique in section)
+  @param {string} [option_style] - Display style: 'drop_down', 'radio', 'text_underline', or 'buttons' (default: 'buttons')
+  @param {boolean} [hide_option_labels] - Whether to hide option labels (default: false)
+  @param {boolean} [spread_options] - Whether to spread text_underline options across available space (default: false)
+  @param {boolean} [full_width_buttons] - Whether button-style options should span full width (default: false)
+  @param {boolean} [preselect_variant] - Whether to preselect the first available variant (default: false)
+  @param {boolean} [hide_sold_out_variants] - Whether to hide sold out variant options (default: false)
+  @param {boolean} [hide_unavailable_variants] - Whether to hide unavailable variant options (default: false)
+
+  @example
+  {% render 'product-form-component-variant-picker',
+    product: product,
+    section_id: section.id,
+    variant_fragment_id: block.id,
+    option_style: block.settings.option_style,
+    hide_option_labels: block.settings.hide_option_labels,
+    spread_options: block.settings.spread_options,
+    full_width_buttons: block.settings.full_width_buttons,
+    preselect_variant: preselect_variant,
+    hide_sold_out_variants: block.settings.hide_sold_out_variants,
+    hide_unavailable_variants: block.settings.hide_unavailable_variants
+  %}
+{% enddoc %}
+
+{%- liquid
+  assign current_variant = product.selected_or_first_available_variant
+  assign option_style_setting = option_style
+
+  assign availability_mode = settings.product_availability_mode
+
+  assign id_base = product.id
+
+  if variant_fragment_id
+    assign id_base = id_base | prepend: '-' | prepend: variant_fragment_id
+  endif
+
+  if section_id
+    assign id_base = id_base | prepend: '-' | prepend: section_id
+  endif
+-%}
+
+<div
+  {% if variant_fragment_id %}
+    data-variant-fragment="{{ variant_fragment_id }}"
+  {% else %}
+    data-variant-fragment="variant-picker"
+  {% endif %}
+  data-variant-picker
+>
+  {% unless product.has_only_default_variant %}
+    <div class="flex flex-col gap-4">
+      {% for option in product.options_with_values %}
+        {% liquid
+          assign option_downcase = option.name | downcase
+
+          assign show_as_swatches = false
+
+          assign swatches = false
+          assign legacy_swatches = false
+
+          if settings.enable_color_swatches_on_product_pages
+            assign swatches_count = option.values | map: 'swatch' | compact | size
+
+            if swatches_count > 0
+              assign swatches = true
+            endif
+          endif
+
+          if swatches == false and settings.enable_legacy_color_swatches_on_product_pages
+            assign swatch_trigger = 'products.product.color_swatch_trigger' | t | downcase
+
+            if option_downcase contains swatch_trigger
+              assign legacy_swatches = true
+            elsif swatch_trigger == 'color' and option_downcase contains 'colour'
+              assign legacy_swatches = true
+            endif
+          endif
+
+          if swatches or legacy_swatches
+            assign show_as_swatches = true
+          endif
+
+          if show_as_swatches
+            assign option_style = 'buttons'
+          else
+            assign option_style = option_style_setting
+          endif
+
+          unless hide_option_labels
+            assign label_class = 'block'
+            assign label_padding = 'mt-2'
+          else
+            assign label_class = 'sr-only'
+          endunless
+
+          case option_style
+            when 'radio'
+              assign option_wrapper_classes = label_padding
+              assign option_value_wrapper_classes = 'relative'
+              assign option_value_input_classes = 'custom-input peer absolute left-0 top-0 h-full w-full cursor-pointer opacity-0'
+              assign option_value_label_classes = 'flex items-center py-1 peer-[:not(.sold-out,.unavailable)]:cursor-pointer peer-[.sold-out]:text-scheme-secondary peer-[.unavailable]:text-scheme-secondary peer-[.sold-out]:line-through peer-[.unavailable]:line-through peer-checked:[&>span]:bg-scheme-text'
+              assign option_value_label_span_classes = 'mr-1 inline-block h-2 w-2 rounded-full border-checkbox border-scheme-text bg-scheme-text/0'
+
+            when 'text_underline'
+              if spread_options
+                assign option_wrapper_classes = label_padding | append: ' -mx-1 flex flex-wrap items-center justify-between'
+              else
+                assign option_wrapper_classes = label_padding | append: ' -mx-1 flex flex-wrap items-center justify-start'
+              endif
+              assign option_value_wrapper_classes = 'label-only-input relative'
+              assign option_value_input_classes = 'peer absolute left-0 top-0 h-full w-full cursor-pointer opacity-0'
+              assign option_value_label_classes = 'block p-1 peer-[:not(.sold-out,.unavailable)]:cursor-pointer peer-[.sold-out]:text-scheme-secondary peer-[.unavailable]:text-scheme-secondary peer-[.sold-out]:line-through peer-[.unavailable]:line-through peer-checked:[&>span]:border-b-text peer-checked:[&>span]:border-scheme-text'
+              assign option_value_label_span_classes = ''
+
+            when 'buttons'
+              assign option_value_input_classes = 'peer absolute left-0 top-0 h-full w-full cursor-pointer opacity-0'
+              assign option_value_label_span_classes = ''
+
+              if show_as_swatches
+                assign option_wrapper_classes = label_padding | append: ' flex flex-wrap items-center justify-start -mx-[calc(theme(spacing.2)_-_1px)]'
+                assign option_value_wrapper_classes = 'label-only-input relative px-1'
+                assign option_value_label_classes = 'relative block cursor-pointer select-none rounded-button border-text border-transparent text-center peer-checked:border-scheme-text peer-[.sold-out]:line-through peer-[.unavailable]:line-through p-[2px]'
+              else
+                assign base_option_value_label_classes = 'relative block cursor-pointer select-none rounded-button border-text border-transparent text-center peer-checked:border-scheme-text peer-[.sold-out]:line-through peer-[.unavailable]:line-through p-2'
+
+                if full_width_buttons and show_as_swatches == false
+                  assign values_size = option.values.size
+
+                  assign max_string_size = option | map: 'values' | map: 'size' | sort | last | plus: 0
+
+                  assign divisible_by_2 = values_size | modulo: 2
+                  assign divisible_by_3 = values_size | modulo: 3
+                  assign divisible_by_4 = values_size | modulo: 4
+                  assign divisible_by_5 = values_size | modulo: 5
+                  assign divisible_by_6 = values_size | modulo: 6
+
+                  if max_string_size <= 3
+                    if divisible_by_4 == 0
+                      assign option_wrapper_classes = label_padding | append: ' grid grid-cols-4 gap-2.5'
+                    elsif divisible_by_5 == 0
+                      assign option_wrapper_classes = label_padding | append: ' grid grid-cols-5 gap-2.5'
+                    elsif divisible_by_6 == 0
+                      assign option_wrapper_classes = label_padding | append: ' grid grid-cols-6 gap-2.5'
+                    else
+                      assign option_wrapper_classes = label_padding | append: ' grid grid-cols-2 gap-2.5'
+                    endif
+                  else
+                    if divisible_by_2 == 0
+                      assign option_wrapper_classes = label_padding | append: ' grid grid-cols-2 gap-2.5'
+                    elsif divisible_by_3 == 0
+                      assign option_wrapper_classes = label_padding | append: ' grid grid-cols-3 gap-2.5'
+                    else
+                      assign option_wrapper_classes = label_padding | append: ' grid grid-cols-2 gap-2.5'
+                    endif
+                  endif
+
+                  assign option_value_wrapper_classes = 'label-only-input relative w-full'
+                  assign option_value_label_classes = base_option_value_label_classes | append: '  w-full'
+                else
+                  assign option_wrapper_classes = label_padding | append: ' flex flex-wrap items-center justify-start -mx-1'
+                  assign option_value_wrapper_classes = 'label-only-input relative px-1'
+                  assign option_value_label_classes = base_option_value_label_classes | append: '  min-w-9'
+                endif
+              endif
+          endcase
+        %}
+
+        <fieldset
+          class="product-variant-picker-block no-js:hidden"
+          data-product-option
+        >
+          {%- if option_style == 'drop_down' -%}
+            <label
+              class="{{ label_class }} {{ label_padding }}"
+              id="{{ id_base }}-option{{ option.position }}"
+            >
+              {% if preselect_variant %}
+                {{ option.name }}:
+              {% else %}
+                {{-
+                  'products.product.select_option'
+                  | t: option_name: option_downcase
+                -}}
+                :
+              {% endif %}
+            </label>
+          {%- else -%}
+            <legend class="{{ label_class }} {{ label_padding }}">
+              {% if preselect_variant %}
+                {{ option.name }}:
+              {% else %}
+                {{-
+                  'products.product.select_option'
+                  | t: option_name: option_downcase
+                -}}
+                :
+              {% endif %}
+              {% if show_as_swatches -%}
+                <span
+                  {% unless preselect_variant %}
+                    class="hidden"
+                    data-selected-swatch-value
+                  {% endunless %}
+                >
+                  {{- option.selected_value -}}
+                </span>
+              {%- endif %}
+            </legend>
+          {%- endif -%}
+          {%- case option_style -%}
+            {%- when 'radio', 'text_underline', 'buttons' -%}
+              <div
+                class="{{ option_wrapper_classes }}"
+                id="{{ id_base }}-option{{ option.position }}"
+              >
+                {% for value in option.values %}
+                  <div class="{{ option_value_wrapper_classes }}{% if hide_sold_out_variants %} [&:has(.sold-out)]:hidden{% endif %}{% if hide_unavailable_variants %} [&:has(.unavailable)]:hidden{% endif %}">
+                    <input
+                      class="{{ option_value_input_classes }}{% if value.variant %}{% if availability_mode == 'adjacent' and value.variant.available == false %} sold-out{% endif %}{% else %} unavailable{% endif %}{% if availability_mode == 'top_down' and value.available == false %} sold-out{% endif %}"
+                      @change="optionChange($el)"
+                      type="radio"
+                      id="{{ id_base }}-option{{ option.position }}-{{ value.id }}"
+                      name="options[{{ option.name }}]"
+                      value="{{ value | escape }}"
+                      {% if value.selected %}
+                        {% if preselect_variant %}
+                          checked
+                        {% else %}
+                          data-selected-value
+                        {% endif %}
+                      {% endif %}
+                      data-single-option-selector
+                      data-product-url="{{ value.product_url }}"
+                      data-position="{{ option.position }}"
+                      data-id="{{ value.id }}"
+                      data-variant-id="{{ value.variant.id }}"
+                    >
+                    <label
+                      class="
+                        {{ option_value_label_classes }}{% if show_as_swatches %}
+                        peer-[:not(.sold-out,.unavailable)]:[&>span:first-of-type]:hidden{% endif %}
+                      "
+                      for="{{ id_base }}-option{{ option.position }}-{{ value.id }}"
+                      title="{{ option.value }}"
+                    >
+                      {%- if swatches -%}
+                        {%- liquid
+                          assign swatch = value.swatch
+                          assign swatch_image = swatch.image
+                          assign swatch_color = swatch.color
+                        -%}
+                        <span
+                          class="absolute inset-0 z-10 h-full w-full bg-scheme-background/25"
+                        >
+                          <span
+                            class="absolute bottom-0 left-0 top-1/2 z-10 h-[var(--text-border-width)] w-full -translate-y-1/2 -rotate-45 transform bg-scheme-text"
+                          ></span>
+                        </span>
+                        <span
+                          class="block h-6 w-6 rounded-button bg-cover bg-no-repeat"
+                          style="background-position: {{ swatch_image.presentation.focal_point | default: 'center' }};{% if swatch_image != blank %} background-image: url({{ swatch_image | image_url: width: 160 }});{% else %}{% endif %}{% if swatch_color != blank %} background-color: rgb({{ swatch_color.rgb }});{% endif %}"
+                        ></span>
+                      {%- elsif legacy_swatches -%}
+                        {%- liquid
+                          assign color_image_url = value | handle | append: '.' | append: 'png' | file_img_url: '110x' | prepend: 'https:'
+                          assign color_swatch_fallback = value | split: ' ' | last | handle
+                        -%}
+                        <span
+                          class="absolute inset-0 z-10 h-full w-full bg-scheme-background/25"
+                        >
+                          <span
+                            class="absolute bottom-0 left-0 top-1/2 z-10 h-[var(--text-border-width)] w-full -translate-y-1/2 -rotate-45 transform bg-scheme-text"
+                          ></span>
+                        </span>
+                        <span
+                          class="block h-6 w-6 rounded-button bg-full"
+                          style="background-image: url({{ color_image_url }}); background-color: {{ color_swatch_fallback }};"
+                        ></span>
+                      {%- endif -%}
+                      <span
+                        {% if show_as_swatches %}
+                          class="sr-only"
+                        {% elsif option_value_label_span_classes != blank %}
+                          class="{{ option_value_label_span_classes }}"
+                        {% endif %}
+                      >
+                        {%- unless option_style == 'radio' -%}
+                          {{- value -}}
+                        {%- endunless -%}
+                      </span>
+                      {% if option_style == 'radio' %}
+                        {{ value -}}
+                      {% endif %}
+                    </label>
+                  </div>
+                {% endfor %}
+              </div>
+            {%- when 'drop_down' -%}
+              <data-island
+                x-data="OptionDropDown"
+                @keyup.escape.prevent.stop="close($refs.button)"
+                @focusin.window="if (! $root.contains($event.target)) { close() }"
+                x-id="['option-dropdown-{{ id_base }}-{{ option.position }}']"
+                class="relative select-none"
+                @click.away="close($refs.button)"
+              >
+                <button
+                  x-ref="button"
+                  type="button"
+                  @click="toggle"
+                  :aria-expanded="expanded"
+                  :aria-controls="$id('option-dropdown-{{ id_base }}-{{ option.position }}')"
+                  class="{{ label_padding }} flex cursor-pointer items-center gap-2 border-b-text border-scheme-text py-1"
+                  @click.away="$refs.panel.contains($event.target) ? close($refs.button) : close()"
+                >
+                  <div
+                    class="bg-scheme-background text-scheme-text{% if current_variant == null or current_variant.available == false %} text-scheme-secondary line-through{% endif %}"
+                  >
+                    {% if preselect_variant %}
+                      {{ option.selected_value }}
+                    {% else %}
+                      <span x-show="!hasSelection">
+                        {{ option.name }}
+                      </span>
+                      <span
+                        x-text="selectedValue"
+                        x-show="hasSelection"
+                        style="display: none;"
+                      >
+                        {{ option.selected_value }}
+                      </span>
+                    {% endif %}
+                  </div>
+                  <div class="ml-auto flex w-fit">
+                    <span
+                      class="my-auto h-4 w-4"
+                      :class="{ 'rotate-180' : expanded }"
+                    >
+                      {%- render 'icon-chevron-down' -%}
+                    </span>
+                  </div>
+                </button>
+                <div
+                  x-ref="panel"
+                  :id="$id('option-dropdown-{{ id_base }}-{{ option.position }}')"
+                  class="absolute bottom-auto left-0 right-0 top-full z-10 mt-0.5 flex max-h-[40vh] overflow-y-auto border-text border-scheme-text bg-scheme-text sm:-left-[--text-border-width] sm:right-auto sm:top-auto"
+                  style="display: none;"
+                >
+                  <div
+                    class="flex w-full min-w-[theme(spacing.16)] flex-col gap-[--text-border-width] sm:w-auto"
+                    role="listbox"
+                    @keydown.right.prevent.stop="$focus.wrap().next()"
+                    @keydown.down.prevent.stop="$focus.wrap().next()"
+                    @keydown.left.prevent.stop="$focus.wrap().previous()"
+                    @keydown.up.prevent.stop="$focus.wrap().previous()"
+                  >
+                    {% for value in option.values %}
+                      <button
+                        @click="selectOption"
+                        data-product-url="{{ value.product_url }}"
+                        data-position="{{ option.position }}"
+                        data-id="{{ value.id }}"
+                        data-variant-id="{{ value.variant.id }}"
+                        type="button"
+                        role="option"
+                        value="{{ value | escape }}"
+                        data-single-option-selector
+                        data-position="{{ option.position }}"
+                        {% if value.selected %}
+                          {% if preselect_variant %}
+                            aria-selected="true"
+                          {% else %}
+                            data-selected-value
+                          {% endif %}
+                        {% endif %}
+                        class="
+                          variant-dropdown-button break-word block bg-scheme-background px-4 py-2
+                          text-left
+                          text-scheme-text
+                          hover:text-scheme-accent
+                          focus-visible:text-scheme-accent
+                          aria-selected:text-scheme-accent
+                          coarse-pointer:min-h-[44px]
+                          coarse-pointer:min-w-[44px]
+                          {% if hide_sold_out_variants %}
+                            [&.sold-out]:hidden
+                          {% endif %}
+                          [&.sold-out]:text-scheme-secondary
+                          [&.sold-out]:line-through
+                          [&.sold-out]:hover:text-scheme-accent
+                          [&.sold-out]:focus:text-scheme-accent
+                          [&.sold-out]:aria-selected:text-scheme-accent
+                          {% if hide_unavailable_variants %}
+                            [&.unavailable]:hidden
+                          {% endif %}
+                          [&.unavailable]:text-scheme-secondary
+                          [&.unavailable]:line-through
+                          [&.unavailable]:hover:text-scheme-accent
+                          [&.unavailable]:focus:text-scheme-accent
+                          [&.unavailable]:aria-selected:text-scheme-accent
+                          {% if value.variant %}
+                            {% if availability_mode == 'adjacent' and value.variant.available == false %}
+                              sold-out
+                            {% endif %}
+                          {% else %}
+                            unavailable
+                          {% endif %}
+                          {% if availability_mode == 'top_down' and value.available == false %}
+                            sold-out
+                          {% endif %}
+                        "
+                      >
+                        {{ value }}
+                      </button>
+                    {% endfor %}
+                  </div>
+                </div>
+              </data-island>
+          {% endcase %}
+        </fieldset>
+      {% endfor %}
+    </div>
+  {% endunless %}
+
+  {%- liquid
+    assign temporarily_show_hidden_sold_out_variants = false
+    assign temporarily_show_hidden_unavailable_variants = false
+
+    if hide_sold_out_variants and product.selected_variant.available == false
+      assign temporarily_show_hidden_sold_out_variants = true
+    endif
+
+    if hide_unavailable_variants and product.selected_variant == null
+      assign temporarily_show_hidden_unavailable_variants = true
+    endif
+  -%}
+
+  {% if temporarily_show_hidden_sold_out_variants
+    or temporarily_show_hidden_unavailable_variants
+  %}
+    <style>
+      {% if temporarily_show_hidden_sold_out_variants %}
+        .\[\&\.sold-out\]\:hidden.sold-out {
+          display: block;
+        }
+
+        .\[\&\:has\(\.sold-out\)\]\:hidden:has(.sold-out) {
+          display: block;
+        }
+      {% endif %}
+
+      {% if temporarily_show_hidden_unavailable_variants %}
+        .\[\&\.unavailable\]\:hidden.unavailable {
+          display: block;
+        }
+
+        .\[\&\:has\(\.unavailable\)\]\:hidden:has(.unavailable) {
+          display: block;
+        }
+      {% endif %}
+    </style>
+  {% endif %}
+</div>

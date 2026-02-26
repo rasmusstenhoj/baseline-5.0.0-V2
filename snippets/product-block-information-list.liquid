@@ -1,0 +1,56 @@
+{% liquid
+  assign font = block.settings.font
+  assign style = block.settings.style
+
+  assign content = block.settings.text
+
+  if content contains 'metafield-multi_line_text_field'
+    assign rows = content | split: '<span class="metafield-multi_line_text_field">' | last | split: '</span>' | first | strip_newlines | split: '<br />'
+  else
+    if content contains '<br/>'
+      assign rows = content | split: '<p>' | last | split: '</p>' | first | strip_newlines | strip | split: '<br/>'
+    else
+      assign rows = content | remove_first: '<p>' | replace: '</p>', '' | strip_newlines | strip | split: '<p>'
+    endif
+  endif
+%}
+<div class="{{ font }} {{ block.settings.text_size }}">
+  {% case style %}
+    {% when 'list' %}
+      <div class="space-y-4">
+        {% for row in rows %}
+          <div>
+            {{- row | strip -}}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="product-block--grid-container -mx-section-horizontal-spacing grid grid-cols-[auto_1fr]">
+        {% for row in rows %}
+          {% if row contains ':' %}
+            <div
+              class="
+                px-4 py-2
+                {% if style == 'table_with_gridlines' %}
+                  border-r-gridline border-b-gridline border-gridline-color
+                {% endif %}
+              "
+            >
+              {{- row | split: ':' | first | strip -}}
+            </div>
+            <div class="py-2 px-4{% if style == 'table_with_gridlines' %} border-b-gridline border-gridline-color{% endif %}">
+              {{- row | split: ':' | last | strip -}}
+            </div>
+          {% else %}
+            <div class="col-span-2 py-2 px-4{% if style == 'table_with_gridlines' %} border-b-gridline border-gridline-color{% endif %}">
+              {{- row | strip -}}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+  {% endcase %}
+
+  <div class="bg-scheme-accent/20">
+    {{ block.settings.secondary_input }}
+  </div>
+</div>

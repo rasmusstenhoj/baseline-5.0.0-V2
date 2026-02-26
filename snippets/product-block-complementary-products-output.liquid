@@ -1,0 +1,125 @@
+{% liquid
+  assign enable_quick_buy = block.settings.enable_quick_buy
+
+  unless add_widescreen_size
+    assign add_widescreen_size = false
+  endunless
+
+  unless widescreen_default_one_col
+    assign widescreen_default_one_col = false
+  endunless
+%}
+{% if recommendations.performed and recommendations.products_count > 0 %}
+  {%- liquid
+    assign products_per_row_mobile = block.settings.products_per_row_mobile | plus: 0
+
+    if add_widescreen_size == false
+      assign products_per_row = block.settings.products_per_row_desktop | plus: 0
+    else
+      # Desktop default between 1024px and 1400px
+      assign products_per_row = 1
+
+      if widescreen_default_one_col
+        assign products_per_row_widescreen = 1
+      else
+        assign products_per_row_widescreen = block.settings.products_per_row_desktop | plus: 0
+      endif
+    endif
+
+    unless sizes
+      case products_per_row_mobile
+        when 1
+          assign mobile_sizes = '100vw'
+        when 2
+          assign mobile_sizes = '50vw'
+      endcase
+
+      unless desktop_sizes_base
+        assign desktop_sizes_base = '50vw'
+      endunless
+
+      assign desktop_sizes = '(min-width: 1024px) calc(' | append: desktop_sizes_base | append: ' / ' | append: products_per_row | append: ')'
+
+      if add_widescreen_size
+        assign widescreen_sizes = '(min-width: 1400px) calc(' | append: widescreen_sizes_base | append: ' / ' | append: products_per_row_widescreen | append: ')'
+      endif
+
+      if add_widescreen_size == false
+        assign sizes = desktop_sizes | append: ', ' | append: mobile_sizes
+      else
+        assign sizes = widescreen_sizes | append: ', ' | append: desktop_sizes | append: ', ' | append: mobile_sizes
+      endif
+    endunless
+  -%}
+  <div
+    class="complementary-products-block {% if block.settings.heading_text_style == 'body' %}complementary-products-block--font-body{% endif %}"
+    {{ block.shopify_attributes }}
+  >
+    <div class="complementary-products-block-container product-block--grid-container -mx-section-horizontal-spacing border-b-gridline border-gridline-color{% if block.settings.heading_text_style == 'heading' %} border-t-gridline mt-product-block{% endif %}">
+      {%- if block.settings.heading != '' -%}
+        <h2 class="complementary-products-block-title px-section-horizontal-spacing pb-theme{% if block.settings.heading_text_style == 'heading' %} font-heading text-heading-standard pt-theme-double{% else %} font-body{% endif %}">
+          {{ block.settings.heading }}
+        </h2>
+      {%- endif -%}
+
+      <ul
+        style="--products-per-row: {{ products_per_row }}; --products-per-row-mobile: {{ products_per_row_mobile }}; --products-per-row-widescreen: {% if add_widescreen_size %}{{ products_per_row_widescreen }}{% else %}{{ products_per_row }}{% endif %}"
+        class="grid grid-cols-[repeat(var(--products-per-row-mobile),_minmax(0,_1fr))] gap-gutter bg-gridline-color lg:grid-cols-[repeat(var(--products-per-row),_minmax(0,_1fr))] xl:grid-cols-[repeat(var(--products-per-row-widescreen),_minmax(0,_1fr))] z-10{% if recommendations.products.size > 0 %} border-t-gridline border-gridline-color{% endif %}"
+      >
+        {%- for product in recommendations.products -%}
+          {%- assign counter = counter | plus: 1 -%}
+          <li class="bg-scheme-background text-scheme-text">
+            {% if block.settings.product_tile_type == 'text_overlay' %}
+              {%- render 'product-tile-text-overlay',
+                product: product,
+                sizes: sizes,
+                loading: 'eager',
+                section_color: section_color,
+                products_per_row_mobile: products_per_row_mobile,
+                product_tile_type: block.settings.product_tile_type
+              -%}
+            {% else %}
+              {%- render 'product-tile-standard',
+                product: product,
+                sizes: sizes,
+                loading: 'eager',
+                section_color: section_color,
+                products_per_row_mobile: products_per_row_mobile,
+                enable_quick_buy: enable_quick_buy,
+                inserted: true,
+                product_tile_type: block.settings.product_tile_type
+              -%}
+            {% endif %}
+          </li>
+        {%- endfor -%}
+        {%- liquid
+          if add_widescreen_size
+            assign items_on_last_row = counter | modulo: products_per_row_widescreen
+          else
+            assign items_on_last_row = counter | modulo: products_per_row
+          endif
+          assign placeholder_width = products_per_row | minus: items_on_last_row
+          assign items_on_last_row_mobile = counter | modulo: products_per_row_mobile
+          assign col_span_mobile = 2 | divided_by: products_per_row_mobile
+          assign placeholder_width_mobile = products_per_row_mobile | minus: items_on_last_row_mobile | times: col_span_mobile
+        -%}
+        {%- if items_on_last_row != 0 -%}
+          <li
+            style="--placeholder-width: {{ placeholder_width }};"
+            class="none absolute bg-scheme-background {% if add_widescreen_size %}xl:block xl:static xl:col-span-placeholder-width{% else %}lg:block lg:static lg:col-span-placeholder-width{% endif %}"
+            aria-hidden="true"
+            role="presentation"
+          ></li>
+        {%- endif -%}
+        {%- if items_on_last_row_mobile != 0 -%}
+          <li
+            style="--placeholder-width-mobile: {{ placeholder_width_mobile }};"
+            class="lg:none col-span-placeholder-width-mobile block bg-scheme-background lg:absolute"
+            aria-hidden="true"
+            role="presentation"
+          ></li>
+        {%- endif -%}
+      </ul>
+    </div>
+  </div>
+{% endif %}

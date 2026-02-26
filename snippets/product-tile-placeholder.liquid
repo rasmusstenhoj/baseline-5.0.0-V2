@@ -1,0 +1,77 @@
+{% doc %}
+  Renders a placeholder product tile snippet.
+
+  This snippet acts as a wrapper that passes configuration parameters to the
+  'quantity-selector' snippet, which handles the actual quantity input rendering.
+
+  @param {string} [product_tile_type] - Type of product tile
+  @param {number} [current] - Current index for placeholder
+  @param {string} [ratio] - Ratio of placeholder
+
+  @example
+  {% render 'product-tile-placeholder',
+    product_tile_type: 'standard',
+    current: 1,
+    ratio: '1.0'
+  %}
+{% enddoc %}
+
+{%- liquid
+  if settings.grid_media_style == 'fill'
+    assign placeholder_padding_classes = 'p-section-horizontal-spacing'
+  else
+    if settings.media_border_radius > 28
+      assign placeholder_padding_classes = 'px-section-horizontal-spacing-double py-section-horizontal-spacing'
+    else
+      assign placeholder_padding_classes = 'p-section-horizontal-spacing'
+    endif
+  endif
+-%}
+
+<a href="#" class="group/zoom block">
+  {%- assign type = 'product-' | append: current -%}
+  <div
+    class="
+      relative
+      {% if product_tile_type == 'standard' %}
+        {% if settings.grid_media_style == 'fill' %}
+          border-b-gridline border-gridline-color
+        {% else %}
+          pt-2 px-2 lg:pt-4 lg:px-4
+        {% endif %}
+      {% elsif settings.grid_media_style == 'inset' %}
+        p-4
+      {% endif %}
+    "
+  >
+    {%- render 'image-crop-placeholder', ratio: ratio, type: type -%}
+    {% if product_tile_type == 'text_overlay' %}
+      <div class="absolute z-20 flex justify-between {{ placeholder_padding_classes }} {% if settings.grid_media_style == 'fill' %}bottom-0 left-0 w-full{% else %}left-4 right-4 bottom-4{% endif %}">
+        <p class="w-3/4">
+          {{ 'homepage.onboarding.product_title' | t }}
+        </p>
+        <p class="text-right">
+          {% if settings.currency_code_enabled == true -%}
+            {{- 1999 | money_with_currency -}}
+          {%- else -%}
+            {{- 1999 | money -}}
+          {%- endif %}
+        </p>
+      </div>
+    {% endif %}
+  </div>
+  {% if product_tile_type == 'standard' %}
+    <div class="flex justify-between p-4">
+      <p class="w-3/4">
+        {{ 'homepage.onboarding.product_title' | t }}
+      </p>
+      <p class="text-right">
+        {% if settings.currency_code_enabled == true -%}
+          {{- 1999 | money_with_currency -}}
+        {%- else -%}
+          {{- 1999 | money -}}
+        {%- endif %}
+      </p>
+    </div>
+  {% endif %}
+</a>

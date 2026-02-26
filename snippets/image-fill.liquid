@@ -1,0 +1,100 @@
+{%- liquid
+  unless sizes
+    assign sizes = '100vw'
+  endunless
+
+  unless widths
+    assign widths = '200, 350, 450, 750, 850, 960, 1280, 1440, 1536, 1706, 1782, 1920, 2560, 2880, 3000'
+  endunless
+
+  unless loading
+    assign loading = null
+  endunless
+
+  unless preload
+    assign preload = false
+  endunless
+
+  if preload
+    assign fetchpriority = 'high'
+  else
+    assign fetchpriority = null
+  endif
+
+  if contain
+    assign object_class = 'object-contain'
+  else
+    assign object_class = 'object-cover'
+  endif
+
+  unless is_thumbnail
+    assign is_thumbnail = false
+  endunless
+
+  unless is_deep_inset
+    assign is_deep_inset = false
+  endunless
+
+  unless hide_media_border
+    assign hide_media_border = false
+  endunless
+
+  assign image_classes = 'image peer/image block absolute inset-0 size-full overflow-hidden ' | append: object_class
+  assign wrapper_classes = 'block absolute inset-0 size-full overflow-hidden'
+
+  unless hide_media_border
+    if settings.grid_media_style == 'inset' and settings.show_inset_media_border
+      assign wrapper_classes = wrapper_classes | append: ' border-gridline border-gridline-color'
+    endif
+  endunless
+
+  if is_thumbnail
+    assign media_radius_class = ' rounded-thumbnail'
+  else
+    if is_deep_inset
+      assign media_radius_class = ' rounded-deep-inset-media'
+    else
+      assign media_radius_class = ' rounded-grid-media'
+    endif
+  endif
+
+  assign wrapper_classes = wrapper_classes | append: media_radius_class
+
+  if settings.zoom_media_on_hover
+    if extra_classes and extra_classes contains 'transition-opacity'
+      # Combine opacity transition (for product tile images) with zoom animation
+      # 'transition-opacity duration-200 ease-in-out' classes should match snippets/product-tile-standard.liquid
+      assign image_classes = image_classes | replace: 'transition-opacity duration-200 ease-in-out', ''
+      assign image_classes = image_classes | append: ' motion-safe:group-hover/zoom:scale-[var(--zoom-media-scale)] motion-safe:[transition:_200ms_opacity_ease-in-out,_300ms_transform_var(--zoom-timing-function)] motion-reduce:[transition:_200ms_opacity_ease-in-out]'
+    else
+      assign image_classes = image_classes | append: ' motion-safe:group-hover/zoom:scale-[var(--zoom-media-scale)]  motion-safe:transition-transform duration-300 ease-zoom'
+    endif
+  endif
+
+  if extra_wrapper_classes
+    assign wrapper_classes = wrapper_classes | append: ' ' | append: extra_wrapper_classes
+  endif
+
+  if extra_classes
+    assign image_classes = image_classes | append: ' ' | append: extra_classes
+  endif
+-%}
+<image-with-placeholder class="{{ wrapper_classes }}">
+  {{
+    image
+    | image_url: width: 3000
+    | image_tag:
+      loading: loading,
+      preload: preload,
+      fetchpriority: fetchpriority,
+      class: image_classes,
+      sizes: sizes,
+      widths: widths
+  }}
+
+  {% unless no_placeholder %}
+    <div
+      class="absolute inset-0 h-full w-full bg-scheme-text opacity-[0.05] peer-[.is-complete]/image:opacity-0 no-js:hidden{{ media_radius_class }}"
+    ></div>
+  {% endunless %}
+</image-with-placeholder>

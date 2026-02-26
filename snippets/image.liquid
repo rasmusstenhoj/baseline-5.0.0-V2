@@ -1,0 +1,79 @@
+{%- liquid
+  unless sizes
+    assign sizes = '100vw'
+  endunless
+
+  unless widths
+    assign widths = '200, 350, 450, 750, 850, 960, 1280, 1440, 1536, 1706, 1782, 1920, 2560, 2880, 3000'
+  endunless
+
+  unless loading
+    assign loading = null
+  endunless
+
+  unless preload
+    assign preload = false
+  endunless
+
+  if preload
+    assign fetchpriority = 'high'
+  else
+    assign fetchpriority = null
+  endif
+
+  unless is_thumbnail
+    assign is_thumbnail = false
+  endunless
+
+  unless is_deep_inset
+    assign is_deep_inset = false
+  endunless
+
+  unless hide_media_border
+    assign hide_media_border = false
+  endunless
+
+  assign element_classes = 'relative overflow-hidden'
+  assign image_classes = 'image peer/image object-cover'
+
+  if is_thumbnail
+    assign element_classes = element_classes | append: ' rounded-thumbnail'
+  else
+    if is_deep_inset
+      assign element_classes = element_classes | append: ' rounded-deep-inset-media'
+    else
+      assign element_classes = element_classes | append: ' rounded-grid-media'
+    endif
+  endif
+
+  unless hide_media_border
+    if settings.grid_media_style == 'inset' and settings.show_inset_media_border
+      assign element_classes = element_classes | append: ' border-gridline border-gridline-color rounded-grid-media'
+    endif
+  endunless
+
+  if settings.zoom_media_on_hover
+    assign image_classes = image_classes | append: '  motion-safe:group-hover/zoom:scale-[var(--zoom-media-scale)] motion-safe:transition-transform duration-200 ease-zoom'
+  endif
+-%}
+
+<image-with-placeholder
+  class="{{ element_classes }}"
+>
+  {{-
+    image
+    | image_url: width: 3000
+    | image_tag:
+      loading: loading,
+      preload: preload,
+      fetchpriority: fetchpriority,
+      class: image_classes,
+      sizes: sizes,
+      widths: widths
+  }}
+  {% unless no_placeholder %}
+    <div
+      class="absolute inset-0 h-full w-full bg-scheme-text opacity-[0.05] peer-[.is-complete]/image:opacity-0 no-js:hidden"
+    ></div>
+  {% endunless %}
+</image-with-placeholder>

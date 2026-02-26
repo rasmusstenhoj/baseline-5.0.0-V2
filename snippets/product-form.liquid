@@ -1,0 +1,118 @@
+{%- liquid
+  assign product_form_id = 'product-form-' | append: section.id
+
+  comment
+    The product is being passed in explicitly only so this snippet can work when called from the featured product section, it is not necessary for product templates
+  endcomment
+-%}
+
+{%- for block in section.blocks -%}
+  {%- liquid
+    assign block_wrapper_classes = ''
+
+    if forloop.first
+      assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--first'
+    endif
+
+    if block.type == 'collapsible_tab'
+      assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--collapsible-tab'
+      if has_borders
+        assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--has-gridlines'
+      endif
+    endif
+
+    if block.type == 'complementary'
+      assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--complementary'
+      if has_borders
+        assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--has-gridlines'
+      endif
+    endif
+
+    if block.type == 'product_group'
+      assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--product-group'
+    endif
+
+    if block.type == 'variant_picker'
+      assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--variant-picker'
+    endif
+
+    if block.type == 'description' and product.description == blank
+      assign block_wrapper_classes = block_wrapper_classes | append: ' hidden'
+    endif
+
+    if block.type == 'information_list' and block.settings.style != 'list'
+      assign block_wrapper_classes = block_wrapper_classes
+      if has_borders
+        assign block_wrapper_classes = block_wrapper_classes | append: ' product-block--has-gridlines'
+      endif
+    endif
+  -%}
+  <div
+    class="product-block {% unless block.type == 'complementary'%}{% if block.type == 'collapsible_tab' %}mt-collapsible-tab{% else %}mt-product-block{% endif %}{% endunless %} {{ block_wrapper_classes }}"
+    {%- if forloop.first -%}
+      style="--spacing-multiplier: 0;"
+    {%- else -%}
+      {%- if block.type == 'collapsible_tab' -%}
+        style="--collapsible-tab-spacing-multiplier: {{ block.settings.space_above }}"
+      {%- elsif block.type == '@app' -%}
+        style="--spacing-multiplier: {{ app_space_above }}"
+      {%- else -%}
+        style="--spacing-multiplier: {{ block.settings.space_above }};"
+      {%- endif -%}
+    {%- endif -%}
+    {{ block.shopify_attributes }}
+  >
+    {%- liquid
+      case block.type
+        when '@app'
+          render 'product-block-app', block: block, product: product
+        when 'title'
+          render 'product-block-title', block: block, product: product, wrap_with_link: featured_product_section
+        when 'vendor'
+          render 'product-block-vendor', block: block, product: product
+        when 'price'
+          render 'product-form-component-price', product: product, current_variant: current_variant, variant_fragment_id: block.id, price_text_size: block.settings.text_size, show_discount_tag: block.settings.show_discount_tag, discount_type: block.settings.discount_type, use_accent_color: block.settings.use_accent_color
+        when 'product_group'
+          if featured_product_section
+            assign simple_link_mode = true
+          else
+            assign simple_link_mode = null
+          endif
+
+          render 'product-form-component-product-group', product: product, section_id: section.id, block_id: block.id, group_metafield_setting: block.settings.group_metafield_key, group_product_display_title_setting: block.settings.group_product_display_title_metafield_key, show_value_label: block.settings.show_value_label, option_style: block.settings.option_style, hide_label: block.settings.hide_label, spread_options: block.settings.spread_options, full_width_buttons: block.settings.full_width_buttons, simple_link_mode: simple_link_mode
+        when 'variant_picker'
+          render 'product-form-component-variant-picker', product: product, section_id: section.id, variant_fragment_id: block.id, option_style: block.settings.option_style, hide_option_labels: block.settings.hide_option_labels, spread_options: block.settings.spread_options, full_width_buttons: block.settings.full_width_buttons, preselect_variant: preselect_variant, hide_sold_out_variants: block.settings.hide_sold_out_variants, hide_unavailable_variants: block.settings.hide_unavailable_variants
+        when 'quantity_selector'
+          render 'product-form-component-quantity-selector', product_form_id: product_form_id, style: block.settings.style, full_width: block.settings.full_width, hide_label: block.settings.hide_label
+        when 'buy_buttons'
+          render 'product-form-component-buy-buttons', product_form_id: product_form_id, product: product, current_variant: current_variant, variant_fragment_id: block.id, show_gift_card_recipient: block.settings.show_gift_card_recipient, show_payment_terms: block.settings.show_payment_terms, full_width: block.settings.full_width, enable_payment_button: block.settings.enable_payment_button, show_atc_price: block.settings.show_atc_price, atc_price_separator_repeats: block.settings.atc_price_separator_repeats, atc_price_separator: block.settings.atc_price_separator, show_quantity_selector: block.settings.show_quantity_selector, preselect_variant: preselect_variant, show_pickup_availability: block.settings.show_pickup_availability, space_above_pickup_availability: block.settings.space_above_pickup_availability
+        when 'description'
+          render 'product-block-description', product: product, truncate_description: block.settings.truncate_description, max_words: block.settings.max_words
+        when 'text'
+          render 'product-block-text', block: block, product: product
+        when 'richtext'
+          render 'product-block-richtext', block: block, product: product
+        when 'information_list'
+          render 'product-block-information-list', block: block, product: product
+        when 'collapsible_tab'
+          render 'product-block-collapsible-tab', block: block, product: product
+        when 'icon_list'
+          render 'product-block-icon-list', block: block, product: product
+        when 'popup'
+          render 'product-block-popup', block: block, product: product, section_color: section_color
+        when 'share'
+          render 'social-sharing', tag: 'h2', share_title: product.title, share_permalink: product.url, share_image: product, section_color: section_color
+        when 'complementary'
+          render 'product-block-complementary', block: block, product: product, last_block_in_column: forloop.last
+        when 'inventory'
+          render 'product-block-inventory', block: block, product: product, current_variant: current_variant
+        when 'location_inventory'
+          render 'product-block-location-inventory', block: block, product: product, current_variant: current_variant
+        when 'separator'
+          render 'product-block-separator'
+        when 'custom_liquid'
+          render 'product-block-custom-liquid', block: block, product: product
+      endcase
+    -%}
+  </div>
+{%- endfor -%}

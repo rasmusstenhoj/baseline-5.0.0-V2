@@ -1,0 +1,37 @@
+{%- liquid
+  assign pick_up_availabilities = current_variant.store_availabilities | where: 'pick_up_enabled', true
+-%}
+
+<div
+  data-variant-fragment="{{ block.id }}"
+  class="product-location-inventory-status-block empty:hidden"
+>
+  {%- if current_variant and current_variant.available -%}
+    <div class="location-inventory empty:hidden">
+      <ul class="space-y-2 empty:hidden">
+        {% for availability in pick_up_availabilities %}
+          {% liquid
+            if availability.available
+              assign list_item_class = ''
+              assign inventory_status = 'products.product.in_stock' | t
+            else
+              if block.settings.show_locations == 'in_stock_only'
+                continue
+              endif
+
+              assign list_item_class = 'text-scheme-text/50'
+              assign inventory_status = 'products.product.out_of_stock' | t
+            endif
+          %}
+          <li
+            {% if list_item_class %}
+              class="{{ list_item_class }}"
+            {% endif %}
+          >
+            {{ availability.location.name }}: {{ inventory_status }}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {%- endif -%}
+</div>

@@ -1,0 +1,810 @@
+{%- liquid
+  unless preload
+    assign preload = false
+  endunless
+
+  unless loading
+    assign loading = null
+  endunless
+
+  assign show_sale_badge = settings.product_grid_show_sale_badge
+  assign show_sold_out_badge = settings.product_grid_show_sold_out_badge
+  assign show_custom_badges = settings.show_custom_badges
+
+  assign on_sale = false
+  if product.compare_at_price > product.price
+    assign on_sale = true
+  endif
+
+  assign sold_out = true
+  if product.available
+    assign sold_out = false
+  endif
+
+  case settings.under_image_display_format
+    when 'title_left_price_right'
+      assign layout_class = 'flex justify-between @small:text-sm @small:flex-col @small:gap-1'
+      assign price_class = 'text-right pl-2 @small:pl-0 @small:text-left @small:w-full'
+      assign title_class = 'text-left w-3/5 @small:w-full'
+      assign swatch_class = 'justify-start'
+
+    when 'title_left_price_under'
+      assign layout_class = '@small:text-sm'
+      assign price_class = 'text-left mt-1'
+      assign title_class = 'text-left'
+      assign swatch_class = 'justify-start'
+
+    when 'title_center_price_under'
+      assign layout_class = 'text-center @small:text-sm'
+      assign price_class = 'text-center mt-1'
+      assign title_class = 'text-center'
+      assign swatch_class = 'justify-center'
+  endcase
+
+  assign output_variant_images = false
+  assign output_hover_image = false
+
+  assign product_tiles_hover_image = settings.product_tiles_hover_image
+
+  if product.media.size > 1 and product_tiles_hover_image != 'none'
+    assign output_hover_image = true
+
+    case product_tiles_hover_image
+      when 'second'
+        assign hover_image = product.media[1].preview_image
+      when 'last'
+        assign last_media = product.media | last
+        assign hover_image = last_media.preview_image
+    endcase
+  endif
+
+  if enable_quick_buy and product.available
+    assign has_product_group = false
+    assign group_products = null
+    assign group_metafield_setting = settings.quick_buy_group_metafield_key
+
+    if group_metafield_setting != blank
+      assign group_metafield_namespace = group_metafield_setting | split: '.' | first
+      assign group_metafield_key = group_metafield_setting | split: '.' | last
+
+      assign product_group_metaobject = product.metafields[group_metafield_namespace][group_metafield_key]
+
+      if product_group_metaobject.value.products.list?
+        assign group_products = product_group_metaobject.value.products.value
+      endif
+
+      if group_products and group_products.count > 0
+        assign has_product_group = true
+      endif
+    endif
+
+    if product.has_only_default_variant != true or has_product_group
+      assign needs_selection = true
+    else
+      assign needs_selection = false
+    endif
+
+    if needs_selection == false
+      assign current_variant = product.selected_or_first_available_variant
+      assign product_form_id = 'product-quick-buy-form-' | append: section.id | append: '-' | append: product.id
+    else
+      assign quick_buy_id = 'product-quick-buy-' | append: product.id | append: '-' | append: section.id
+
+      if product.url contains '?'
+        assign product_quick_buy_url = product.url | append: '&view=quick-buy'
+      else
+        assign product_quick_buy_url = product.url | append: '?view=quick-buy'
+      endif
+    endif
+
+    assign quick_buy_button_on_desktop = false
+    assign quick_buy_button_over_image = false
+    assign quick_buy_button_under_text = false
+
+    if settings.quick_buy_style_on_desktop == 'button_with_text'
+      assign quick_buy_button_on_desktop = true
+      if settings.quick_buy_position_on_desktop == 'over_image'
+        assign quick_buy_button_over_image = true
+      else
+        assign quick_buy_button_under_text = true
+      endif
+    endif
+  endif
+
+  assign has_color_option = false
+
+  assign enable_swatches = settings.enable_color_swatches_in_product_tiles
+  assign enable_legacy_swatches = settings.enable_legacy_color_swatches_in_product_tiles
+
+  if enable_swatches or enable_legacy_swatches
+    for option in product.options_with_values
+      assign is_color = false
+      assign option_downcase = option.name | downcase
+
+      if enable_swatches
+        assign swatches_count = option | map: 'values' | map: 'swatch' | compact | size
+
+        if swatches_count > 0
+          assign is_color = true
+        endif
+      endif
+
+      if is_color == false and enable_legacy_swatches
+        assign swatch_trigger = 'products.product.color_swatch_trigger' | t | downcase
+
+        if option_downcase contains swatch_trigger
+          assign is_color = true
+        elsif swatch_trigger == 'color' and option_downcase contains 'colour'
+          assign is_color = true
+        endif
+      endif
+
+      if is_color
+        assign has_color_option = true
+
+        assign variants_with_images = option | map: 'values' | map: 'variant' | where: 'featured_media' | compact
+        break
+      endif
+    endfor
+  endif
+
+  assign preselect_first_swatch = settings.preselect_first_swatch
+
+  assign product_tiles_hover_image_with_swatches = settings.product_tiles_hover_image_with_swatches
+
+  assign swatch_hover_image = null
+
+  assign output_featured_media = true
+
+  if variants_with_images and variants_with_images.size > 0
+    if has_color_option
+      assign output_variant_images = true
+    endif
+
+    case product_tiles_hover_image_with_swatches
+      when 'featured'
+        if product.featured_media
+          assign swatch_hover_image = product.featured_media.preview_image
+        endif
+      when 'second', 'last'
+        if product.media.size > 1
+          case product_tiles_hover_image_with_swatches
+            when 'second'
+              assign swatch_hover_image = product.media[1].preview_image
+            when 'last'
+              assign last_media = product.media | last
+              assign swatch_hover_image = last_media.preview_image
+          endcase
+        endif
+    endcase
+
+    if preselect_first_swatch == true
+      assign output_featured_media = false
+    endif
+  endif
+
+  if product.options.size >= 1 and product.options.first != 'Title'
+    assign target_option = product.options_with_values.first
+  endif
+
+  comment
+    Loop over values in target option
+  endcomment
+
+  capture option_value_list
+    if target_option
+      for value in target_option.values
+        if value.available
+          echo '<span>'
+          echo value
+          echo '</span>'
+        else
+          echo '<span class="opacity-50 '
+          if settings.sold_out_strikethrough
+            echo 'line-through text-scheme-secondary'
+          endif
+          echo '">'
+          echo value
+          echo '</span>'
+        endif
+      endfor
+    endif
+  endcapture
+
+  if settings.preview_option_values_on_hover and option_value_list != blank
+    assign variant_on_hover_classes = 'grid row-start-1 row-end-2 col-start-1 col-end-2 duration-200 transition-opacity ease-gentle'
+  endif
+
+  if settings.grid_media_style == 'inset'
+    assign inset_grid_media = true
+  endif
+-%}
+
+<data-island
+  class="hover:ease-gentle group/zoom {% if enable_swatches != true and enable_legacy_swatches != true %}group/image{% endif %} group relative flex h-full flex-col text-center @container focus-within:text-scheme-accent hover:text-scheme-accent"
+  {% if has_color_option and enable_swatches or enable_legacy_swatches %}
+    x-data="
+      {
+        currentSwatchVariantId: {% if preselect_first_swatch %}'{{ product.selected_or_first_available_variant.id }}'{% else %}null{% endif %},
+        productUrl: '{{ product.url }}'
+      }
+    "
+  {% elsif enable_quick_buy %}
+    x-data
+  {% endif %}
+  data-color-scheme="{{ section_color }}"
+>
+  <a
+    href="{{ product.url }}"
+    {% if has_color_option and enable_swatches or enable_legacy_swatches %}
+      :href="productUrl"
+    {% endif %}
+    tabindex="-1"
+    aria-hidden="true"
+    data-splide-ignore
+    class="absolute inset-0 h-full w-full"
+  >
+    {%- comment -%}
+      This link only serves to cover the part of the product grid cell that’s not covered by the product tile; it’s not accessible via keyboard or via screen readers to keep navigation seamless for those methods
+    {%- endcomment -%}
+  </a>
+
+  <div
+    class="relative"
+  >
+    {%- comment -%}
+      This link covers the product tile’s title and price area; it’s not accessible via keyboard or via screen readers to keep navigation seamless for those methods
+    {%- endcomment -%}
+    <a
+      href="{{ product.url }}"
+      {% if has_color_option and enable_swatches or enable_legacy_swatches %}
+        :href="productUrl"
+      {% endif %}
+      class="focus-inset absolute inset-0 z-30"
+      {% if enable_swatches or enable_legacy_swatches %}
+        tabindex="-1"
+        data-splide-ignore
+        aria-hidden="true"
+      {% endif %}
+    >
+      <span class="sr-only">{{ product.title }}</span>
+    </a>
+
+    {% if show_sale_badge
+      or show_sold_out_badge
+      or show_custom_badges != 'none'
+    %}
+      {% render 'badges',
+        product: product,
+        product_tile_type: product_tile_type,
+        sold_out: sold_out,
+        on_sale: on_sale,
+        show_sale_badge: show_sale_badge,
+        show_sold_out_badge: show_sold_out_badge,
+        show_custom_badges: show_custom_badges
+      %}
+    {% endif %}
+
+    <div
+      class="w-full {% if settings.grid_media_style == 'fill' %}border-b-gridline border-gridline-color{% else %}px-section-horizontal-spacing pt-2 lg:pt-4{% endif %}"
+    >
+      <div
+        class="relative {% if enable_swatches or enable_legacy_swatches %}group/image{% endif %}"
+        {% if output_variant_images %}
+          :class="
+            {
+              'group/swatch': currentSwatchVariantId !== null,
+              'group/image': currentSwatchVariantId === null,
+            }
+          "
+        {% endif %}
+      >
+        {% if enable_swatches or enable_legacy_swatches %}
+          <a
+            href="{{ product.url }}"
+            {% if has_color_option %}
+              :href="productUrl"
+            {% endif %}
+            class="focus-inset absolute inset-0 z-30"
+          >
+            <span class="sr-only">{{ product.title }}</span>
+          </a>
+        {% endif %}
+
+        {% if product.media.size > 0
+          and inset_grid_media
+          and settings.show_inset_media_border
+        %}
+          <div
+            aria-hidden="true"
+            class="pointer-events-none absolute inset-0 z-30 rounded-grid-media border-gridline border-gridline-color"
+          ></div>
+        {% endif %}
+        {% liquid
+          assign crop_media = false
+          assign contain = false
+
+          unless settings.product_standard_tile_image_crop == 'natural'
+            assign crop_media = true
+            assign ratio = settings.product_standard_tile_image_crop | plus: 0
+          endunless
+
+          if force_crop
+            if force_crop_ratio == 'natural'
+              assign crop_media = false
+              assign ratio = 0
+            else
+              assign crop_media = true
+              assign ratio = force_crop_ratio
+
+              if force_crop_style == 'contain'
+                assign contain = true
+              endif
+            endif
+          else
+            if settings.product_standard_tile_image_crop_style == 'contain'
+              assign contain = true
+            endif
+          endif
+        %}
+        {%- if crop_media -%}
+          {%- if product.featured_media != blank -%}
+            {% if output_featured_media %}
+              {%- render 'image-crop',
+                image: product.featured_media,
+                sizes: sizes,
+                preload: preload,
+                loading: loading,
+                ratio: ratio,
+                contain: contain,
+                hide_media_border: true
+              -%}
+            {% else %}
+              <div
+                class="relative w-full"
+                style="padding-top: {{ 1 | divided_by: ratio | times: 100 }}%;"
+              ></div>
+            {% endif %}
+          {%- endif -%}
+        {%- else -%}
+          {%- liquid
+            if product.featured_media != blank
+              if output_featured_media
+                render 'image', image: product.featured_media, sizes: sizes, preload: preload, loading: loading, hide_media_border: true
+              else
+                echo '<div class="relative" style="padding-top: '
+                echo 100.0000 | divided_by: product.featured_media.preview_image.aspect_ratio
+                echo
+                echo '%"></div>'
+              endif
+            else
+              echo '<div class="relative pt-[100%]"></div>'
+            endif
+          -%}
+        {%- endif -%}
+
+        {% if output_variant_images %}
+          {% for variant in variants_with_images %}
+            {%- liquid
+              assign img_classes = 'z-10 bg-scheme-background opacity-0 transition-opacity duration-200 ease-in-out'
+
+              if preselect_first_swatch and forloop.first
+                assign img_classes = img_classes | replace: 'opacity-0', 'opacity-100'
+              endif
+
+              if inset_grid_media and settings.media_border_radius > 0
+                assign img_classes = img_classes | append: ' shadow-rounded-hover-image'
+              endif
+            -%}
+            <data-island
+              class="contents"
+              {% if preselect_first_swatch and forloop.first %}
+                x-data="{ shown: true, top: true }"
+              {% else %}
+                x-data="{ shown: false, top: false }"
+              {% endif %}
+              x-init="
+                if (currentSwatchVariantId === '{{ variant.id }}') {
+                  shown = true;
+                  top = true;
+                }
+
+                $watch('currentSwatchVariantId', (value) => {
+                  if (value === '{{ variant.id }}') {
+                    shown = true;
+                    top = true;
+                  } else {
+                    top = false;
+                    setTimeout(() => { shown = false; }, 200)
+                  }
+                });
+              "
+              :class="
+                {
+                  '[&>image-with-placeholder>img]:opacity-100' :
+                    shown,
+                  '[&>image-with-placeholder>img]:z-20' :
+                    top,
+                }
+              "
+            >
+              {% render 'image-fill',
+                image: variant.featured_media.preview_image,
+                sizes: sizes,
+                loading: 'lazy',
+                preload: false,
+                extra_classes: img_classes,
+                hide_media_border: true
+              %}
+            </data-island>
+          {% endfor %}
+        {% endif %}
+
+        {% liquid
+          if output_hover_image
+            if hover_image
+              assign second_image_extra_classes = 'z-5 bg-scheme-background opacity-0 transition-opacity duration-200 ease-in-out group-hover/image:opacity-100 group-has-[:focus-visible]/image:opacity-100'
+
+              if inset_grid_media and settings.media_border_radius > 0
+                assign second_image_extra_classes = second_image_extra_classes | append: ' shadow-rounded-hover-image'
+              endif
+
+              render 'image-fill', image: hover_image, contain: contain, sizes: sizes, preload: false, loading: loading, extra_wrapper_classes: second_image_extra_classes, hide_media_border: true
+            endif
+
+            if swatch_hover_image
+              assign swatch_hover_image_classes = 'z-25 bg-scheme-background opacity-0 transition-opacity duration-200 ease-in-out group-hover/swatch:opacity-100 group-has-[:focus-visible]/swatch:opacity-100'
+
+              if inset_grid_media and settings.media_border_radius > 0
+                assign swatch_hover_image_classes = swatch_hover_image_classes | append: ' shadow-rounded-hover-image'
+              endif
+
+              render 'image-fill', image: swatch_hover_image, contain: contain, sizes: sizes, preload: false, loading: loading, extra_wrapper_classes: swatch_hover_image_classes, hide_media_border: true
+            endif
+          endif
+        %}
+
+        {%- if enable_quick_buy and product.available %}
+          <div class="{% if inset_grid_media %}p-inset-quick-buy{% else %}p-section-horizontal-spacing{% endif %} pointer-events-none absolute inset-0 z-40 flex h-full w-full items-end {% unless settings.quick_buy_plus_icon_desktop_visibility == 'always' %} transition-opacity lg:opacity-0 lg:group-has-[:focus-visible]/image:opacity-100 lg:group-has-[:focus-visible]/swatch:opacity-100 lg:group-hover/image:opacity-100 lg:group-hover/swatch:opacity-100 {% endunless %} {% if quick_buy_button_under_text %}lg:hidden{% endif %}">
+            {% if needs_selection %}
+              <div
+                class="pointer-events-auto ml-auto w-fit {% if quick_buy_button_over_image %}lg:w-full lg:ml-0{% endif %} lg:pointer-events-none lg:group-hover/image:pointer-events-auto lg:group-hover/swatch:pointer-events-auto lg:group-has-[:focus-visible]/image:pointer-events-auto lg:group-has-[:focus-visible]/swatch:pointer-events-auto"
+              >
+                {% if product.available %}
+                  <a
+                    href="{{ product.url }}"
+                    :role="`button`"
+                    class="icon-button {% if settings.quick_buy_button_style == 'secondary' %}icon-button icon-button--secondary{% endif %} ml-auto block w-fit {% if quick_buy_button_over_image %}lg:hidden{% endif %}"
+                    @click.prevent="$store.modals.open('{{ quick_buy_id }}')"
+                    aria-label="{{ 'products.product.choose_options' | t }}"
+                  >
+                    <span class="block size-6">
+                      {% render 'icon-plus' %}
+                    </span>
+                  </a>
+                  {%- if quick_buy_button_over_image -%}
+                    <a
+                      href="{{ product.url }}"
+                      :role="`button`"
+                      class="hidden w-full lg:block {% if settings.quick_buy_button_style == 'primary' %}theme-button{% else %}theme-button--secondary{% endif %}"
+                      @click.prevent="$store.modals.open('{{ quick_buy_id }}')"
+                    >
+                      {% if products_per_row_mobile > 1 %}
+                        <span class="max-lg:hidden">
+                          {{- 'products.product.choose_options' | t -}}
+                        </span>
+                        <span class="lg:hidden">
+                          {{- 'products.product.choose_options_short' | t -}}
+                        </span>
+                      {% else %}
+                        {{ 'products.product.choose_options' | t }}
+                      {% endif %}
+                    </a>
+                  {%- endif -%}
+                {% endif %}
+              </div>
+            {% else %}
+              <data-island
+                class="pointer-events-auto w-full bg-transparent lg:pointer-events-none lg:group-hover/image:pointer-events-auto lg:group-hover/swatch:pointer-events-auto lg:group-has-[:focus-visible]/image:pointer-events-auto lg:group-has-[:focus-visible]/swatch:pointer-events-auto"
+                x-data="QuickBuy"
+                src="quick-buy"
+              >
+                {% render 'product-form-component-buy-buttons',
+                  product_form_id: product_form_id,
+                  product: product,
+                  current_variant: current_variant,
+                  quick_buy: true,
+                  quick_buy_drawer: false,
+                  show_gift_card_recipient: false,
+                  show_payment_terms: false,
+                  enable_payment_button: false,
+                  quick_buy_button_on_desktop: quick_buy_button_on_desktop,
+                  quick_buy_button_style: settings.quick_buy_button_style,
+                  show_atc_price: false,
+                  show_pickup_availability: false
+                %}
+              </data-island>
+            {% endif %}
+          </div>
+        {%- endif -%}
+      </div>
+    </div>
+
+    {% liquid
+      assign meta_class = 'py-4 px-section-horizontal-spacing'
+
+      if settings.product_grid_uppercase
+        assign meta_class = meta_class | append: ' uppercase'
+      endif
+    %}
+    <div
+      class="relative {{ meta_class }} {{ layout_class }}"
+    >
+      <div class="{{ title_class }} break-word">
+        {% if settings.product_grid_show_vendor and product.vendor != '' %}
+          <p class="mb-1 text-scheme-secondary{% if sold_out %} line-through{% endif %}">
+            {{ product.vendor }}
+          </p>
+        {% endif %}
+        <div
+          aria-hidden="true"
+          class="grid grid-cols-1 grid-rows-1"
+        >
+          <p
+            class="{% if sold_out %}text-scheme-secondary line-through{% endif %}{% if settings.preview_option_values_on_hover and option_value_list != blank %}{{ variant_on_hover_classes }} group-hover:opacity-0 group-has-[:focus-visible]:opacity-0 duration-150 transition-opacity ease-gentle items-start opacity-100{% endif %}"
+          >
+            {{ product.title }}
+          </p>
+          {% if settings.preview_option_values_on_hover
+            and option_value_list != blank
+          %}
+            <div
+              class="{{ variant_on_hover_classes }} ease-gentle items-start opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-has-[:focus-visible]:opacity-100"
+            >
+              <div class="flex flex-wrap gap-x-1.5 {{ swatch_class }}">
+                {{ option_value_list }}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="{{ price_class }}">
+        {% if sold_out %}
+          <s class="text-scheme-secondary">
+            {{- 'products.product.sold_out' | t -}}
+          </s>
+        {% else %}
+          {% if on_sale and sold_out != true %}
+            <s class="block lg:inline"
+              ><span class="sr-only">
+                {{- 'products.product.regular_price' | t -}}
+              </span>
+              {{- product.compare_at_price | money -}}
+            </s>
+          {% endif %}
+          {% if on_sale %}
+            {% if product.price_varies %}
+              {% liquid
+                if settings.currency_code_enabled == true
+                  assign sale_price = product.price | money_with_currency
+                else
+                  assign sale_price = product.price | money
+                endif
+              %}
+              <span class="text-scheme-accent"
+                ><span class="sr-only">
+                  {{- 'products.product.sale_price' | t -}}</span
+                ><br>
+                {{
+                  'products.product.on_sale_from_html'
+                  | t: price: sale_price
+                -}}
+              </span>
+            {% else %}
+              <span class="text-scheme-accent"
+                ><span class="sr-only">
+                  {{- 'products.product.sale_price' | t -}}
+                </span>
+                {%- if settings.currency_code_enabled == true -%}
+                  {{- product.price | money_with_currency -}}
+                {%- else -%}
+                  {{- product.price | money -}}
+                {%- endif -%}
+              </span>
+            {% endif %}
+          {% else %}
+            {% if product.price_varies %}
+              {%- if settings.currency_code_enabled == true -%}
+                {%- assign price = product.price | money_with_currency -%}
+              {%- else -%}
+                {%- assign price = product.price | money -%}
+              {%- endif -%}
+              <span>
+                {{-
+                  'products.product.from_lowest_price_html'
+                  | t: lowest_price: price
+                -}}
+              </span>
+            {% else %}
+              <span>
+                {%- if settings.currency_code_enabled == true -%}
+                  {{- product.price | money_with_currency -}}
+                {%- else -%}
+                  {{- product.price | money -}}
+                {%- endif -%}
+              </span>
+            {% endif %}
+          {% endif %}
+        {% endif %}
+        {% assign unit_price_variant = product.first_available_variant %}
+        {%- if unit_price_variant.unit_price -%}
+          <p
+            class="{% if sold_out %}text-scheme-secondary line-through{% endif %} text-xs"
+          >
+            <span data-unit-price>
+              {%- if settings.currency_code_enabled == true -%}
+                {{- unit_price_variant.unit_price | money_with_currency -}}
+              {%- else -%}
+                {{- unit_price_variant.unit_price | money -}}
+              {%- endif %}
+            </span>
+            <span>/</span>
+            <span data-unit-price-measurement-reference-value>
+              {%- if unit_price_variant.unit_price_measurement.reference_value
+                  != 1
+              -%}
+                {{- unit_price_variant.unit_price_measurement.reference_value -}}
+              {%- endif -%}
+            </span>
+            <span data-unit-price-measurement-reference-unit>
+              {{- unit_price_variant.unit_price_measurement.reference_unit -}}
+            </span>
+          </p>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+  {%- if enable_quick_buy and quick_buy_button_under_text %}
+    <div class="relative z-10 mt-auto hidden w-full px-section-horizontal-spacing pb-section-horizontal-spacing lg:flex">
+      {% if needs_selection %}
+        <div
+          class="w-full"
+        >
+          {% if product.available %}
+            <a
+              href="{{ product.url }}"
+              :role="`button`"
+              class="block {% if settings.quick_buy_button_style == 'primary' %}theme-button{% else %}theme-button--secondary{% endif %} w-full"
+              @click.prevent="$store.modals.open('{{ quick_buy_id }}')"
+            >
+              {% if products_per_row_mobile > 1 %}
+                <span class="max-lg:hidden">
+                  {{- 'products.product.choose_options' | t -}}
+                </span>
+                <span class="lg:hidden">
+                  {{- 'products.product.choose_options_short' | t -}}
+                </span>
+              {% else %}
+                {{ 'products.product.choose_options' | t }}
+              {% endif %}
+            </a>
+          {% endif %}
+        </div>
+      {% else %}
+        <data-island
+          class="w-full"
+          x-data="QuickBuy"
+          src="quick-buy"
+        >
+          {% render 'product-form-component-buy-buttons',
+            product_form_id: product_form_id,
+            product: product,
+            current_variant: current_variant,
+            quick_buy: true,
+            quick_buy_drawer: false,
+            show_gift_card_recipient: false,
+            show_payment_terms: false,
+            enable_payment_button: false,
+            quick_buy_button_on_desktop: true,
+            quick_buy_button_style: settings.quick_buy_button_style,
+            show_atc_price: false,
+            show_pickup_availability: false
+          %}
+        </data-island>
+      {% endif %}
+    </div>
+  {%- endif -%}
+  {%- if has_color_option and enable_swatches or enable_legacy_swatches -%}
+    {%- assign swatch_trigger = 'products.product.color_swatch_trigger'
+      | t
+      | downcase
+    -%}
+    {%- for option in product.options_with_values -%}
+      {%- liquid
+        assign is_color = false
+        assign option_downcase = option.name | downcase
+        if option_downcase contains swatch_trigger
+          assign is_color = true
+        elsif swatch_trigger == 'color' and option_downcase contains 'colour'
+          assign is_color = true
+        endif
+
+        unless is_color
+          continue
+        endunless
+      -%}
+      <div class="relative z-10 w-fit px-section-horizontal-spacing pb-section-horizontal-spacing">
+        <div
+          class="-mx-1 flex {{ swatch_class }} -mt-2 w-fit flex-wrap"
+        >
+          {%- for value in option.values -%}
+            {%- liquid
+              if enable_swatches and value.swatch != blank
+                assign swatch = value.swatch
+                assign swatch_image = swatch.image
+                assign swatch_color = swatch.color
+              elsif enable_legacy_swatches and is_color
+                assign color_image = value | handle | append: '.' | append: 'png' | file_img_url: '50x' | prepend: 'https:'
+                assign color_swatch_fallback = value | split: ' ' | last | handle
+              endif
+            -%}
+            <a
+              href="{{ value.variant.url }}"
+              class="mx-1 mt-2 rounded-button border-text border-scheme-text/0 p-px"
+              :class="{ 'border-scheme-text' : currentSwatchVariantId === '{{ value.variant.id }}', 'border-scheme-text/0' : currentSwatchVariantId !== '{{ value.variant.id }}' }"
+              @click.prevent="currentSwatchVariantId = '{{ value.variant.id }}'; productUrl = '{{ value.variant.url }}'"
+            >
+              {%- if enable_swatches and value.swatch != blank -%}
+                <span
+                  class="block rounded-button p-2"
+                  style="background-position: {{ swatch_image.presentation.focal_point | default: 'center' }};{% if swatch_image != blank %} background-image: url({{ swatch_image | image_url: width: 160 }});{% endif %}{% if swatch_color != blank %} background-color: rgb({{ swatch_color.rgb }});{% endif %}"
+                ></span>
+              {%- elsif enable_legacy_swatches and is_color -%}
+                <span
+                  class="block rounded-button p-2"
+                  style="background-image: url({{ color_image }}); background-color: {{ color_swatch_fallback }};"
+                ></span>
+              {%- endif -%}
+              <span class="sr-only">{{ value }}</span>
+            </a>
+          {%- endfor -%}
+        </div>
+      </div>
+    {%- endfor -%}
+  {%- endif -%}
+  {% if enable_quick_buy and product.available and needs_selection %}
+    <data-island
+      x-data
+      x-init="{% if request.design_mode %} $store.modals.removeExistingContents('quickBuyDrawer', '#{{ quick_buy_id }}'); {% endif %}{% unless inserted %}initTeleport($root); {% endunless %}$store.modals.register('{{ quick_buy_id }}', 'quickBuyDrawer');"
+      class="hidden"
+      on="idle"
+    >
+      <template
+        {% if inserted %}
+          x-teleport="#quick-buy-drawer-slot"
+        {% else %}
+          data-should-teleport="#quick-buy-drawer-slot"
+        {% endif %}
+      >
+        <template
+          id="{{ quick_buy_id }}"
+          x-if="$store.modals.quickBuyDrawer.contents === '{{ quick_buy_id }}'"
+        >
+          <div
+            data-modal-label="{{ 'products.product.choose_product_options' | t: product_name: product.title | escape }}"
+            x-html="
+              $fetchedFragment(
+                '{{ product_quick_buy_url }}',
+                '[data-quick-buy-root]'
+              )
+            "
+          >
+            <div class="my-16 px-section-horizontal-spacing text-center">
+              {{ 'general.search.loading' | t }}&hellip;
+            </div>
+          </div>
+        </template>
+      </template>
+    </data-island>
+  {% endif %}
+</data-island>

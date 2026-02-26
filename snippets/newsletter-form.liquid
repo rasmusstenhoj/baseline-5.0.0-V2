@@ -1,0 +1,36 @@
+{% form 'customer', id: form_id %}
+  {% if form.errors and template.suffix != 'contact' %}
+    {{ form.errors | default_errors }}
+  {% endif %}
+
+  {% if form.posted_successfully? %}
+    <p class="lg:ml-theme-half">
+      {{ 'general.newsletter_form.confirmation' | t }}
+    </p>
+  {% else %}
+    <input type="hidden" name="contact[tags]" value="newsletter">
+    <div class="items-end lg:flex">
+      <label class="sr-only" for="Email-{{ section.id }}">
+        {{- 'general.newsletter_form.email_placeholder' | t -}}
+      </label>
+      <input
+        type="email"
+        class="font-body block w-full border-b-text border-current bg-transparent pb-1 leading-[inherit] placeholder-current"
+        name="contact[email]"
+        id="Email-{{ section.id }}"
+        value="{% if customer.email != blank %}{{ customer.email }}{% endif %}"
+        placeholder="{{ 'general.newsletter_form.email_placeholder' | t }}"
+        autocorrect="off"
+        autocapitalize="off"
+      >
+      <button
+        class="theme-link mt-2 shrink-0 py-1 leading-[inherit] hover:text-scheme-accent lg:ml-2 lg:mt-0"
+        type="submit"
+        name="commit"
+        id="Subscribe"
+      >
+        {{- 'general.newsletter_form.submit' | t -}}
+      </button>
+    </div>
+  {% endif %}
+{% endform %}

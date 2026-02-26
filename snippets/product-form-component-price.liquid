@@ -1,0 +1,186 @@
+{% doc %}
+  Renders the price in product forms.
+
+  @param {object} [product] - The product object (required for "Featured product" sections, optional for product pages where it's globally available)
+  @param {object} [current_variant] - The variant to display pricing for (defaults to product.selected_or_first_available_variant)
+  @param {string} [variant_fragment_id] - Fragment ID for variant change updates (typically block.id, must be unique in section)
+  @param {string} [price_text_size] - Text size class for the price: e.g., 'text-base', 'text-heading-standard', etc.; falls back to a type-scale-based value if not provided
+  @param {boolean} [show_discount_tag] - Whether to show discount when product is on sale
+  @param {string} [discount_type] - Discount style: 'percentage' or 'amount'
+  @param {boolean} [use_accent_color] - Whether to use the accent color for discount
+
+  @example
+  {% render 'product-form-component-price',
+    product: product,
+    current_variant: current_variant,
+    variant_fragment_id: block.id,
+    price_text_size: block.settings.text_size,
+    show_discount_tag: block.settings.show_discount_tag,
+    discount_type: block.settings.discount_type,
+    use_accent_color: block.settings.use_accent_color
+  %}
+{% enddoc %}
+
+{%- liquid
+  unless price_text_size
+    if settings.desktop_feature_heading_scale > 4
+      assign price_text_size = 'text-heading-standard'
+    else
+      assign price_text_size = 'text-base'
+    endif
+  endunless
+
+  if price_text_size contains 'heading'
+    assign price_font_class = 'font-heading'
+  else
+    assign price_font_class = 'font-body'
+  endif
+
+  unless current_variant
+    assign current_variant = product.selected_or_first_available_variant
+  endunless
+
+  if price_text_size == 'text-heading-standard' or price_text_size == 'text-heading-feature'
+    assign price_gap_class = 'gap-x-4 lg:gap-x-6'
+    assign discount_gap_class = 'gap-1 lg:gap-2'
+  elsif price_text_size == 'text-heading-secondary'
+    assign price_gap_class = 'gap-x-2 lg:gap-x-4'
+    assign discount_gap_class = 'gap-1'
+  else
+    assign price_gap_class = 'gap-2'
+    assign discount_gap_class = 'gap-1'
+  endif
+
+  assign price_classes = ''
+
+  if current_variant and product.compare_at_price_max and current_variant.compare_at_price > current_variant.price
+    assign price_classes = price_classes | append: ' text-scheme-accent'
+  endif
+
+  unless current_variant
+    assign price_classes = price_classes | append: ' invisible'
+  endunless
+
+  assign price_classes = price_classes | replace_first: ' ', ''
+-%}
+
+<div
+  {% if variant_fragment_id %}
+    data-variant-fragment="{{ variant_fragment_id }}"
+  {% else %}
+    data-variant-fragment="price"
+  {% endif %}
+>
+  <div
+    class="product-price-block {{ price_font_class }} {{ price_text_size }} {% if current_variant.compare_at_price > current_variant.price %}flex flex-wrap items-center {{ price_gap_class }}{% endif %}"
+  >
+    {% if product.compare_at_price_max > product.price %}
+      <span class="sr-only">
+        {{- 'products.product.regular_price' | t -}}
+      </span>
+    {% endif %}
+
+    <span
+      class="{% if show_discount_tag %}inline-flex{% endif %} {{ price_classes }}"
+    >
+      {%- if settings.currency_code_enabled -%}
+        {{- current_variant.price | money_with_currency -}}
+      {%- else -%}
+        {{- current_variant.price | money -}}
+      {%- endif -%}
+    </span>
+
+    {% if product.compare_at_price_max > product.price
+      and current_variant
+      and product.compare_at_price_max
+      and current_variant.compare_at_price > current_variant.price
+    %}
+      <span
+        class="{% if show_discount_tag %}inline-flex flex-wrap items-baseline {{ discount_gap_class }}{% endif %}"
+      >
+        <span class="sr-only">
+          {{- 'products.product.sale_price' | t -}}
+        </span>
+
+        <s>
+          {{- current_variant.compare_at_price | money -}}
+        </s>
+
+        {% if show_discount_tag %}
+          {% assign discount_as_number = current_variant.compare_at_price
+            | minus: current_variant.price
+          %}
+          {% assign discount_as_number_money = discount_as_number | money %}
+          {% assign discount_as_number_with_tag = 'products.product.discount_tag'
+            | t: amount: discount_as_number_money
+          %}
+
+          {% if discount_type == 'percentage' %}
+            {% assign discount_as_percentage = 100
+              | times: discount_as_number
+              | divided_by: current_variant.compare_at_price
+              | round
+              | append: '%'
+            %}
+            {% assign discount_as_percentage_with_tag = 'products.product.discount_tag'
+              | t: amount: discount_as_percentage
+            %}
+          {% endif %}
+
+          <span
+            class="inline-flex flex-nowrap {{ discount_gap_class }} {{ price_font_class }} {% if use_accent_color %}text-scheme-accent{% endif %}"
+          >
+            {% if discount_type == 'percentage' %}
+              <span>
+                {{ discount_as_percentage_with_tag }}
+              </span>
+            {% else %}
+              <span>
+                {{ discount_as_number_with_tag }}
+              </span>
+            {% endif %}
+          </span>
+        {% endif %}
+      </span>
+    {% endif %}
+  </div>
+
+  {% if current_variant.unit_price_measurement %}
+    <div
+      class="font-body mt-2 text-sm"
+    >
+      <span class="sr-only">
+        {{- 'products.product.unit_price_label' | t -}}
+      </span>
+      <span>
+        {{- current_variant.unit_price | money -}}
+      </span>
+      <span aria-hidden="true"> / </span>
+      <span class="sr-only">
+        {{- 'general.accessibility.unit_price_separator' | t -}}
+      </span>
+      <span>
+        {%- if current_variant.unit_price_measurement.reference_value != 1 -%}
+          {{- current_variant.unit_price_measurement.reference_value -}}
+        {%- endif -%}
+      </span>
+      <span>
+        {{- current_variant.unit_price_measurement.reference_unit -}}
+      </span>
+    </div>
+  {% endif %}
+
+  {%- if cart.taxes_included or shop.shipping_policy.body != blank -%}
+    <div class="font-body mt-2 text-sm">
+      {%- if cart.taxes_included -%}
+        {{ 'products.product.include_taxes' | t }}
+      {%- endif -%}
+      {%- if shop.shipping_policy.body != blank -%}
+        {{
+          'products.product.shipping_policy_html'
+          | t: link: shop.shipping_policy.url
+        }}
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+</div>

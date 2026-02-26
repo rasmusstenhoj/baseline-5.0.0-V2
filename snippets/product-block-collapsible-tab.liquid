@@ -1,0 +1,71 @@
+<div
+  class="collapsible-tab"
+>
+  <data-island
+    class="product-block--grid-container -mx-section-horizontal-spacing border-b-gridline border-gridline-color px-section-horizontal-spacing py-2"
+    x-data="{ open: false }"
+  >
+    <h2
+      {% unless block.settings.heading_text_style == 'heading' %}
+        class="text-base"
+      {% endunless %}
+    >
+      <button
+        @click="open = !open"
+        class="{{ block.settings.heading_text_style }} flex w-full cursor-pointer items-center justify-between text-left"
+        type="button"
+        :aria-expanded="open ? true : 'false'"
+      >
+        <div class="flex items-center justify-start">
+          {% if block.settings.icon != 'none' -%}
+            <div class="mr-2 flex h-6 w-6 shrink-0 items-center">
+              {%- render 'product-icon', icon: block.settings.icon -%}
+            </div>
+          {%- endif %}
+          <div
+            class="flex items-center text-base"
+          >
+            {{ block.settings.heading }}
+          </div>
+        </div>
+        {%- if settings.accordion_icon == 'plus_minus' -%}
+          <div class="flex h-6 w-6 shrink-0 items-center" x-show="!open">
+            {% render 'icon-plus' %}
+          </div>
+          <div
+            class="flex h-6 w-6 shrink-0 items-center"
+            x-show="open"
+            style="display: none;"
+          >
+            {%- render 'icon-minus' -%}
+          </div>
+        {%- else -%}
+          <div
+            class="ease-gentle flex h-6 w-6 shrink-0 rotate-0 items-center transition-transform duration-[280ms]"
+            :class="{ 'rotate-180' : open, 'rotate-0' : ! open }"
+          >
+            {%- render 'icon-chevron-down' -%}
+          </div>
+        {%- endif -%}
+      </button>
+    </h2>
+    <div
+      id="{{ block.id }}"
+      x-show="open"
+      style="display: none;"
+      x-collapse
+    >
+      <div class="rte pt-4 text-base">
+        {{ block.settings.content }}
+        {{ block.settings.page.content }}
+      </div>
+    </div>
+  </data-island>
+  <noscript>
+    <div class="rte">
+      <h2 class="text-heading-standard"></h2>
+      {{ block.settings.content }}
+      {{ block.settings.page.content }}
+    </div>
+  </noscript>
+</div>

@@ -1,0 +1,20 @@
+{% comment %}
+  This script tag contains options for es-modules-shim, which is loaded
+  automatically by Shopify.
+{% endcomment %}
+<script type="esms-options">
+  {
+    "noLoadEventRetriggers": true
+  }
+</script>
+
+<script type="importmap">
+  {
+    "imports": {
+      "vendor": "{{ 'vendor.bundle.min.js' | asset_url }}",
+      "deferrable-data": "{{ 'deferrable-data.bundle.js' | asset_url }}",
+      "product": "{{ 'island-product.bundle.js' | asset_url }}",
+      "quick-buy": "{{ 'island-quick-buy.bundle.js' | asset_url }}"
+    }
+  }
+</script>

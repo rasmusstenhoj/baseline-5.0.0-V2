@@ -1,0 +1,263 @@
+{%- liquid
+  assign grid_media_style = settings.grid_media_style
+  unless preload
+    assign preload = false
+  endunless
+
+  unless loading
+    assign loading = null
+  endunless
+
+  assign padding_class = 'p-grid-media'
+
+  assign enable_video_autoplay = false
+  if section.settings.enable_video_autoplay == true and media.media_type == 'video'
+    assign enable_video_autoplay = true
+  endif
+
+  if two_media_per_row and grid_media_style == 'fill'
+    assign border_classes = 'lg:-mb-gridline'
+    if template_type == 'three_col'
+      assign border_classes = border_classes | append: ' xl:border-b-gridline xl:border-gridline-color'
+    else
+      assign border_classes = border_classes | append: ' lg:border-b-gridline lg:border-gridline-color'
+    endif
+  endif
+-%}
+
+<div
+  class="focus-inset relative {{ border_classes }} {{ padding_class }}{% if grid_media_style == 'fill' %} w-full{% endif %}"
+  data-media-id="{{ media.id }}"
+  data-product-single-media-wrapper
+  {% if media.media_type == 'image' %}
+    data-product-media-type-image data-product-image-index="{{ image_index }}"
+    {% if section.settings.enable_image_zoom and media.media_type == 'image' %}
+      role="button"
+      :class="`cursor-zoom-in`"
+      @click.prevent="openZoom({{ media.id }})"
+      @keydown.enter.prevent="openZoom({{ media.id }})"
+      @keydown.space.prevent="openZoom({{ media.id }})"
+      tabindex="0"
+    {% endif %}
+  {% endif %}
+  {% if media.media_type == 'video' or media.media_type == 'external_video' %}
+    role="figure" data-product-media-type-video
+    data-enable-video-looping="{{ enable_video_looping }}"
+  {% endif %}
+  {% if media.media_type == 'model' %}
+    data-product-media-type-model
+  {% endif %}
+  {% if media.media_type == 'external_video' %}
+    data-video-id="{{ media.external_id }}"
+  {% endif %}
+  {% if scroll_to %}
+    @media-visible.camel="!isUsingSlideshowToDisplayMedia && scrollToTopOf($el)"
+  {% endif %}
+>
+  {% case media.media_type %}
+    {% when 'image' %}
+      {% render 'image',
+        image: media.image,
+        sizes: sizes,
+        image_attributes: 'data-product-featured-image',
+        wrapper_attributes: 'data-product-image-wrapper',
+        preload: preload,
+        loading: loading
+      %}
+      {% assign image_index = image_index | plus: 1 %}
+    {% when 'external_video', 'video' %}
+      {% liquid
+        assign featured_video = media
+
+        comment
+          Shopify rounds video aspect ratios too much,
+          resulting in alignment issues
+        endcomment
+
+        assign media_aspect_ratio = featured_video.aspect_ratio
+
+        if media.media_type == 'video' and featured_video.sources
+          assign first_video_source = featured_video.sources | first
+
+          assign media_aspect_ratio = first_video_source.width | times: 1.00000000 | divided_by: first_video_source.height
+        elsif media.media_type == 'external_video'
+          assign rounded_media_aspect_ratio_as_string = featured_video.aspect_ratio | round: 2 | append: ''
+
+          if rounded_media_aspect_ratio_as_string contains '1.77' or rounded_media_aspect_ratio_as_string contains '1.78'
+            assign media_aspect_ratio = 1.77777778
+          elsif rounded_media_aspect_ratio_as_string contains '0.562' or rounded_media_aspect_ratio_as_string contains '0.563'
+            assign media_aspect_ratio = 0.5625
+          endif
+        endif
+      %}
+      <data-island
+        id="{{ section.id }}-{{ media.id }}"
+        x-data="ProductMediaVideo"
+      >
+        <div
+          class="relative"
+          style="padding-top: {{ 100.00 | divided_by: media_aspect_ratio }}%"
+          x-intersect:leave="pause"
+          {% if enable_video_autoplay == true %}
+            x-intersect:enter="enabled ? play : enable"
+          {% endif %}
+        >
+          <div x-show="!enabled">
+            <button
+              @click="enable"
+              class="group/button absolute inset-0 h-full w-full"
+              type="button"
+              aria-label="{{ 'media.play_video' | t }}"
+            >
+              <span
+                class="button__icon lg:w-18 lg:h-18 text-scheme-background-overlay absolute left-1/2 top-1/2 z-40 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 transform items-center justify-center rounded-full bg-scheme-background transition-opacity group-hover/button:bg-scheme-accent group-hover/button:text-scheme-accent-contrast"
+              >
+                <span class="inline-block h-8 w-8">
+                  {%- render 'icon-play' -%}
+                </span>
+              </span>
+              {% render 'image-fill',
+                image: featured_video.preview_image,
+                sizes: sizes,
+                loading: loading,
+                preload: preload
+              %}
+            </button>
+          </div>
+          <template x-if="enabled">
+            {%- liquid
+              assign video_class = 'video absolute inset-0 h-full w-full rounded-grid-media'
+              if settings.grid_media_style == 'inset' and settings.show_inset_media_border
+                assign video_class = video_class | append: ' border-gridline border-gridline-color'
+              endif
+              assign player_id = 'player-' | append: section.id | append: '-' | append: media.id
+            -%}
+            {% case featured_video.media_type %}
+              {% when 'external_video' %}
+                {% assign video_class = video_class
+                  | append: ' js-'
+                  | append: featured_video.host
+                %}
+                {% if featured_video.host == 'youtube' %}
+                  <data-island
+                    x-data="YouTubeEmbed"
+                    @play="play"
+                    @pause="pause"
+                    {% if request.design_mode %}
+                      @deinit="deinit"
+                    {% endif %}
+                    src="{{ 'island-youtube-embed.bundle.js' | asset_url }}"
+                  >
+                    {{
+                      featured_video
+                      | external_video_url:
+                        enablejsapi: 1,
+                        autoplay: true,
+                        loop: enable_video_looping,
+                        playlist: featured_video.external_id
+                      | external_video_tag:
+                        id: player_id,
+                        class: video_class,
+                        loading: loading,
+                        x-ref: 'video',
+                        alpineonloadattr: 'onIFrameLoad'
+                      | replace: 'alpineonloadattr', 'x-on:load'
+                    }}
+                  </data-island>
+                {% else %}
+                  <data-island
+                    x-data="VimeoEmbed"
+                    @play="play"
+                    @pause="pause"
+                    {% if request.design_mode %}
+                      @deinit="deinit"
+                    {% endif %}
+                    src="{{ 'island-vimeo-embed.bundle.js' | asset_url }}"
+                  >
+                    {{
+                      featured_video
+                      | external_video_url:
+                        autoplay: true,
+                        loop: enable_video_looping,
+                        player_id: media.id
+                      | external_video_tag:
+                        id: player_id,
+                        class: video_class,
+                        loading: loading,
+                        x-ref: 'video'
+                    }}
+                  </data-island>
+                {% endif %}
+              {% when 'video' %}
+                <data-island
+                  x-data="HTMLVideo"
+                  @play="play"
+                  @pause="pause"
+                >
+                  {{
+                    featured_video
+                    | video_tag:
+                      autoplay: true,
+                      image_size: '2048x',
+                      loop: enable_video_looping,
+                      controls: true,
+                      preload: 'none',
+                      class: video_class,
+                      muted: true,
+                      id: player_id,
+                      loading: loading,
+                      x-ref: 'video'
+                  }}
+                </data-island>
+            {% endcase %}
+          </template>
+        </div>
+      </data-island>
+    {% when 'model' %}
+      {% liquid
+        assign model_class = 'absolute inset-0 w-full h-full'
+
+        if settings.grid_media_style == 'inset' and settings.show_inset_media_border
+          assign model_class = model_class | append: ' border-gridline border-gridline-color rounded-grid-media'
+        endif
+      %}
+      <link
+        id="ModelViewerStyle"
+        rel="stylesheet"
+        href="https://cdn.shopify.com/shopifycloud/model-viewer-ui/assets/v1.0/model-viewer-ui.css"
+        media="print"
+        onload="this.media='all'"
+      >
+      {{ 'shopify-model-viewer-ui.css' | asset_url | stylesheet_tag }}
+      <data-island
+        class="relative w-full"
+        x-data="ProductModel"
+        style="padding-top: 100%;"
+        src="{{ 'island-product-model.bundle.js' | asset_url }}"
+      >
+        <div x-show="!enabled">
+          {{
+            media
+            | image_url: width: 1000
+            | image_tag:
+              class: model_class,
+              sizes: sizes,
+              loading: loading,
+              preload: preload
+          }}
+        </div>
+        <template x-if="enabled">
+          {{
+            media
+            | model_viewer_tag:
+              image_size: '2048x',
+              reveal: 'interaction',
+              toggleable: true,
+              data-model-id: media.id,
+              class: model_class,
+              background-color: 'white'
+          }}
+        </template>
+      </data-island>
+  {% endcase %}
+</div>

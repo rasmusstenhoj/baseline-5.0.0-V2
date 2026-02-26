@@ -1,0 +1,29 @@
+{% liquid
+  assign font = block.settings.font
+  assign symbol = block.settings.symbol
+  assign text = block.settings.text
+
+  assign render_icon = false
+  if symbol == 'icon' and block.settings.icon != 'none'
+    assign render_icon = true
+  endif
+%}
+<div
+  class="{{ font }} {{ block.settings.text_size }} {% if render_icon %}flex items-center justify-start{% endif %}"
+>
+  {% if render_icon -%}
+    <div class="mr-2 flex h-6 w-6 items-center">
+      {%- render 'product-icon', icon: block.settings.icon -%}
+    </div>
+  {%- endif %}
+
+  <div class="flex items-center py-1">
+    {% if symbol == 'subheading' %}
+      <span class="{% render 'subheading-symbol-classes' %}">
+        {{ text | strip }}
+      </span>
+    {% else %}
+      {{- text -}}
+    {% endif %}
+  </div>
+</div>

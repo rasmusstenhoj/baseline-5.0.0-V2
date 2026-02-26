@@ -1,0 +1,345 @@
+{% doc %}
+  Renders buy buttons component including add to cart button, dynamic checkout buttons, quantity selector, and pickup availability.
+
+  @param {string} product_form_id - Unique ID for the product form element
+  @param {object} [product] - The product object (required for "Featured product" sections, optional for product pages where it's globally available)
+  @param {object} [current_variant] - The variant to treat as the currently selected variant (will fall back to product.selected_or_first_available_variant if not provided)
+  @param {string} [variant_fragment_id] - Fragment ID for variant change updates (typically block.id, must be unique in section)
+  @param {boolean} [quick_buy] - Whether component is rendered in a quick buy context – could mean standard product tile or quick buy drawer (default: false)
+  @param {boolean} [quick_buy_drawer] - Whether component is rendered in quick buy drawer, to differentiate from when `quick_buy == true` means product tile (default: false)
+  @param {boolean} [show_gift_card_recipient] - Whether to show gift card recipient form for gift card products (default: false)
+  @param {boolean} [show_payment_terms] - Whether to show Shop Pay Installments (default: false)
+  @param {boolean} [full_width] - Whether buy buttons should span full width (default: false)
+  @param {boolean} [enable_payment_button] - Whether to show dynamic checkout button (default: false)
+  @param {boolean} [quick_buy_button_on_desktop] - Whether to show text button instead of icon button on desktop in product tiles (default: false)
+  @param {string} [quick_buy_button_style] - Style of quick buy button: 'primary' or 'secondary' (default: 'primary')
+  @param {boolean} [show_atc_price] - Whether to show price in add to cart button (default: false)
+  @param {number} [atc_price_separator_repeats] - Number of times to repeat the separator inside add to cart button price
+  @param {string} [atc_price_separator] - Character separator between button text and price when showing price in add to cart button
+  @param {boolean} [show_quantity_selector] - Whether to show inline quantity selector in buy buttons (default: false)
+  @param {boolean} [preselect_variant] - Whether the product section is configured to pre-select a variant on page load (default: true)
+  @param {boolean} [show_pickup_availability] - Whether to show pickup availability section (default: false)
+  @param {number} [space_above_pickup_availability] - Spacing multiplier above pickup availability (default: 1.0)
+
+  @example
+  {% render 'product-form-component-buy-buttons',
+    product_form_id: product_form_id,
+    product: product,
+    current_variant: current_variant,
+    variant_fragment_id: block.id,
+    show_gift_card_recipient: block.settings.show_gift_card_recipient,
+    show_payment_terms: block.settings.show_payment_terms,
+    full_width: block.settings.full_width,
+    enable_payment_button: block.settings.enable_payment_button,
+    show_atc_price: block.settings.show_atc_price,
+    atc_price_separator_repeats: block.settings.atc_price_separator_repeats,
+    atc_price_separator: block.settings.atc_price_separator,
+    show_quantity_selector: block.settings.show_quantity_selector,
+    preselect_variant: section.settings.preselect_variant,
+    show_pickup_availability: block.settings.show_pickup_availability,
+    space_above_pickup_availability: block.settings.space_above_pickup_availability
+  %}
+{% enddoc %}
+
+{%- liquid
+  assign render_gift_card_recipient_form = false
+
+  unless quick_buy
+    assign quick_buy = false
+  endunless
+
+  unless quick_buy_drawer
+    assign quick_buy_drawer = false
+  endunless
+
+  if show_gift_card_recipient and product.gift_card?
+    assign render_gift_card_recipient_form = true
+  endif
+
+  unless current_variant
+    assign current_variant = product.selected_or_first_available_variant
+  endunless
+
+  if preselect_variant == null
+    assign preselect_variant = true
+  endif
+
+  assign last_character_in_root_url = routes.root_url | split: '' | last
+  assign root_url = routes.root_url
+  if last_character_in_root_url != '/'
+    assign root_url = root_url | append: '/'
+  endif
+-%}
+
+<data-island
+  x-data="ProductForm"
+  {% if variant_fragment_id %}
+    data-variant-fragment="{{ variant_fragment_id }}"
+  {% else %}
+    data-variant-fragment="buy-buttons"
+  {% endif %}
+  src="product"
+>
+  {% form 'product',
+    product,
+    id: product_form_id,
+    class: 'flex flex-col gap-4',
+    data-product-form: ''
+  %}
+    {% if show_payment_terms %}
+      <div class="contents" data-skip-on-section-update>
+        {{ form | payment_terms }}
+      </div>
+    {% endif %}
+
+    {% if current_variant %}
+      <input type="hidden" name="id" value="{{ current_variant.id }}">
+    {% endif %}
+
+    <div
+      class="text-sm {% if quick_buy %}bg-scheme-background px-section-horizontal-spacing py-section-vertical-spacing z-10{% endif %}"
+      x-show="errorMessage"
+      x-transition:enter="transition ease duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease duration-300"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      style="display: none;"
+    >
+      <span class="text-scheme-accent" x-text="errorMessage"></span>
+    </div>
+
+    {% if render_gift_card_recipient_form %}
+      {% render 'gift-card-recipient-form', product: product, form: form %}
+    {% endif %}
+
+    {%- if settings.cart_type == 'page'
+      or settings.open_drawer_on_add_to_cart == false
+    -%}
+      <div
+        class="{% if quick_buy %}bg-scheme-background text-sm space-y-1 [&_a[href]]:text-sm px-section-horizontal-spacing py-section-vertical-spacing z-10{% else %}mb-8 mt-4{% endif %}"
+        x-show="addedToCart"
+        x-transition:enter="transition ease duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease duration-300"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        style="display: none;"
+      >
+        <p>{{ 'cart.popup.added_to_cart' | t }}!</p>
+        <p class="has-theme-links">
+          {{
+            'products.product.add_to_cart_confirm_html'
+            | t:
+              cart_url: routes.cart_url,
+              link_url: routes.all_products_collection_url
+          -}}
+          .
+        </p>
+      </div>
+    {%- endif -%}
+
+    <div
+      class="add-to-cart-container {% unless quick_buy or full_width %}max-w-2xl{% endunless %}"
+    >
+      {%- liquid
+        if quick_buy != true
+          if enable_payment_button
+            assign cta_button_classes = 'theme-button--secondary'
+          else
+            assign cta_button_classes = 'theme-button'
+          endif
+        elsif quick_buy_drawer
+          # Quick buy drawer
+          assign cta_button_classes = 'theme-button'
+        else
+          # Quick buy in product tile
+          assign icon_button_classes = 'block ml-auto w-fit'
+          assign cta_button_classes = cta_button_classes | append: ' hidden'
+
+          if quick_buy_button_on_desktop
+            assign icon_button_classes = icon_button_classes | append: ' lg:hidden'
+            assign cta_button_classes = cta_button_classes | append: ' lg:block'
+          endif
+
+          if quick_buy_button_style == 'primary'
+            assign cta_button_classes = cta_button_classes | append: ' theme-button'
+          else
+            assign cta_button_classes = cta_button_classes | append: ' theme-button--secondary'
+          endif
+        endif
+
+        unless current_variant
+          assign show_atc_price = false
+          assign atc_price_separator_repeats = false
+          assign atc_price_separator = false
+        endunless
+
+        if show_atc_price
+          assign cta_button_classes = cta_button_classes | append: ' theme-button--with-price'
+        endif
+      -%}
+
+      {%- # white-space: normal -%}
+      {% if show_atc_price %}
+        {% capture atc_price %}
+          <data-island class="contents" x-data="AddToCartPrice" on="idle">
+            <span aria-hidden="true">
+              {%- for i in (1..atc_price_separator_repeats) -%}
+                {{- atc_price_separator -}}
+                {%- unless forloop.last -%}&thinsp;{%- endunless -%}
+              {%- endfor -%}
+            </span>
+            <span x-html-if-set="totalCurrentPrice && formatMoney(totalCurrentPrice)">
+              {%- if settings.currency_code_enabled -%}
+                {{- current_variant.price | money_with_currency -}}
+              {%- else -%}
+                {{- current_variant.price | money -}}
+              {%- endif -%}
+            </span>
+          </data-island>
+        {% endcapture %}
+      {% endif %}
+
+      <div class="atc-container {% if show_quantity_selector %}flex flex-col gap-2 lg:flex-row{% endif %}">
+        {%- if show_quantity_selector -%}
+          {%- render 'quantity-selector', mode: 'inline' -%}
+        {%- endif -%}
+
+        {%- comment -%}
+          Icon button for quick buy
+        {%- endcomment -%}
+        {%- if quick_buy and quick_buy_drawer == false -%}
+          <button
+            class="icon-button {% if quick_buy_button_style == 'secondary' %}icon-button icon-button--secondary{% endif %} {{ icon_button_classes }}"
+            type="submit"
+            {% unless current_variant.available %}
+              disabled="disabled"
+            {% endunless %}
+          >
+            <span class="sr-only">
+              {% if current_variant %}
+                {% if current_variant.available %}
+                  {{ 'products.product.add_to_cart' | t -}}
+                {% else %}
+                  {{ 'products.product.sold_out' | t }}
+                {% endif %}
+                {% if show_atc_price -%}
+                  {{ atc_price }}
+                {%- endif %}
+              {% else %}
+                {{ 'products.product.unavailable' | t }}
+              {% endif %}
+            </span>
+            <span class="block size-6">
+              {% render 'icon-plus' %}
+            </span>
+          </button>
+        {%- endif -%}
+
+        <button
+          class="add-to-cart font-button inline-block w-full justify-center  px-1 py-2 align-middle {% if settings.button_uppercase %}uppercase{% endif %} {{ cta_button_classes }} [&.disabled--transient]:cursor-not-allowed [&.disabled--unavailable]:cursor-not-allowed [&.disabled--unavailable]:opacity-50 [&.disabled--unavailable]:after:content-none{% if current_variant.available != true or preselect_variant != true %} disabled--unavailable{% endif %}"
+          type="submit"
+          {% if current_variant.available != true
+            or preselect_variant != true
+          %}
+            disabled
+          {% endif %}
+          {% if preselect_variant == false %}
+            :disabled="!allOptionsHaveSelections"
+            :class="{ 'disabled--unavailable' : !allOptionsHaveSelections || !currentVariant }"
+          {% endif %}
+        >
+          {% if preselect_variant == false %}
+            <span x-show="!allOptionsHaveSelections">
+              {{ 'products.product.choose_options' | t }}
+            </span>
+          {% endif %}
+          <span
+            {% if preselect_variant == false %}
+              x-show="allOptionsHaveSelections"
+              style="display: none;"
+            {% endif %}
+          >
+            {% if current_variant %}
+              {% if current_variant.available %}
+                {{ 'products.product.add_to_cart' | t -}}
+              {% else %}
+                {{ 'products.product.sold_out' | t }}
+              {% endif %}
+              {% if show_atc_price -%}
+                {{ atc_price }}
+              {%- endif %}
+            {% else %}
+              {{ 'products.product.unavailable' | t }}
+            {% endif %}
+          </span>
+        </button>
+      </div>
+
+      {%- if enable_payment_button
+        and render_gift_card_recipient_form == false
+      -%}
+        {% liquid
+          assign payment_button_wrapper_class = 'payment-button-wrapper'
+        %}
+        <script>
+          window.addToCartBtnEl = document.querySelector('.add-to-cart');
+
+          if (window.addToCartBtnEl) {
+            let lastHeight = 0;
+
+            const updateHeight = () => {
+              const currentHeight =
+                window.addToCartBtnEl.getBoundingClientRect().height;
+
+              if (currentHeight !== lastHeight) {
+                document.documentElement.style.setProperty(
+                  '--add-to-cart-button-height',
+                  `${currentHeight}px`
+                );
+                lastHeight = currentHeight;
+              }
+            };
+
+            // Set initial height on load
+            updateHeight();
+
+            const resizeObserver = new ResizeObserver((entries) => {
+              for (const entry of entries) {
+                updateHeight();
+              }
+            });
+
+            resizeObserver.observe(window.addToCartBtnEl);
+          }
+        </script>
+        <div
+          class="{{ payment_button_wrapper_class }} color-scheme mt-2 rounded-button"
+          data-skip-on-section-update
+        >
+          {{ form | payment_button }}
+        </div>
+      {%- endif -%}
+    </div>
+  {% endform %}
+
+  {% if show_pickup_availability and current_variant.available %}
+    <div
+      class="mt-product-block empty:hidden"
+      style="--spacing-multiplier: {{ space_above_pickup_availability }};"
+    >
+      {%- render 'pickup-availability', variant: current_variant -%}
+    </div>
+  {% endif %}
+</data-island>
+
+{% if settings.buttons_show_arrow %}
+  {% style %}
+    .add-to-cart-container .shopify-payment-button__button--unbranded:after {
+      content: '\00a0\2192';
+    }
+  {% endstyle %}
+{% endif %}

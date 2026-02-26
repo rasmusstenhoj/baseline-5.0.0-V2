@@ -1,0 +1,45 @@
+{%- liquid
+  assign should_truncate = false
+
+  if truncate_description
+    assign truncated_description = product.description | strip_html | truncatewords: max_words, '[TRUNCATED]'
+
+    if truncated_description contains '[TRUNCATED]'
+      assign should_truncate = true
+      assign truncated_description = truncated_description | replace: '[TRUNCATED]', '&hellip;'
+    endif
+  endif
+-%}
+{%- if should_truncate -%}
+  <data-island
+    class="no-js:hidden"
+    x-data="{ open: false }"
+  >
+    <data-island x-data="RTE" class="rte" x-show="!open">
+      {{ truncated_description }}
+    </data-island>
+    <button
+      @click="open = !open"
+      x-show="!open"
+      :aria-expanded="open ? true : 'false'"
+      class="theme-link theme-link--no-arrow mt-4 inline-flex cursor-pointer items-center justify-center gap-1.5 hover:text-scheme-accent"
+    >
+      <span class="flex items-center">
+        {{- 'products.product.read_more' | t -}}
+      </span>
+      <span class="flex h-4 w-4 items-center">{%- render 'icon-plus' %}</span>
+    </button>
+    <div class="rte" x-show="open" style="display: none;">
+      {{ product.description }}
+    </div>
+  </data-island>
+  <noscript>
+    <div class="rte mt-8">
+      {{ product.description }}
+    </div>
+  </noscript>
+{%- else -%}
+  <data-island x-data="RTE" class="break-word rte">
+    {{ product.description }}
+  </data-island>
+{%- endif -%}

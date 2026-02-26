@@ -1,0 +1,46 @@
+{%- liquid
+  assign form_id = 'Contact-' | append: section_id
+
+  unless is_a_block
+    assign is_a_block = false
+  endunless
+
+  if is_a_block and text == blank
+    assign block_no_text = true
+  endif
+-%}
+
+<section
+  class="{% if is_a_block %}@container{% else %}border-b-gridline py-section-vertical-spacing{% endif %} border-gridline-color bg-scheme-background text-scheme-text"
+  data-color-scheme="{{ section_color }}"
+>
+  <div class="{% unless is_a_block %}px-section-horizontal-spacing{% endunless %} lg:flex lg:items-center lg:gap-4 {% if block_no_text %}{{ horizontal_position }}{% else %}justify-center lg:justify-between{% endif %}">
+    {% unless block_no_text %}
+      <div class="lg:max-w-3/5">
+        {% if title != blank %}
+          {%- if subheading != blank -%}
+            <div class="{% if title != blank or text != blank %}{% if settings.double_subheading_spacing %}mb-4{% else %}mb-2{% endif %}{% endif %}">
+              <span class="font-subheading text-subheading {% render 'subheading-symbol-classes' %}">
+                {{ subheading | strip }}
+              </span>
+            </div>
+          {%- endif -%}
+
+          <h2 class="font-heading {{ title_text_size_class }}" for="Email">
+            {{ title | escape }}
+          </h2>
+        {% endif %}
+
+        {% if text != blank %}
+          <div class="[&_a[href]]:underline [&_a[href]]:hover:text-scheme-accent {{ text_size_class }}{% if title != blank %} mt-2{% endif %}">
+            {{ text }}
+          </div>
+        {% endif %}
+      </div>
+    {% endunless %}
+
+    <div class="{% unless block_no_text or text == blank and title == blank %}mt-theme-double{% endunless %} lg:mt-0 {{ form_position }} {% if block_no_text %}w-full @lg:w-1/2{% endif %}">
+      {% render 'newsletter-form', form_id: form_id %}
+    </div>
+  </div>
+</section>

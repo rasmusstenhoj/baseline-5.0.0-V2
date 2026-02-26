@@ -1,0 +1,18 @@
+{%- unless recommendations.performed -%}
+  {% if last_block_in_column %}
+    {% comment %} Respect padding if an empty complementary products block is last in the column {% endcomment %}
+    <div class="product-block--last pb-section-vertical-spacing"></div>
+  {% endif %}
+  {% capture section_url %}{{ routes.product_recommendations_url }}?section_id={{ section.id }}&product_id={{ product.id }}&limit={{ block.settings.product_list_limit }}&intent=complementary{% endcapture %}
+  <data-island
+    class="complementary-products-block {% if block.settings.heading_text_style == 'body' %}complementary-products-block--font-body mt-product-block{% endif %}"
+    x-data
+    x-html="
+      $fetchedFragment(
+        '{{ section_url }}',
+        '.complementary-products-block'
+      )
+    "
+    on="idle"
+  ></data-island>
+{%- endunless -%}

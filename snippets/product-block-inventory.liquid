@@ -1,0 +1,41 @@
+<div
+  data-variant-fragment="{{ block.id }}"
+  class="product-inventory-status-block empty:hidden"
+>
+  {%- if current_variant
+    and current_variant.inventory_management == 'shopify'
+  -%}
+    <div>
+      {% if current_variant.inventory_quantity > 0 %}
+        {% if current_variant.inventory_quantity
+            > block.settings.low_inventory_threshold
+        %}
+          <span>{{ 'products.product.inventory_in_stock' | t }}</span>
+        {% else %}
+          {% if block.settings.show_inventory_quantity %}
+            <span class="text-scheme-accent">
+              {{
+                'products.product.inventory_low_stock_with_count'
+                | t: count: current_variant.inventory_quantity
+              }}
+            </span>
+          {% else %}
+            <span class="text-scheme-accent">
+              {{- 'products.product.inventory_low_stock' | t -}}
+            </span>
+          {% endif %}
+        {% endif %}
+      {% else %}
+        {% if current_variant.inventory_policy == 'continue' %}
+          <span>
+            {{ 'products.product.inventory_out_of_stock_continue_selling' | t }}
+          </span>
+        {% else %}
+          <span>
+            {{ 'products.product.inventory_out_of_stock' | t }}
+          </span>
+        {% endif %}
+      {% endif %}
+    </div>
+  {%- endif -%}
+</div>

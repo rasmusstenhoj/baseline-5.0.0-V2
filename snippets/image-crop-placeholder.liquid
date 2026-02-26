@@ -1,0 +1,50 @@
+{% liquid
+  unless type
+    assign type = 'image'
+  endunless
+
+  if ratio == 0 or ratio == blank
+    assign ratio = 1.0
+  endif
+
+  unless is_thumbnail
+    assign is_thumbnail = false
+  endunless
+
+  unless is_deep_inset
+    assign is_deep_inset = false
+  endunless
+
+  assign svg_classes = 'absolute inset-0 w-full h-full text-scheme-placeholder-foreground bg-scheme-placeholder-background fill-current overflow-hidden'
+  assign wrapper_classes = 'relative w-full overflow-hidden aspect-media'
+
+  if always_show_border_radius
+    assign wrapper_classes = wrapper_classes | append: ' rounded-media'
+  elsif is_thumbnail
+    assign wrapper_classes = wrapper_classes | append: ' rounded-thumbnail'
+  else
+    if is_deep_inset
+      assign wrapper_classes = wrapper_classes | append: ' rounded-deep-inset-media'
+    else
+      assign wrapper_classes = wrapper_classes | append: ' rounded-grid-media'
+    endif
+  endif
+
+  if settings.grid_media_style == 'inset' and settings.show_inset_media_border
+    assign wrapper_classes = wrapper_classes | append: ' border-gridline border-gridline-color'
+  endif
+
+  if settings.zoom_media_on_hover
+    assign svg_classes = svg_classes | append: ' motion-safe:group-hover/zoom:scale-[var(--zoom-media-scale)]  motion-safe:transition-transform duration-300 ease-zoom'
+  endif
+%}
+<div
+  class="{{ wrapper_classes }}"
+  style="--media-aspect-ratio: {{ ratio }};"
+>
+  {{ type | placeholder_svg_tag: svg_classes }}
+
+  {% if hotspots %}
+    {{ hotspots }}
+  {% endif %}
+</div>

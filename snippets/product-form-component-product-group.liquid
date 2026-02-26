@@ -1,0 +1,425 @@
+{% doc %}
+  Renders a product group picker component for product forms.
+
+  @param {object} [product] - The product object (required for "Featured product" sections, optional for product pages where it's globally available)
+  @param {string} [section_id] - Section ID for generating unique element IDs
+  @param {string} [block_id] - Block ID for generating unique element IDs
+  @param {boolean} [is_in_quick_buy] - Whether the component is rendered inside a quick buy drawer (default: false)
+  @param {string} group_metafield_setting - Metafield reference in format 'namespace.key' that points to the product group metaobject
+  @param {boolean} [simple_link_mode] - Whether to use simple links instead of Alpine.js navigation (auto-detected based on design mode)
+  @param {string} [group_product_display_title_setting] - Optional metafield reference in format 'namespace.key' for custom display titles
+  @param {boolean} [show_value_label] - Whether to show the value label with swatches/thumbnails (default: false)
+  @param {string} [option_style] - Display style: 'drop_down', 'radio', 'text_underline', 'buttons', 'swatches', 'thumbnails' (default: 'buttons')
+  @param {boolean} [hide_label] - Whether to hide the group label (default: false)
+  @param {boolean} [spread_options] - Whether to spread text_underline options across available space (default: false)
+  @param {boolean} [full_width_buttons] - Whether button-style options should span full width (default: false)
+
+  @example
+  {% render 'product-form-component-product-group',
+    product: product,
+    section_id: section.id,
+    block_id: block.id,
+    group_metafield_setting: block.settings.group_metafield_key,
+    group_product_display_title_setting: block.settings.group_product_display_title_metafield_key,
+    show_value_label: block.settings.show_value_label,
+    option_style: block.settings.option_style,
+    hide_label: block.settings.hide_label,
+    spread_options: block.settings.spread_options,
+    full_width_buttons: block.settings.full_width_buttons
+  %}
+{% enddoc %}
+
+{%- liquid
+  unless is_in_quick_buy
+    assign is_in_quick_buy = false
+  endunless
+
+  assign group_metafield_namespace = group_metafield_setting | split: '.' | first
+  assign group_metafield_key = group_metafield_setting | split: '.' | last
+
+  assign product_group_metaobject = product.metafields[group_metafield_namespace][group_metafield_key]
+
+  if product_group_metaobject.value.products.list?
+    assign group_products = product_group_metaobject.value.products.value
+  endif
+
+  unless simple_link_mode
+    if request.design_mode == false or is_in_quick_buy
+      assign simple_link_mode = false
+    else
+      assign simple_link_mode = true
+    endif
+  endunless
+
+  assign id_base = product.id
+
+  if block_id
+    assign id_base = id_base | prepend: '-' | prepend: block_id
+  endif
+
+  if section_id
+    assign id_base = id_base | prepend: '-' | prepend: section_id
+  endif
+-%}
+
+<div
+  class="product-group-block empty:hidden"
+>
+  {%- if group_products and group_products.count > 0 %}
+    {%- liquid
+      assign group_products_label = product_group_metaobject.value.label.value
+
+      if product_group_metaobject.value.common_title_part and product_group_metaobject.value.common_title_part.type == 'single_line_text_field'
+        assign group_products_common_title_part = product_group_metaobject.value.common_title_part.value
+      endif
+
+      assign current_product_value = product.title
+
+      assign current_product_has_custom_value = false
+
+      if group_product_display_title_setting != empty
+        assign group_product_display_title_namespace = group_product_display_title_setting | split: '.' | first
+        assign group_product_display_title_key = group_product_display_title_setting | split: '.' | last
+
+        assign group_products_current_value_metafield = product.metafields[group_product_display_title_namespace][group_product_display_title_key]
+
+        if group_products_current_value_metafield and group_products_current_value_metafield.type == 'single_line_text_field' and group_products_current_value_metafield.value != empty
+          assign group_products_current_value = group_products_current_value_metafield.value
+        endif
+
+        if group_products_current_value
+          assign current_product_has_custom_value = true
+          assign current_product_value = group_products_current_value
+        endif
+      endif
+
+      if current_product_has_custom_value == false and group_products_common_title_part != blank
+        assign current_product_value = product.title | replace: group_products_common_title_part, '' | strip
+      endif
+
+      if show_value_label and option_style == 'swatches' or option_style == 'thumbnails'
+        assign option_style = option_style | append: '_with_value'
+      endif
+
+      assign group_products_values_string = ''
+      assign separator_token = '|||:VALUE-SEPARATOR:|||'
+
+      for group_product in group_products
+        assign value = group_product.title
+
+        assign product_has_custom_value = false
+
+        if group_product_display_title_setting != empty
+          assign group_products_product_display_title_metafield = group_product.metafields[group_product_display_title_namespace][group_product_display_title_key]
+
+          if group_products_product_display_title_metafield and group_products_product_display_title_metafield.type == 'single_line_text_field' and group_products_product_display_title_metafield.value != empty
+            assign product_has_custom_value = true
+            assign value = group_products_product_display_title_metafield.value
+          endif
+        endif
+
+        if product_has_custom_value == false and group_products_common_title_part != blank
+          assign value = group_product.title | replace: group_products_common_title_part, '' | strip
+        endif
+
+        assign group_products_values_string = group_products_values_string | append: value
+
+        unless forloop.last
+          assign group_products_values_string = group_products_values_string | append: separator_token
+        endunless
+      endfor
+
+      assign group_products_values = group_products_values_string | split: separator_token
+    -%}
+    <div
+      class="flex flex-col gap-4"
+      {% unless simple_link_mode %}
+        x-data="ProductGroupPicker"
+      {% endunless %}
+    >
+      {% liquid
+        unless hide_label
+          assign label_class = 'block'
+          assign label_padding = 'mt-2'
+        else
+          assign label_class = 'sr-only'
+        endunless
+
+        case option_style
+          when 'radio'
+            assign option_wrapper_classes = label_padding
+            assign option_value_wrapper_classes = 'relative'
+            assign option_value_label_classes = 'flex items-center py-1 [&.is-current>span]:bg-scheme-text'
+            assign option_value_label_span_classes = 'mr-1 inline-block h-2 w-2 rounded-full border-checkbox border-scheme-text bg-scheme-text/0'
+
+          when 'text_underline'
+            if spread_options
+              assign option_wrapper_classes = label_padding | append: ' -mx-1 flex flex-wrap items-center justify-between'
+            else
+              assign option_wrapper_classes = label_padding | append: ' -mx-1 flex flex-wrap items-center justify-start'
+            endif
+
+            assign option_value_wrapper_classes = 'label-only-input relative'
+            assign option_value_label_classes = 'block p-1 [&.is-current>span]:border-b-text [&.is-current>span]:border-scheme-text'
+            assign option_value_label_span_classes = ''
+
+          when 'buttons', 'swatches', 'thumbnails', 'swatches_with_value', 'thumbnails_with_value'
+            if option_style == 'swatches' or option_style == 'thumbnails'
+              assign full_width_buttons = false
+            endif
+
+            assign option_wrapper_classes = label_padding | append: ' flex flex-wrap items-center justify-start'
+            assign option_value_wrapper_classes = 'label-only-input relative px-1'
+            assign base_option_value_label_classes = 'cursor-pointer select-none rounded-button border-text border-transparent text-center [&.is-current]:border-scheme-text'
+            assign option_value_label_span_classes = ''
+
+            if option_style contains '_with_value'
+              assign base_option_value_label_classes = base_option_value_label_classes | prepend: 'flex items-center justify-start text-left gap-2 '
+
+              if full_width_buttons
+                assign base_option_value_label_classes = base_option_value_label_classes | replace: 'justify-start text-left', 'justify-center text-center'
+              endif
+            else
+              assign base_option_value_label_classes = base_option_value_label_classes | prepend: 'relative block '
+            endif
+
+            if option_style == 'swatches' or option_style == 'thumbnails'
+              assign option_wrapper_classes = option_wrapper_classes | append: ' -mx-[calc(theme(spacing.2)_-_1px)]'
+              assign option_value_label_classes = base_option_value_label_classes | append: ' p-[2px]'
+            else
+              if option_style contains '_with_value'
+                assign option_wrapper_classes = option_wrapper_classes | append: ' -mx-1'
+              endif
+
+              assign base_option_value_label_classes = base_option_value_label_classes | append: ' p-2'
+
+              if full_width_buttons
+                assign values_size = group_products.count
+
+                assign max_string_size = group_products_values | map: 'size' | sort | last | plus: 0
+
+                assign divisible_by_2 = values_size | modulo: 2
+                assign divisible_by_3 = values_size | modulo: 3
+                assign divisible_by_4 = values_size | modulo: 4
+                assign divisible_by_5 = values_size | modulo: 5
+                assign divisible_by_6 = values_size | modulo: 6
+
+                assign short_string_form = false
+
+                if option_style == 'buttons' and max_string_size <= 3
+                  assign short_string_form = true
+                endif
+
+                if short_string_form
+                  if divisible_by_4 == 0
+                    assign option_wrapper_classes = label_padding | append: ' grid grid-cols-4 gap-2.5'
+                  elsif divisible_by_5 == 0
+                    assign option_wrapper_classes = label_padding | append: ' grid grid-cols-5 gap-2.5'
+                  elsif divisible_by_6 == 0
+                    assign option_wrapper_classes = label_padding | append: ' grid grid-cols-6 gap-2.5'
+                  else
+                    assign option_wrapper_classes = label_padding | append: ' grid grid-cols-2 gap-2.5'
+                  endif
+                else
+                  if divisible_by_2 == 0
+                    assign option_wrapper_classes = label_padding | append: ' grid grid-cols-2 gap-2.5'
+                  elsif divisible_by_3 == 0
+                    assign option_wrapper_classes = label_padding | append: ' grid grid-cols-3 gap-2.5'
+                  else
+                    assign option_wrapper_classes = label_padding | append: ' grid grid-cols-2 gap-2.5'
+                  endif
+                endif
+
+                assign option_value_wrapper_classes = 'label-only-input relative w-full'
+                assign option_value_label_classes = base_option_value_label_classes | append: '  w-full'
+              else
+                assign option_wrapper_classes = label_padding | append: ' flex flex-wrap items-center justify-start -mx-1'
+                assign option_value_wrapper_classes = 'label-only-input relative px-1'
+                assign option_value_label_classes = base_option_value_label_classes | append: ' min-w-9'
+              endif
+            endif
+        endcase
+      %}
+
+      <fieldset>
+        {%- if group_products_label != empty -%}
+          {%- if option_style == 'drop_down' -%}
+            <label
+              class="{{ label_class }} {{ label_padding }}"
+              for="product-group-{{ id_base }}"
+            >
+              {{ group_products_label }}:
+            </label>
+          {%- else -%}
+            <legend class="{{ label_class }} {{ label_padding }}">
+              {{ group_products_label }}:
+              {% if option_style == 'swatches'
+                or option_style == 'thumbnails'
+              -%}
+                {{ current_product_value }}
+              {%- endif %}
+            </legend>
+          {%- endif -%}
+        {%- endif -%}
+        {%- case option_style -%}
+          {%- when 'radio',
+            'text_underline',
+            'buttons',
+            'swatches',
+            'thumbnails',
+            'swatches_with_value',
+            'thumbnails_with_value'
+          -%}
+            <div
+              id="product-group-{{ id_base }}"
+              class="{{ option_wrapper_classes }}"
+            >
+              {% for group_product in group_products %}
+                {% assign value = group_products_values[forloop.index0] %}
+                <div class="{{ option_value_wrapper_classes }}">
+                  <a
+                    href="{{ group_product.url }}"
+                    {% unless simple_link_mode %}
+                      @click.prevent="selectGroupProduct"
+                      :role="`button`"
+                    {% endunless %}
+                    class="{{ option_value_label_classes }}{% if group_product.handle == product.handle %} is-current{% endif %}"
+                    title="{{ value }}"
+                  >
+                    {%- if option_style contains 'swatches'
+                      or option_style contains 'thumbnails'
+                    -%}
+                      {%- if option_style contains 'swatches' -%}
+                        {%- liquid
+                          assign swatches = group_product.metafields.shopify['color-pattern'].value
+
+                          assign swatch_with_image = swatches | where: 'image' | first
+                          assign swatch_with_color = swatches | where: 'color' | first
+
+                          assign swatch_image = swatch_with_image.image
+                          assign swatch_color = swatch_with_color.color
+
+                          unless swatch_image and swatch_color
+                            assign color_image_url = value | handle | append: '.' | append: 'png' | file_img_url: '110x' | prepend: 'https:'
+                            assign color_swatch_fallback = value | split: ' ' | last | handle
+                          endunless
+                        -%}
+                        <span
+                          class="block size-6 rounded-button bg-full"
+                          {% if swatch_image or swatch_color %}
+                            style="{% if swatch_image != blank %}background-position: {{ swatch_image.presentation.focal_point | default: 'center' }}; background-image: url({{ swatch_image | image_url: width: 160 }});{% else %}{% endif %}{% if swatch_color %} background-color: {{ swatch_color }};{% endif %}"
+                          {% else %}
+                            style="background-image: url({{ color_image_url }}); background-color: {{ color_swatch_fallback }};"
+                          {% endif %}
+                        ></span>
+                      {%- elsif option_style contains 'thumbnails' -%}
+                        {{
+                          group_product.featured_media
+                          | image_url: width: 220
+                          | image_tag:
+                            loading: 'lazy',
+                            class: 'block size-12 rounded-button',
+                            sizes: '3rem'
+                        }}
+                      {%- endif -%}
+                    {%- endif -%}
+                    <span
+                      {% if option_style == 'swatches'
+                        or option_style == 'thumbnails'
+                      %}
+                        class="sr-only"
+                      {% elsif option_value_label_span_classes != blank %}
+                        class="{{ option_value_label_span_classes }}"
+                      {% endif %}
+                    >
+                      {%- unless option_style == 'radio' -%}
+                        {{- value -}}
+                      {%- endunless -%}
+                    </span>
+                    {% if option_style == 'radio' %}
+                      {{ value -}}
+                    {% endif %}
+                  </a>
+                </div>
+              {% endfor %}
+            </div>
+          {%- when 'drop_down' -%}
+            <data-island
+              x-data="OptionDropDown"
+              @keyup.escape.prevent.stop="close($refs.button)"
+              @focusin.window="if (! $root.contains($event.target)) { close() }"
+              x-id="['product-group-dropdown-{{ id_base }}']"
+              class="relative select-none"
+              @click.away="close($refs.button)"
+            >
+              <button
+                x-ref="button"
+                type="button"
+                @click="toggle"
+                :aria-expanded="expanded"
+                :aria-controls="$id('product-group-dropdown-{{ id_base }}')"
+                class="{{ label_padding }} flex cursor-pointer items-center gap-2 border-b-text border-scheme-text py-1"
+                @click.away="$refs.panel.contains($event.target) ? close($refs.button) : close()"
+              >
+                <div
+                  class="bg-scheme-background text-scheme-text"
+                >
+                  {{ current_product_value }}
+                </div>
+                <div class="ml-auto flex w-fit">
+                  <span
+                    class="my-auto h-4 w-4"
+                    :class="{ 'rotate-180' : expanded }"
+                  >
+                    {%- render 'icon-chevron-down' -%}
+                  </span>
+                </div>
+              </button>
+              <div
+                x-ref="panel"
+                :id="$id('product-group-dropdown-{{ id_base }}')"
+                class="absolute bottom-auto left-0 right-0 top-full z-10 mt-0.5 flex max-h-[40vh] overflow-y-auto border-text border-scheme-text bg-scheme-text sm:-left-[--text-border-width] sm:right-auto sm:top-auto"
+                style="display: none;"
+              >
+                <div
+                  class="flex w-full min-w-[theme(spacing.16)] flex-col gap-[--text-border-width] sm:w-auto"
+                  role="listbox"
+                  @keydown.right.prevent.stop="$focus.wrap().next()"
+                  @keydown.down.prevent.stop="$focus.wrap().next()"
+                  @keydown.left.prevent.stop="$focus.wrap().previous()"
+                  @keydown.up.prevent.stop="$focus.wrap().previous()"
+                >
+                  {% for group_product in group_products %}
+                    {% assign value = group_products_values[forloop.index0] %}
+                    <a
+                      href="{{ group_product.url }}"
+                      {% if request.design_mode == false or is_in_quick_buy %}
+                        @click.prevent="selectGroupProduct"
+                        role="option"
+                      {% endif %}
+                      value="{{ value | escape }}"
+                      {% if group_product.handle == product.handle %}
+                        aria-selected="true"
+                      {% endif %}
+                      class="
+                        variant-dropdown-button break-word block bg-scheme-background px-4 py-2
+                        text-left
+                        text-scheme-text
+                        hover:text-scheme-accent
+                        focus-visible:text-scheme-accent
+                        aria-selected:text-scheme-accent
+                        coarse-pointer:min-h-[44px]
+                        coarse-pointer:min-w-[44px]
+                      "
+                    >
+                      {{ value }}
+                    </a>
+                  {% endfor %}
+                </div>
+              </div>
+            </data-island>
+        {% endcase %}
+      </fieldset>
+    </div>
+  {% endif -%}
+</div>

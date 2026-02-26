@@ -1,0 +1,304 @@
+{%- liquid
+  unless preload
+    assign preload = false
+  endunless
+
+  unless loading
+    assign loading = null
+  endunless
+
+  assign title_price_display = settings.title_price_display
+  assign show_sale_badge = settings.product_grid_show_sale_badge
+  assign show_sold_out_badge = settings.product_grid_show_sold_out_badge
+  assign show_custom_badges = settings.show_custom_badges
+
+  assign on_sale = false
+  if product.compare_at_price > product.price
+    assign on_sale = true
+  endif
+
+  assign sold_out = true
+  if product.available
+    assign sold_out = false
+  endif
+
+  case settings.overlay_title_price_display_format
+    when 'title_left_price_right'
+      assign layout_class = 'flex justify-between @small:text-sm @small:flex-col @small:gap-1'
+      assign price_class = 'text-right pl-2 @small:pl-0 @small:text-left @small:w-full'
+      assign title_class = 'text-left w-3/5 @small:w-full'
+
+    when 'title_left_price_under'
+      assign layout_class = '@small:text-sm'
+      assign price_class = 'text-left mt-1'
+      assign title_class = 'text-left'
+
+    when 'title_center_price_under'
+      assign layout_class = 'text-center @small:text-sm'
+      assign price_class = 'text-center mt-1'
+      assign title_class = 'text-center'
+  endcase
+
+  if title_price_display == 'over_image_bottom' or title_price_display == 'on_hover'
+    assign layout_class = layout_class | append: ' items-end'
+  endif
+
+  assign product_tiles_hover_image = settings.product_tiles_hover_image
+-%}
+
+<div
+  class="group/zoom group relative block h-full text-center{% unless settings.title_price_display == 'on_hover' %} hover:text-scheme-accent{% endunless %}"
+  data-color-scheme="{{ section_color }}"
+>
+  <a
+    href="{{ product.url }}"
+    class="focus-inset absolute inset-0 z-30"
+  >
+    <span class="sr-only">{{ product.title }}</span>
+  </a>
+  <div class="relative -mb-gridline border-b-gridline border-gridline-color">
+    {% if show_sale_badge
+      or show_sold_out_badge
+      or show_custom_badges != 'none'
+    %}
+      {% render 'badges',
+        product: product,
+        product_tile_type: product_tile_type,
+        sold_out: sold_out,
+        on_sale: on_sale,
+        show_sale_badge: show_sale_badge,
+        show_sold_out_badge: show_sold_out_badge,
+        show_custom_badges: show_custom_badges
+      %}
+    {% endif %}
+
+    <div class="h-full w-full{% if settings.grid_media_style == 'inset' %} p-section-horizontal-spacing{% endif %}">
+      <div class="relative z-0">
+        {% liquid
+          assign crop_media = false
+          assign contain = false
+
+          unless settings.product_overlay_tile_image_crop == 'natural'
+            assign crop_media = true
+            assign ratio = settings.product_overlay_tile_image_crop | plus: 0
+          endunless
+
+          if force_crop
+            if force_crop_ratio == 'natural'
+              assign crop_media = false
+              assign ratio = 0
+            else
+              assign crop_media = true
+              assign ratio = force_crop_ratio
+
+              if force_crop_style == 'contain'
+                assign contain = true
+              endif
+            endif
+          else
+            if settings.product_overlay_tile_image_crop_style == 'contain'
+              assign contain = true
+            endif
+          endif
+        %}
+
+        {%- if product.featured_media != blank %}
+          {%- if crop_media -%}
+            {%- render 'image-crop',
+              image: product.featured_media,
+              sizes: sizes,
+              preload: preload,
+              loading: loading,
+              ratio: ratio,
+              contain: contain
+            -%}
+          {%- else -%}
+            {%- liquid
+              render 'image', image: product.featured_media, sizes: sizes, preload: preload, loading: loading
+            -%}
+          {%- endif -%}
+        {%- else -%}
+          <div
+            class="relative aspect-media"
+            style="--media-aspect-ratio: {% if crop_media %}{{ ratio }}{% else %}1.0{% endif %};"
+          ></div>
+        {%- endif -%}
+
+        {% liquid
+          if product.media.size > 1 and product_tiles_hover_image != 'none'
+            assign hover_image_extra_classes = 'z-10 bg-scheme-background opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100 group-focus-within:opacity-100'
+
+            if settings.grid_media_style == 'inset' and settings.media_border_radius > 0
+              assign hover_image_extra_classes = hover_image_extra_classes | append: ' shadow-rounded-hover-image'
+            endif
+
+            case product_tiles_hover_image
+              when 'second'
+                assign hover_image = product.media[1].preview_image
+              when 'last'
+                assign last_media = product.media | last
+                assign hover_image = last_media.preview_image
+            endcase
+
+            render 'image-fill', image: hover_image, contain: contain, sizes: sizes, preload: false, loading: loading, extra_classes: hover_image_extra_classes
+          endif
+        %}
+      </div>
+    </div>
+
+    {% liquid
+      if settings.grid_media_style == 'fill'
+        assign padding_classes = 'p-section-horizontal-spacing'
+      else
+        assign padding_classes = 'p-media-content-less-1rem'
+      endif
+
+      assign meta_class = padding_classes | append: ' z-20 supports-hover:absolute'
+
+      if settings.grid_media_style == 'fill'
+        if title_price_display == 'over_image_top'
+          assign meta_class = meta_class | append: ' top-0'
+        else
+          assign meta_class = meta_class | append: ' bottom-0'
+        endif
+
+        assign meta_class = meta_class | append: ' left-0 right-0'
+      else
+        assign meta_class = meta_class | append: ' left-4 right-4'
+
+        if title_price_display == 'over_image_top'
+          assign meta_class = meta_class | append: ' top-4'
+        else
+          assign meta_class = meta_class | append: ' bottom-4'
+        endif
+      endif
+
+      if title_price_display == 'on_hover'
+        assign meta_class = meta_class | append: ' supports-hover:absolute supports-hover:opacity-0 supports-hover:group-hover:opacity-100 supports-hover:group-focus-within:opacity-100 transition-opacity duration-200 supports-hover:ease-in-out supports-hover:text-scheme-text'
+
+        if settings.grid_media_style == 'fill'
+          assign meta_class = meta_class | append: ' border-t-gridline border-gridline-color bg-scheme-background'
+        endif
+      else
+        assign meta_class = meta_class | append: ' absolute'
+      endif
+
+      if settings.product_grid_uppercase
+        assign meta_class = meta_class | append: ' uppercase'
+      endif
+    %}
+    <div
+      class="{{ meta_class }} @container"
+    >
+      <div class=" {{ layout_class }}">
+        <div class="{{ title_class }} break-word">
+          {% if settings.product_grid_show_vendor and product.vendor != '' %}
+            <p class="mb-1 text-scheme-secondary{% if sold_out %} line-through{% endif %}">
+              {{ product.vendor }}
+            </p>
+          {% endif %}
+          <p
+            aria-hidden="true"
+            class="{% if sold_out %}text-scheme-secondary line-through{% endif %}"
+          >
+            {{ product.title }}
+          </p>
+        </div>
+        <div class="{{ price_class }}">
+          {% if sold_out %}
+            <s class="text-scheme-secondary">
+              {{- 'products.product.sold_out' | t -}}
+            </s>
+          {% else %}
+            {% if on_sale and sold_out != true %}
+              <s class="block lg:inline"
+                ><span class="sr-only">
+                  {{- 'products.product.regular_price' | t -}}
+                </span>
+                {{- product.compare_at_price | money -}}
+              </s>
+            {% endif %}
+            {% if on_sale %}
+              {% if product.price_varies %}
+                {% liquid
+                  if settings.currency_code_enabled == true
+                    assign sale_price = product.price | money_with_currency
+                  else
+                    assign sale_price = product.price | money
+                  endif
+                %}
+                <span class="text-scheme-accent"
+                  ><span class="sr-only">
+                    {{- 'products.product.sale_price' | t -}}</span
+                  ><br>
+                  {{
+                    'products.product.on_sale_from_html'
+                    | t: price: sale_price
+                  -}}
+                </span>
+              {% else %}
+                <span class="text-scheme-accent"
+                  ><span class="sr-only">
+                    {{- 'products.product.sale_price' | t -}}
+                  </span>
+                  {%- if settings.currency_code_enabled == true -%}
+                    {{- product.price | money_with_currency -}}
+                  {%- else -%}
+                    {{- product.price | money -}}
+                  {%- endif -%}
+                </span>
+              {% endif %}
+            {% else %}
+              {% if product.price_varies %}
+                {%- if settings.currency_code_enabled == true -%}
+                  {%- assign price = product.price | money_with_currency -%}
+                {%- else -%}
+                  {%- assign price = product.price | money -%}
+                {%- endif -%}
+                <span>
+                  {{-
+                    'products.product.from_lowest_price_html'
+                    | t: lowest_price: price
+                  -}}
+                </span>
+              {% else %}
+                <span>
+                  {%- if settings.currency_code_enabled == true -%}
+                    {{- product.price | money_with_currency -}}
+                  {%- else -%}
+                    {{- product.price | money -}}
+                  {%- endif -%}
+                </span>
+              {% endif %}
+            {% endif %}
+          {% endif %}
+          {% assign current_variant = product.first_available_variant %}
+          {%- if current_variant.unit_price -%}
+            <p
+              class="{% if sold_out %}text-scheme-secondary line-through{% endif %} text-xs"
+            >
+              <span data-unit-price>
+                {%- if settings.currency_code_enabled == true -%}
+                  {{- current_variant.unit_price | money_with_currency -}}
+                {%- else -%}
+                  {{- current_variant.unit_price | money -}}
+                {%- endif %}
+              </span>
+              <span>/</span>
+              <span data-unit-price-measurement-reference-value>
+                {%- if current_variant.unit_price_measurement.reference_value
+                    != 1
+                -%}
+                  {{- current_variant.unit_price_measurement.reference_value -}}
+                {%- endif -%}
+              </span>
+              <span data-unit-price-measurement-reference-unit>
+                {{- current_variant.unit_price_measurement.reference_unit -}}
+              </span>
+            </p>
+          {%- endif -%}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

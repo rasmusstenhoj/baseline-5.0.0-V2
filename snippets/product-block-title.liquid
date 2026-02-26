@@ -1,0 +1,18 @@
+{% liquid
+  if template.name == 'product'
+    assign tag = 'h1'
+  else
+    assign tag = 'h2'
+  endif
+%}
+
+<{{ tag }}
+  class="product-title-block font-heading break-word text-heading-feature"
+  data-product-title
+>
+  {%- if wrap_with_link -%}
+    <a href="{{ product.url }}">{{ product.title }}</a>
+  {%- else -%}
+    {{ product.title }}
+  {%- endif -%}
+</{{ tag }}>

@@ -1,0 +1,26 @@
+{% doc %}
+  Renders a quantity selector component for product forms.
+
+  This snippet acts as a wrapper that passes configuration parameters to the
+  'quantity-selector' snippet, which handles the actual quantity input rendering.
+
+  @param {string} product_form_id - The ID of the product form to associate with the quantity input
+  @param {string} [style] - The visual style of the quantity selector: 'underline' or 'border', can also be 'inline' in the Quick buy drawer
+  @param {boolean} [full_width] - Whether the quantity selector should span full width (default: false)
+  @param {boolean} [hide_label] - Whether to hide the “Quantity” label (default: false)
+
+  @example
+  {% render 'product-form-component-quantity-selector',
+    product_form_id: product_form_id,
+    style: block.settings.style,
+    full_width: block.settings.full_width,
+    hide_label: block.settings.hide_label
+  %}
+{% enddoc %}
+
+{%- render 'quantity-selector',
+  product_form_id: product_form_id,
+  style: style,
+  full_width: full_width,
+  hide_label: hide_label
+-%}
