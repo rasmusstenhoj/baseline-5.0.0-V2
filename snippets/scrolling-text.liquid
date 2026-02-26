@@ -1,0 +1,163 @@
+{%- liquid
+  comment
+    The minimum speed possible is 20s, the maximum speed is 1s
+  endcomment
+
+  assign min_speed_setting = 20
+  assign max_speed_setting = 400
+
+  assign speed_number = min_speed_setting | plus: max_speed_setting | minus: speed_setting
+
+  assign speed_number = speed_number | divided_by: 2 | divided_by: 10
+
+  unless anchor_tag_aria_label
+    assign anchor_tag_aria_label = text
+  endunless
+
+  unless overlays_media
+    assign overlays_media = false
+  endunless
+
+  unless mobile_text_scale
+    assign mobile_text_scale = 0
+  endunless
+
+  unless desktop_text_scale
+    assign desktop_text_scale = 0
+  endunless
+
+  unless text_size_class
+    capture text_size_class
+      render 'type-scale-classes', mobile_text_scale: mobile_text_scale, desktop_text_scale: desktop_text_scale
+    endcapture
+  endunless
+
+  if repeat_text
+    if mobile_text_scale and desktop_text_scale
+      assign mobile_text_scale = mobile_text_scale | plus: 0
+      assign desktop_text_scale = desktop_text_scale | plus: 0
+    endif
+
+    assign content_class = 'grow-0 shrink-0'
+
+    if separator_type == 'gap'
+      assign gap = spacing_between_repeated_text
+    else
+      if spacing_between_repeated_text == 'gap-4 lg:gap-8'
+        assign half_gap = 'px-2 lg:px-4'
+      elsif spacing_between_repeated_text == 'gap-10 lg:gap-20'
+        assign half_gap = 'px-5 lg:px-10'
+      elsif spacing_between_repeated_text == 'gap-16 lg:gap-32'
+        assign half_gap = 'px-8 lg:px-16'
+      elsif spacing_between_repeated_text == 'gap-32 lg:gap-64'
+        assign half_gap = 'px-16 lg:px-32'
+      endif
+    endif
+
+    if separator_type == 'button'
+      if link != blank
+        assign anchor_tag_aria_label = text | append: ' - ' | append: inline_link_text
+      endif
+    endif
+
+  else
+    assign content_class = 'shrink-0 pl-[100vw]'
+  endif
+
+  assign container_padding_class = ''
+  if mobile_text_scale and desktop_text_scale
+    if overlays_media
+      if settings.spacing == 'none'
+        assign container_padding_class = container_padding_class | append: ' py-4'
+      else
+        assign container_padding_class = container_padding_class | append: ' py-theme'
+      endif
+    else
+      if mobile_text_scale >= 4
+        assign container_padding_class = container_padding_class | append: ' py-4'
+      else
+        assign container_padding_class = container_padding_class | append: ' py-2'
+      endif
+
+      if desktop_text_scale >= 8
+        assign container_padding_class = container_padding_class | append: ' lg:py-6'
+      elsif desktop_text_scale >= 7
+        assign container_padding_class = container_padding_class | append: ' lg:py-5'
+      elsif desktop_text_scale >= 3
+        assign container_padding_class = container_padding_class | append: ' lg:py-3.5'
+      else
+        assign container_padding_class = container_padding_class | append: ' lg:py-2'
+      endif
+    endif
+  endif
+-%}
+
+{% if repeat_text %}
+  {% if separator_type == 'button' and inline_link_text != blank %}
+    {% capture link_tag %}<span class="theme-button {% if button_style == 'secondary' %}theme-button--secondary{% endif %} theme-button--in-group tracking-normal {% if link == blank %}opacity-50 cursor-not-allowed group-hover:border-text group-hover:border-button group-hover:bg-button group-hover:text-button-color{% endif %}">{{- inline_link_text -}}</span>{% endcapture %}
+
+    {% capture text_with_separator %}<span class="{{ half_gap }}">{{ text }}</span>{{ link_tag }}{% endcapture %}
+    {% assign text = text_with_separator %}
+  {% else %}
+    {% capture text_with_separator %}<span class="{{ half_gap }}">{{ text }}</span>{% if separator_type == 'symbol' %}<span>{% for i in (1..separator_repeats) %}{{ separator }}{% unless forloop.last %}{{ spacing_between_repeated_separators }}{% endunless %}{% endfor %}</span>{% endif %}{% endcapture %}
+    {% assign text = text_with_separator %}
+  {% endif %}
+{% endif %}
+
+{% capture content %}
+  <scrolling-items-container class="block {% if link != blank %}group-hover:text-scheme-accent{% endif %}">
+    <scrolling-items
+      style="
+        --base-scrolling-items-speed: {{ speed_number }}s;
+        --local-scrolling-items-speed-multiplier: 1;
+        --scrolling-items-speed: calc(
+            var(--base-scrolling-items-speed) * var(--global-scrolling-items-speed-multiplier) *
+              var(--local-scrolling-items-speed-multiplier)
+          );
+        --scrolling-items-direction: {{ direction }};"
+      class="block w-max whitespace-nowrap motion-safe:animate-[scrolling-items_var(--scrolling-items-speed)_linear_infinite_var(--scrolling-items-direction)] motion-safe:focus-within:[animation-play-state:paused] motion-safe:hover:[animation-play-state:paused] {{ font }} {{ text_size_class }} motion-reduce:block motion-reduce:whitespace-normal motion-reduce:px-section-horizontal-spacing motion-reduce:text-center {% if repeat_text %}motion-reduce:-translate-x-1/4{% endif %}"
+    >
+      <scrolling-items-surface class="flex flex-nowrap items-center {{ gap }}">
+        <scrolling-items-content
+          class="{{ content_class }} {% if separator_type == 'button' %}flex items-center{% endif %}"
+          aria-hidden="true"
+        >{{ text }}</scrolling-items-content>
+          <noscript>
+            {% liquid
+              if repeat_text
+                assign fallback_repeat_limit = 11
+              else
+                assign fallback_repeat_limit = 1
+              endif
+            %}
+            {% for i in (1..fallback_repeat_limit) %}
+              <span class="motion-reduce:hidden {{ content_class }}">{{ text }}</span>
+            {% endfor %}
+          </noscript>
+      </scrolling-items-surface>
+    </scrolling-items>
+  </scrolling-items-container>
+{% endcapture %}
+
+{%- if html_tag and html_tag != '' -%}
+  <{{ html_tag }}>
+{%- endif -%}
+{%- if link == blank -%}
+  <span class="sr-only">{{ anchor_tag_aria_label }}</span>
+{%- endif -%}
+<a
+  {% if link == blank %}
+    aria-disabled="true"
+  {% else %}
+    href="{{ link }}"
+  {% endif %}
+  class="focus-inset text-scheme-text focus-visible:relative focus-visible:block {% if full_height %}py-section-vertical-spacing w-screen{% endif %}"
+  aria-label="{{ anchor_tag_aria_label | strip_html | escape }}"
+>
+  <div class="{{ container_padding_class }} relative overflow-hidden {% if is_overlaid %}h-full flex {{ overlaid_content_position }}{% endif %}">
+    {{ content }}
+  </div>
+</a>
+{%- if html_tag and html_tag != '' -%}
+  </{{ html_tag }}>
+{%- endif -%}

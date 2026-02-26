@@ -1,0 +1,33 @@
+{% liquid
+  case desktop_width
+    when 'two_thirds'
+      assign desktop_width = 'lg:w-3/4'
+    when 'half'
+      assign desktop_width = 'lg:w-1/2'
+    else
+      assign desktop_width = 'lg:w-full'
+  endcase
+
+  case desktop_alignment
+    when 'left'
+      assign desktop_alignment = 'justify-start'
+    when 'right'
+      assign desktop_alignment = 'justify-end'
+    else
+      assign desktop_alignment = 'justify-center'
+  endcase
+%}
+
+<div class="flex {{ text_align }} {{ desktop_alignment }}">
+  <div class="w-full {{ desktop_width }}">
+    {% render 'section-content',
+      title: title,
+      subheading: subheading,
+      text: text,
+      cta_link: cta_link,
+      cta_text: cta_text,
+      cta_style: cta_style,
+      cta_button_style: cta_button_style
+    %}
+  </div>
+</div>

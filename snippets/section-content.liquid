@@ -1,0 +1,83 @@
+{% doc %}
+  Renders section content.
+
+  @param {string} title - Heading title
+  @param {string} [title_size_class] - Heading size class
+  @param {string} [subheading] - Subheading above heading title
+  @param {string} [text] - Text under heading title
+  @param {string} [text_size_class] - Text size class
+  @param {string} [text_font_class] - Text font class
+  @param {string} [cta_link] - CTA link
+  @param {string} [cta_text] - CTA text
+  @param {string} [cta_style] - CTA style (button or link)
+  @param {string} [cta_button_style] - CTA button style (primary or secondary)
+
+  @example
+  {% render 'section-content',
+    title: title,
+    title_size_class: title_size_class,
+    subheading: subheading,
+    text: text,
+    text_size_class: text_size_class,
+    text_font_class: text_font_class,
+    cta_link: cta_link,
+    cta_text: cta_text,
+    cta_style: cta_style,
+    cta_button_style: cta_button_style
+  %}
+{% enddoc %}
+
+{% liquid
+  unless title_size_class
+    assign title_size_class = 'text-heading-standard'
+  endunless
+
+  unless text_size_class
+    assign text_size_class = 'text-base'
+  endunless
+
+  unless text_font_class
+    assign text_font_class = 'font-body'
+  endunless
+%}
+
+{%- if title != blank -%}
+  {%- if subheading != blank -%}
+    <div class="{% if settings.double_subheading_spacing %}mb-4{% else %}mb-2{% endif %}">
+      <span class="font-subheading text-subheading {% render 'subheading-symbol-classes' %}">
+        {{ subheading | strip }}
+      </span>
+    </div>
+  {%- endif -%}
+
+  <h2 class="font-heading break-word {{ title_size_class }}">
+    {{ title }}
+  </h2>
+{%- endif -%}
+
+{%- if text != blank -%}
+  <div class="rte break-word {% if title != blank %}mt-4{% endif %} {{ text_size_class }} {{ text_font_class }}">
+    {{ text }}
+  </div>
+{%- endif -%}
+
+{%- if cta_link != blank and cta_text != blank -%}
+  <div class="mt-cta text-0">
+    {%- case cta_style -%}
+      {%- when 'link' -%}
+        <a
+          class="theme-link inline-block text-scheme-text hover:text-scheme-accent"
+          href="{{ cta_link }}"
+        >
+          {{- cta_text -}}
+        </a>
+      {%- when 'button' -%}
+        <a
+          href="{{ cta_link }}"
+          class="theme-button {% if cta_button_style == 'secondary' %}theme-button--secondary{% endif %}"
+        >
+          {{- cta_text -}}
+        </a>
+    {%- endcase -%}
+  </div>
+{%- endif -%}

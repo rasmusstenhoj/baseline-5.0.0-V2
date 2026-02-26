@@ -1,0 +1,181 @@
+{%- liquid
+  unless poster_preload
+    assign poster_preload = false
+  endunless
+
+  unless poster_loading
+    assign poster_loading = null
+  endunless
+
+  unless is_deep_inset
+    assign is_deep_inset = false
+  endunless
+
+  assign id = section.id | append: '-' | append: video.id
+  assign media_class = 'absolute inset-0 w-full h-full object-cover object-center overflow-hidden'
+  assign preview_image_media_class = media_class | append: ' transition duration-300 scale-100 group-hover:scale-105'
+
+  if ratio != 'natural'
+    assign ratio_percentage = 1 | divided_by: ratio | times: 100
+  else
+    if video != blank
+      assign precise_ratio = video.sources[0].width | times: 1.00000000 | divided_by: video.sources[0].height
+      assign ratio_percentage = 100.00000000 | divided_by: precise_ratio
+    else
+      assign ratio_percentage = 56.25
+    endif
+  endif
+
+  assign container_class = 'group relative pb-[var(--ratio-percent)] overflow-hidden'
+
+  if fill
+    if fill_only_on_desktop
+      assign container_class = 'group relative pb-[var(--ratio-percent)] overflow-hidden lg:pb-0 lg:absolute lg:inset-0'
+    else
+      assign container_class = 'absolute inset-0'
+    endif
+  endif
+
+  if is_deep_inset
+    assign media_class = media_class | append: ' rounded-deep-inset-media'
+    assign preview_image_media_class = preview_image_media_class | append: ' rounded-deep-inset-media'
+    assign container_class = container_class | append: ' rounded-deep-inset-media'
+  else
+    assign media_class = media_class | append: ' rounded-grid-media'
+    assign preview_image_media_class = preview_image_media_class | append: ' rounded-grid-media'
+    assign container_class = container_class | append: ' rounded-grid-media'
+  endif
+
+  if settings.grid_media_style == 'inset' and settings.show_inset_media_border
+    assign media_class = media_class | append: ' border-gridline border-gridline-color'
+    assign preview_image_media_class = preview_image_media_class | append: ' border-gridline border-gridline-color'
+  endif
+-%}
+
+<div
+  class="{{ container_class }}"
+  style="--ratio-percent: {{ ratio_percentage }}%;"
+>
+  {%- case mode -%}
+    {%- when 'autoplay' -%}
+      <data-island
+        id="{{ id }}"
+        class="absolute inset-0 h-full w-full"
+        x-data="Video('{{ mode | strip }}')"
+        x-intersect:enter="play(true)"
+        x-intersect:leave.full="pause"
+      >
+        <data-island
+          class="html-video-wrapper"
+          x-data="HTMLVideo"
+          @play="play"
+          @pause="pause"
+        >
+          {%- if video != blank -%}
+            {{
+              video
+              | video_tag:
+                autoplay: true,
+                image_size: '2048x',
+                loop: true,
+                controls: false,
+                preload: 'none',
+                class: media_class,
+                muted: true,
+                id: player_id,
+                x-ref: 'video'
+            }}
+          {%- else -%}
+            <video x-ref="video" autoplay muted loop class="{{ media_class }}">
+              <source
+                src="{{ 'placeholder-video.mp4' | asset_url }}"
+                type="video/mp4"
+              >
+              Your browser does not support the video tag.
+            </video>
+          {%- endif -%}
+        </data-island>
+      </data-island>
+    {%- when 'preview' -%}
+      <data-island
+        id="{{ id }}"
+        class="absolute h-full w-full"
+        x-data="Video({{ playback | json }})"
+        x-intersect:leave="pause"
+      >
+        <div
+          class="relative h-full w-full"
+        >
+          <template x-if="!enabled">
+            <button
+              @click="enable"
+              class="group/button absolute inset-0 h-full w-full"
+              type="button"
+              aria-label="{{ 'media.play_video' | t }}"
+            >
+              <span
+                class="button__icon text-scheme-background-overlay group-hover/button:text-scheme-accent-overlay absolute left-1/2 top-1/2 z-20 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 transform items-center justify-center rounded-full bg-scheme-background transition-opacity group-hover/button:bg-scheme-accent group-hover/button:text-scheme-accent-contrast lg:h-20 lg:w-20"
+              >
+                <span class="inline-block h-8 w-8">
+                  {%- render 'icon-play' -%}
+                </span>
+              </span>
+              {%- if video != blank -%}
+                {{
+                  video.preview_image
+                  | image_url: width: 2000
+                  | image_tag:
+                    class: preview_image_media_class,
+                    preload: poster_preload,
+                    loading: poster_loading,
+                    sizes: sizes
+                }}
+              {%- else -%}
+                {%- render 'image-fill-placeholder',
+                  is_deep_inset: deep_inset
+                -%}
+              {%- endif -%}
+            </button>
+          </template>
+          <template x-if="enabled">
+            <data-island
+              class="html-video-wrapper {{ wrapper_class }}"
+              x-data="HTMLVideo"
+              @play="play"
+              @pause="pause"
+            >
+              {%- if video != blank -%}
+                {{
+                  video
+                  | video_tag:
+                    autoplay: true,
+                    image_size: '2048x',
+                    loop: loop,
+                    controls: true,
+                    preload: 'none',
+                    class: media_class,
+                    muted: false,
+                    id: player_id,
+                    x-ref: 'video'
+                }}
+              {%- else -%}
+                <video
+                  x-ref="video"
+                  autoplay
+                  muted
+                  loop
+                  class="{{ media_class }}"
+                >
+                  <source
+                    src="{{ 'placeholder-video.mp4' | asset_url }}"
+                    type="video/mp4"
+                  >
+                  Your browser does not support the video tag.
+                </video>
+              {%- endif -%}
+            </data-island>
+          </template>
+        </div>
+      </data-island>
+  {%- endcase -%}
+</div>

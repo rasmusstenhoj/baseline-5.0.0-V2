@@ -1,0 +1,12 @@
+{%- liquid
+  unless settings.subheading_symbol == ''
+    assign classes = 'inline-flex items-center gap-1.5 before:inline-block before:w-subheading-symbol before:aspect-square before:bg-scheme-text before:content-empty before:shrink-0'
+    if settings.subheading_symbol == 'circle'
+      assign classes = classes | append: ' before:rounded-full'
+    endif
+    if settings.subheading_symbol == 'diamond'
+      assign classes = classes | append: ' before:rotate-45'
+    endif
+    echo classes
+  endunless
+-%}

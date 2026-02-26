@@ -1,0 +1,67 @@
+{%- liquid
+  assign base_container_classes = 'flex items-center'
+  assign base_input_classes = 'appearance-none bg-transparent p-2 text-center leading-base'
+  assign block_classes = 'flex flex-col gap-2'
+
+  if mode == 'inline'
+    assign style = 'border'
+    assign hide_label = true
+  endif
+
+  if style == 'underline'
+    assign container_classes = base_container_classes | append: ' w-fit'
+    assign input_classes = base_input_classes | append: ' w-10 border-b-text border-scheme-text mx-2 '
+  else
+    if full_width or mode == 'inline'
+      assign container_classes = base_container_classes | append: ' justify-between w-full rounded-button border-text border-scheme-text px-2'
+    else
+      assign container_classes = base_container_classes | append: ' w-fit rounded-button border-text border-scheme-text px-2'
+    endif
+    assign input_classes = base_input_classes | append: ' w-16 leading-none'
+  endif
+-%}
+
+<div
+  class="product-quantity-block {{ block_classes }}"
+>
+  {%- unless hide_label -%}
+    <label class="{{ label_class }}" for="Quantity">
+      {{- 'products.product.quantity' | t }}:</label
+    >
+  {%- endunless -%}
+  <data-island
+    x-data="Quantity"
+    class="{{ container_classes }} grow"
+  >
+    <button
+      type="button"
+      class="min-touch-target size-3 fill-current"
+      @click="decrement"
+      aria-label="'{ 'general.accessibility.decrement_one' | t }}"
+    >
+      {% render 'icon-minus' %}
+    </button>
+    <input
+      {% if product_form_id %}
+        form="{{ product_form_id }}"
+      {% endif %}
+      class="{{ input_classes }}"
+      type="number"
+      id="Quantity"
+      name="quantity"
+      value="1"
+      min="1"
+      step="1"
+      x-ref="quantityInput"
+      x-model.number.fill="quantity"
+    >
+    <button
+      type="button"
+      class="min-touch-target size-3  fill-current"
+      @click="increment"
+      aria-label="{{ 'general.accessibility.increment_one' | t }}"
+    >
+      {% render 'icon-plus' %}
+    </button>
+  </data-island>
+</div>

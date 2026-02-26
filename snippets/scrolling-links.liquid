@@ -1,0 +1,198 @@
+{%- liquid
+  comment
+    The minimum speed possible is 20s, the maximum speed is 1s
+  endcomment
+
+  assign min_speed_setting = 20
+  assign max_speed_setting = 400
+
+  assign speed_number = min_speed_setting | plus: max_speed_setting | minus: speed_setting
+
+  assign speed_number = speed_number | divided_by: 2 | divided_by: 10
+
+  if mobile_text_scale and desktop_text_scale
+    assign mobile_text_scale = mobile_text_scale | plus: 0
+    assign desktop_text_scale = desktop_text_scale | plus: 0
+  endif
+
+  assign content_class = content_class | append: ' flex flex-nowrap items-center'
+
+  assign direction = direction
+
+  assign placeholder_title = 'homepage.onboarding.product' | t
+  assign aria_label = 'general.carousel.products_carousel' | t
+  if type == 'collections'
+    assign placeholder_title = 'homepage.onboarding.collection' | t
+    assign aria_label = 'general.carousel.collections_carousel' | t
+  endif
+
+  if separator_type == 'gap'
+    assign gap = spacing_between_repeated_text
+  else
+    if spacing_between_repeated_text == 'gap-4 lg:gap-8'
+      assign half_gap = 'px-2 lg:px-4'
+    elsif spacing_between_repeated_text == 'gap-10 lg:gap-20'
+      assign half_gap = 'px-5 lg:px-10'
+    elsif spacing_between_repeated_text == 'gap-16 lg:gap-32'
+      assign half_gap = 'px-8 lg:px-16'
+    elsif spacing_between_repeated_text == 'gap-32 lg:gap-64'
+      assign half_gap = 'px-16 lg:px-32'
+    endif
+  endif
+-%}
+
+{%- capture links -%}
+  {%- for item in items limit: limit -%}
+    <a
+      class="min-touch-target hover:text-scheme-accent {% if media_display == 'inline' and item.featured_image %}block{% endif %}" href="{{ item.url }}"
+      {% if media_display == 'hover' %}
+        x-on:mouseenter="currentLink = '{{ item.handle }}'"
+        x-on:mouseleave="currentLink = ''"
+        x-on:focus="currentLink = '{{ item.handle }}'"
+        x-on:blur="currentLink = ''"
+      {% endif %}
+      x-intersect:enter.half="$el.ariaHidden = null; $el.tabIndex = null"
+      x-intersect:leave.half="$el.ariaHidden = true; $el.tabIndex = -1"
+    >
+      {%- if media_display == 'inline' and item.featured_image -%}
+        <div class="flex items-center justify-center gap-2">
+          <span class="inline-block h-[1em]" style="aspect-ratio: 1/1;">
+          {%- liquid
+            if forloop.index <= 4 and section.index < 3
+              assign loading = 'eager'
+            else
+              assign loading = 'lazy'
+            endif
+
+            render 'image-crop', image: item.featured_image, sizes: '1em', loading: loading, ratio: 1, is_thumbnail: true
+            -%}
+
+          </span>
+          <span>{{- item.title -}}</span>
+          {% if show_collection_count and item.products_count %}
+            <sup
+              class="-ml-inline-sup"
+            >
+              {{- item.products_count -}}
+              <span class="sr-only">
+                {{- 'general.search.products' | t -}}
+              </span>
+            </sup>
+          {% endif %}
+        </div>
+      {%- else -%}
+       <span>{{ item.title }}</span>
+       {% if show_collection_count and item.products_count %}
+        <sup
+          class="-ml-inline-sup"
+        >
+          {{- item.products_count -}}
+          <span class="sr-only">
+            {{- 'general.search.products' | t -}}
+          </span>
+        </sup>
+      {% endif %}
+      {%- endif -%}
+    </a>
+    {% if separator_type == 'symbol' %}<span class="{{ half_gap }}" aria-hidden="true">{% for i in (1..separator_repeats) %}{{ separator }}{% unless forloop.last %}{{ spacing_between_repeated_separators }}{% endunless %}{% endfor %}</span>{% endif %}
+
+  {%- else -%}
+    {%- for i in (1..3) -%}
+      <a
+        class="min-touch-target hover:text-scheme-accent"
+        {% if media_display == 'hover' %}
+          x-on:mouseenter="currentLink = 'placeholder'"
+          x-on:mouseleave="currentLink = ''"
+          x-on:focus="currentLink = 'placeholder'"
+          x-on:blur="currentLink = ''"
+        {% endif %}
+        x-intersect:enter.half="$el.ariaHidden = null; $el.tabIndex = null"
+        x-intersect:leave.half="$el.ariaHidden = true; $el.tabIndex = -1"
+      >
+        {%- if media_display == 'inline' -%}
+          <div class="flex items-center justify-center gap-2">
+            <span class="inline-block h-[1em]" style="aspect-ratio: 1/1;">
+              {% render 'image-crop-placeholder', ratio: 1, is_thumbnail: true %}
+            </span>
+            <span>{{ placeholder_title }}</span>
+          </div>
+        {%- else -%}
+         <span>{{ placeholder_title }}</span>
+        {%- endif -%}
+      </a>
+      {% if separator_type == 'symbol' %}<span class="{{ half_gap }}" aria-hidden="true">{% for i in (1..separator_repeats) %}{{ separator }}{% unless forloop.last %}{{ spacing_between_repeated_separators }}{% endunless %}{% endfor %}</span>{% endif %}
+
+    {%- endfor -%}
+  {%- endfor -%}
+{%- endcapture -%}
+
+{% capture content %}
+  <scrolling-items-container class="block" aria-label="{{ aria_label }}">
+    <scrolling-items
+      style="
+        --base-scrolling-items-speed: {{ speed_number }}s;
+        --local-scrolling-items-speed-multiplier: 1;
+        --scrolling-items-speed: calc(
+            var(--base-scrolling-items-speed) * var(--global-scrolling-items-speed-multiplier) *
+              var(--local-scrolling-items-speed-multiplier)
+          );
+        --scrolling-items-direction: {{ direction }};"
+      class="block w-max whitespace-nowrap motion-safe:animate-[scrolling-items_var(--scrolling-items-speed)_linear_infinite_var(--scrolling-items-direction)] motion-safe:focus-within:[animation-play-state:paused] motion-safe:hover:[animation-play-state:paused] {{ font }} {{ text_size_class }} motion-reduce:block motion-reduce:-translate-x-1/4 motion-reduce:whitespace-normal motion-reduce:px-section-horizontal-spacing motion-reduce:text-center"
+    >
+      <scrolling-items-surface class="flex flex-nowrap items-center {{ gap }}">
+        <scrolling-items-content class="{{ content_class }} {{ gap }}">{{ links }}</scrolling-items-content>
+          <noscript>
+            {% liquid
+              assign fallback_repeat_limit = 11
+            %}
+            {% for i in (1..fallback_repeat_limit) %}
+              <span class="motion-reduce:hidden {{ content_class }}">{{ links }}</span>
+            {% endfor %}
+          </noscript>
+      </scrolling-items-surface>
+    </scrolling-items>
+  </scrolling-items-container>
+{% endcapture %}
+
+{% liquid
+  assign container_padding_class = 'py-2'
+
+  if mobile_text_scale and desktop_text_scale
+    if mobile_text_scale >= 4
+      assign container_padding_class = 'py-4'
+    endif
+
+    if desktop_text_scale >= 8
+      assign container_padding_class = container_padding_class | append: ' lg:py-6'
+    elsif desktop_text_scale >= 7
+      assign container_padding_class = container_padding_class | append: ' lg:py-5'
+    elsif desktop_text_scale >= 3
+      assign container_padding_class = container_padding_class | append: ' lg:py-3.5'
+    else
+      assign container_padding_class = container_padding_class | append: ' lg:py-2'
+    endif
+  endif
+%}
+
+<data-island
+  class="{{ container_padding_class }} overflow-hidden"
+  {% if media_display == 'hover' %}
+    x-data="{ currentLink: '' }"
+  {% else %}
+    x-data
+  {% endif %}
+>
+  {{ content }}
+
+  {%- if media_display == 'hover' -%}
+    {%- liquid
+      for item in items limit: limit
+        if item.featured_image
+          render 'hover-link-media', image: item.featured_image, handle: item.handle, modal: true, media_type: 'image'
+        endif
+      else
+        render 'hover-link-image-placeholder', modal: true
+      endfor
+    -%}
+  {%- endif -%}
+</data-island>

@@ -1,0 +1,122 @@
+{% liquid
+  assign placeholder_media_classes = 'rounded-grid-media absolute inset-0 h-full w-full object-cover'
+  if settings.grid_media_style == 'inset' and settings.show_inset_media_border
+    assign placeholder_media_classes = placeholder_media_classes | append: ' border-gridline border-gridline-color'
+  endif
+
+  unless has_newsletter
+    assign has_newsletter = false
+  endunless
+%}
+
+<section
+  class="group relative overflow-hidden border-b-gridline border-gridline-color p-grid-media"
+  style="--media-aspect-ratio: {{ aspect_ratio }}; --media-aspect-ratio-desktop: {{ aspect_ratio_desktop }};"
+>
+  {% if cta_link != blank %}
+    {% unless has_countdown_timer and has_newsletter %}
+      <a href="{{ cta_link }}" class="absolute inset-0 z-11"
+        ><span class="sr-only">
+          {%- if cta_text != blank -%}
+            {{- cta_text -}}
+          {%- elsif video and video.alt != blank -%}
+            {{- video.alt -}}
+          {%- endif -%}
+        </span></a
+      >
+    {% endunless %}
+  {% endif %}
+  <div class="relative {{ size_classes }}">
+    <div class="{{ container_class }}">
+      {%- if video != blank -%}
+        {%- render 'video',
+          video: video,
+          mode: 'autoplay',
+          container_id: section.id,
+          fill: true
+        -%}
+      {%- else -%}
+        <video
+          autoplay
+          muted
+          class="{{ placeholder_media_classes }}"
+        >
+          <source
+            src="{{ 'placeholder-video.mp4' | asset_url }}"
+            type="video/mp4"
+          >
+          Your browser does not support the video tag.
+        </video>
+      {%- endif -%}
+    </div>
+    <div
+      class="absolute inset-0 z-10 text-scheme-text"
+      data-color-scheme="{{ text_color }}"
+    >
+      <div class="flex {{ content_position }} {{ text_align }} h-full w-full">
+        <div class="{{ content_width_desktop }} overflow-hidden p-media-content-less-grid-media text-scheme-text max-lg:w-full">
+          {% render 'section-content',
+            title: title,
+            title_size_class: heading_size_class,
+            subheading: subheading
+          %}
+
+          {% if has_countdown_timer %}
+            <div class="mt-4">
+              {%- render 'countdown-timer',
+                year: year,
+                month: month,
+                day: day,
+                hour: hour,
+                minute: minute,
+                font: font,
+                style: style,
+                number_padding: number_padding,
+                flash_separators: flash_separators,
+                minimum_shown_parts: minimum_shown_parts,
+                metafield_ns_and_key: metafield_ns_and_key,
+                no_background: true
+              -%}
+            </div>
+          {% endif %}
+
+          {% if text != blank %}
+            <div class="rte text-base {% if title != '' %}mt-theme-half{% endif %}">
+              {{ text }}
+            </div>
+          {% endif %}
+
+          {% if cta_link != blank and cta_text != '' %}
+            {% unless has_countdown_timer and has_newsletter %}
+              <div class="mt-cta text-0">
+                {%- case cta_style -%}
+                  {%- when 'link' -%}
+                    <span
+                      class="theme-link inline-block text-scheme-text group-hover:text-scheme-accent"
+                    >
+                      {{- cta_text -}}
+                    </span>
+
+                  {%- when 'button' -%}
+                    <span
+                      class="theme-button {% if cta_button_style == 'secondary' %}theme-button--secondary{% endif %} theme-button--in-group inline-block"
+                    >
+                      {{- cta_text -}}
+                    </span>
+                {%- endcase -%}
+              </div>
+            {% endunless %}
+          {% endif %}
+
+          {% if has_newsletter %}
+            <div class="mt-4 lg:flex {% if content_position contains 'text-left' %}lg:justify-start{% elsif content_position contains 'text-center' %}lg:justify-center{% else %}lg:justify-end{% endif %}">
+              <div class="w-full xl:max-w-3/5">
+                {% render 'newsletter-form', form_id: form_id %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
