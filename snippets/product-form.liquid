@@ -91,7 +91,7 @@
         when 'text'
           render 'product-block-text', block: block, product: product
         when 'richtext'
-          render 'product-block-richtext', block: block, product: product
+          render 'product-block-richtext', block: block, product: product, max_width: 'max-w-2xl'
         when 'information_list'
           render 'product-block-information-list', block: block, product: product
         when 'collapsible_tab'
