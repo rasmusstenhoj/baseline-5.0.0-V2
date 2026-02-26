@@ -7,7 +7,12 @@
 
   assign title_font = block.settings.font | default: 'font-heading'
   assign title_text_size = block.settings.text_size | default: 'text-heading-feature'
+  assign show_inline_price = block.settings.show_inline_price | default: false
 %}
+
+{% if show_inline_price %}
+  <div class="flex items-baseline justify-between gap-4">
+{% endif %}
 
 <{{ tag }}
   class="product-title-block {{ title_font }} break-word {{ title_text_size }}"
@@ -19,3 +24,14 @@
     {{ product.title }}
   {%- endif -%}
 </{{ tag }}>
+
+{% if show_inline_price %}
+    {%- render 'product-form-component-price',
+      product: product,
+      current_variant: current_variant,
+      variant_fragment_id: 'inline-title-price',
+      price_text_size: block.settings.inline_price_text_size,
+      show_discount_tag: false
+    -%}
+  </div>
+{% endif %}
