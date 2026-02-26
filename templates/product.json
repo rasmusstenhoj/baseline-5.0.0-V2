@@ -12,6 +12,12 @@
     "main": {
       "type": "main-product",
       "blocks": {
+        "title_nM9QCj": {
+          "type": "title",
+          "settings": {
+            "space_above": 1
+          }
+        },
         "text_eWyEKj": {
           "type": "text",
           "name": "Title",
@@ -163,6 +169,7 @@
         }
       },
       "block_order": [
+        "title_nM9QCj",
         "text_eWyEKj",
         "price_jk9rEJ",
         "richtext_4yPNzt",
