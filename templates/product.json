@@ -15,19 +15,9 @@
         "title_nM9QCj": {
           "type": "title",
           "settings": {
-            "space_above": 1
-          }
-        },
-        "text_eWyEKj": {
-          "type": "text",
-          "name": "Title",
-          "settings": {
-            "text": "{{ product.title }}",
             "font": "font-heading",
             "text_size": "text-heading-secondary",
-            "symbol": "none",
-            "icon": "none",
-            "space_above": 0.5
+            "space_above": 1
           }
         },
         "price_jk9rEJ": {
@@ -170,7 +160,6 @@
       },
       "block_order": [
         "title_nM9QCj",
-        "text_eWyEKj",
         "price_jk9rEJ",
         "richtext_4yPNzt",
         "variant_robot_block_E43QxW",
