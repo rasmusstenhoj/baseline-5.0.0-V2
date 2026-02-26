@@ -17,6 +17,8 @@
           "settings": {
             "font": "font-heading",
             "text_size": "text-heading-secondary",
+            "show_inline_price": true,
+            "inline_price_text_size": "text-base",
             "space_above": 1
           }
         },
