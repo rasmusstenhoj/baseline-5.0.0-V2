@@ -30,7 +30,9 @@
     endif
   endunless
 
-  if price_text_size contains 'heading'
+  if price_font_class_override
+    assign price_font_class = price_font_class_override
+  elsif price_text_size contains 'heading'
     assign price_font_class = 'font-heading'
   else
     assign price_font_class = 'font-body'
