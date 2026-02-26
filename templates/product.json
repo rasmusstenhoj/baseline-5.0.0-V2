@@ -98,6 +98,7 @@
             "show_payment_terms": false,
             "enable_payment_button": false,
             "full_width": false,
+            "show_button_arrow": false,
             "button_font": "font-heading",
             "button_text_size": "text-subheading",
             "show_atc_price": false,
