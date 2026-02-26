@@ -77,28 +77,22 @@
 
 {%- liquid
   assign button_style_overrides = ''
+  assign button_font_class = ''
 
   if button_font != blank and button_font != 'default'
-    case button_font
-      when 'font-body'
-        assign button_style_overrides = button_style_overrides | append: 'font-family: var(--body-font-stack); font-weight: var(--body-font-weight); font-style: var(--body-font-style); letter-spacing: 0;'
-      when 'font-heading'
-        assign button_style_overrides = button_style_overrides | append: 'font-family: var(--heading-font-stack); font-weight: var(--heading-font-weight); font-style: var(--heading-font-style); letter-spacing: var(--heading-letterspacing);'
-      when 'font-subheading'
-        assign button_style_overrides = button_style_overrides | append: 'font-family: var(--subheading-font-stack); font-weight: var(--subheading-font-weight); font-style: var(--subheading-font-style); letter-spacing: var(--subheading-letterspacing);'
-    endcase
+    assign button_font_class = button_font
   endif
 
   if button_text_size != blank and button_text_size != 'default'
     case button_text_size
       when 'text-base'
-        assign button_style_overrides = button_style_overrides | append: ' font-size: var(--font-size-base); line-height: var(--base-line-height);'
+        assign button_style_overrides = button_style_overrides | append: 'font-size: var(--font-size-base); line-height: var(--base-line-height);'
       when 'text-subheading'
-        assign button_style_overrides = button_style_overrides | append: ' font-size: var(--subheading-size); line-height: var(--subheading-line-height);'
+        assign button_style_overrides = button_style_overrides | append: 'font-size: var(--subheading-size); line-height: var(--subheading-line-height);'
       when 'text-heading-standard'
-        assign button_style_overrides = button_style_overrides | append: ' font-size: var(--standard-heading-size); line-height: var(--heading-line-height);'
+        assign button_style_overrides = button_style_overrides | append: 'font-size: var(--standard-heading-size); line-height: var(--heading-line-height);'
       when 'text-heading-secondary'
-        assign button_style_overrides = button_style_overrides | append: ' font-size: var(--secondary-heading-size); line-height: var(--heading-line-height);'
+        assign button_style_overrides = button_style_overrides | append: 'font-size: var(--secondary-heading-size); line-height: var(--heading-line-height);'
     endcase
   endif
 -%}
@@ -272,7 +266,7 @@
         {%- endif -%}
 
         <button
-          class="add-to-cart font-button inline-block w-full justify-center  px-1 py-2 align-middle {% if settings.button_uppercase %}uppercase{% endif %} {{ cta_button_classes }} [&.disabled--transient]:cursor-not-allowed [&.disabled--unavailable]:cursor-not-allowed [&.disabled--unavailable]:opacity-50 [&.disabled--unavailable]:after:content-none{% if current_variant.available != true or preselect_variant != true %} disabled--unavailable{% endif %}"
+          class="add-to-cart font-button inline-block w-full justify-center px-1 py-2 align-middle {% if settings.button_uppercase %}uppercase{% endif %} {{ cta_button_classes }} {{ button_font_class }} [&.disabled--transient]:cursor-not-allowed [&.disabled--unavailable]:cursor-not-allowed [&.disabled--unavailable]:opacity-50 [&.disabled--unavailable]:after:content-none{% if current_variant.available != true or preselect_variant != true %} disabled--unavailable{% endif %}"
           {% if button_style_overrides != blank %}
             style="{{ button_style_overrides }}"
           {% endif %}
