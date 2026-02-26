@@ -121,6 +121,17 @@
               assign option_value_label_classes = 'block p-1 peer-[:not(.sold-out,.unavailable)]:cursor-pointer peer-[.sold-out]:text-scheme-secondary peer-[.unavailable]:text-scheme-secondary peer-[.sold-out]:line-through peer-[.unavailable]:line-through peer-checked:[&>span]:border-b-text peer-checked:[&>span]:border-scheme-text'
               assign option_value_label_span_classes = ''
 
+            when 'parentheses'
+              if spread_options
+                assign option_wrapper_classes = label_padding | append: ' -mx-1 flex flex-wrap items-center justify-between'
+              else
+                assign option_wrapper_classes = label_padding | append: ' -mx-1 flex flex-wrap items-center justify-start'
+              endif
+              assign option_value_wrapper_classes = 'label-only-input relative'
+              assign option_value_input_classes = 'peer absolute left-0 top-0 h-full w-full cursor-pointer opacity-0'
+              assign option_value_label_classes = 'block p-1 peer-[:not(.sold-out,.unavailable)]:cursor-pointer peer-[.sold-out]:text-scheme-secondary peer-[.unavailable]:text-scheme-secondary peer-[.sold-out]:line-through peer-[.unavailable]:line-through'
+              assign option_value_label_span_classes = ''
+
             when 'buttons'
               assign option_value_input_classes = 'peer absolute left-0 top-0 h-full w-full cursor-pointer opacity-0'
               assign option_value_label_span_classes = ''
@@ -175,7 +186,7 @@
         %}
 
         <fieldset
-          class="product-variant-picker-block no-js:hidden"
+          class="product-variant-picker-block no-js:hidden{% if option_style == 'parentheses' %} variant-style-parentheses{% endif %}"
           data-product-option
         >
           {%- if option_style == 'drop_down' -%}
@@ -217,7 +228,7 @@
             </legend>
           {%- endif -%}
           {%- case option_style -%}
-            {%- when 'radio', 'text_underline', 'buttons' -%}
+            {%- when 'radio', 'text_underline', 'buttons', 'parentheses' -%}
               <div
                 class="{{ option_wrapper_classes }} {{ values_font }} {{ values_text_size }}"
                 id="{{ id_base }}-option{{ option.position }}"
@@ -467,6 +478,17 @@
           display: block;
         }
       {% endif %}
+    </style>
+  {% endif %}
+
+  {% if option_style_setting == 'parentheses' %}
+    <style>
+      .variant-style-parentheses input:checked + label > span::before {
+        content: '(';
+      }
+      .variant-style-parentheses input:checked + label > span::after {
+        content: ')';
+      }
     </style>
   {% endif %}
 </div>
