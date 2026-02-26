@@ -54,11 +54,17 @@
   </noscript>
 
 <style>
-  .collapsible-tab button:hover .collapsible-tab-icon::before {
+  .collapsible-tab-icon::before {
     content: '(';
+    visibility: hidden;
   }
-  .collapsible-tab button:hover .collapsible-tab-icon::after {
+  .collapsible-tab-icon::after {
     content: ')';
+    visibility: hidden;
+  }
+  .collapsible-tab button:hover .collapsible-tab-icon::before,
+  .collapsible-tab button:hover .collapsible-tab-icon::after {
+    visibility: visible;
   }
 </style>
 
