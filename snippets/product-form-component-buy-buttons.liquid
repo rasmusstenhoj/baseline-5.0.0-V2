@@ -270,6 +270,10 @@
         <button
           class="add-to-cart font-button inline-block w-full justify-center  px-1 py-2 align-middle {% if settings.button_uppercase %}uppercase{% endif %} {{ cta_button_classes }} [&.disabled--transient]:cursor-not-allowed [&.disabled--unavailable]:cursor-not-allowed [&.disabled--unavailable]:opacity-50 [&.disabled--unavailable]:after:content-none{% if current_variant.available != true or preselect_variant != true %} disabled--unavailable{% endif %}"
           type="submit"
+        {% if button_style_overrides != blank %}
+          style="{{ button_style_overrides }}"
+        {% endif %}
+          type="submit"
           {% if current_variant.available != true
             or preselect_variant != true
           %}
