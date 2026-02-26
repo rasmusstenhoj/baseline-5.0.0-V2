@@ -71,6 +71,34 @@
   endif
 -%}
 
+{%- liquid
+  assign button_style_overrides = ''
+
+  if button_font != blank and button_font != 'default'
+    case button_font
+      when 'font-body'
+        assign button_style_overrides = button_style_overrides | append: 'font-family: var(--body-font-stack); font-weight: var(--body-font-weight); font-style: var(--body-font-style); letter-spacing: 0;'
+      when 'font-heading'
+        assign button_style_overrides = button_style_overrides | append: 'font-family: var(--heading-font-stack); font-weight: var(--heading-font-weight); font-style: var(--heading-font-style); letter-spacing: var(--heading-letterspacing);'
+      when 'font-subheading'
+        assign button_style_overrides = button_style_overrides | append: 'font-family: var(--subheading-font-stack); font-weight: var(--subheading-font-weight); font-style: var(--subheading-font-style); letter-spacing: var(--subheading-letterspacing);'
+    endcase
+  endif
+
+  if button_text_size != blank and button_text_size != 'default'
+    case button_text_size
+      when 'text-base'
+        assign button_style_overrides = button_style_overrides | append: ' font-size: var(--font-size-base); line-height: var(--base-line-height);'
+      when 'text-subheading'
+        assign button_style_overrides = button_style_overrides | append: ' font-size: var(--subheading-size); line-height: var(--subheading-line-height);'
+      when 'text-heading-standard'
+        assign button_style_overrides = button_style_overrides | append: ' font-size: var(--standard-heading-size); line-height: var(--heading-line-height);'
+      when 'text-heading-secondary'
+        assign button_style_overrides = button_style_overrides | append: ' font-size: var(--secondary-heading-size); line-height: var(--heading-line-height);'
+    endcase
+  endif
+-%}
+
 <data-island
   x-data="ProductForm"
   {% if variant_fragment_id %}
