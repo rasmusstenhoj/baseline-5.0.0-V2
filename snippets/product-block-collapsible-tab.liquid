@@ -2,62 +2,46 @@
   class="collapsible-tab"
 >
   <data-island
-    class="product-block--grid-container -mx-section-horizontal-spacing border-b-gridline border-gridline-color px-section-horizontal-spacing py-2"
-    x-data="{ open: false }"
+    class="pt-2 max-w-2xl"
+    x-data="{ open: {{ block.settings.open_by_default | default: false }} }"
   >
-    <h2
-      {% unless block.settings.heading_text_style == 'heading' %}
-        class="text-base"
-      {% endunless %}
-    >
-      <button
-        @click="open = !open"
-        class="{{ block.settings.heading_text_style }} flex w-full cursor-pointer items-center justify-between text-left"
-        type="button"
-        :aria-expanded="open ? true : 'false'"
+    <div class="pb-2" {% if block.settings.show_bottom_border %}style="border-bottom: {{ block.settings.border_width }}px solid rgb(var(--color-scheme-text));"{% endif %}>
+      <h2
+        {% unless block.settings.heading_text_style == 'heading' %}
+          class="text-base"
+        {% endunless %}
       >
-        <div class="flex items-center justify-start">
-          {% if block.settings.icon != 'none' -%}
-            <div class="mr-2 flex h-6 w-6 shrink-0 items-center">
-              {%- render 'product-icon', icon: block.settings.icon -%}
+        <button
+          @click="open = !open"
+          class="{{ block.settings.heading_text_style }} flex w-full cursor-pointer items-center justify-between text-left"
+          type="button"
+          :aria-expanded="open ? true : 'false'"
+        >
+          <div class="flex items-center justify-start">
+            {% if block.settings.icon != 'none' -%}
+              <div class="mr-2 flex h-6 w-6 shrink-0 items-center">
+                {%- render 'product-icon', icon: block.settings.icon -%}
+              </div>
+            {%- endif %}
+            <div
+              class="flex items-center text-base"
+            >
+              {{ block.settings.heading }}
             </div>
-          {%- endif %}
-          <div
-            class="flex items-center text-base"
-          >
-            {{ block.settings.heading }}
           </div>
+          <span class="font-heading text-base leading-none" x-text="open ? '−' : '+'"></span>
+        </button>
+      </h2>
+      <div
+        id="{{ block.id }}"
+        x-show="open"
+        {% unless block.settings.open_by_default %}style="display: none;"{% endunless %}
+        x-collapse
+      >
+        <div class="rte pt-4 text-base">
+          {{ block.settings.content }}
+          {{ block.settings.page.content }}
         </div>
-        {%- if settings.accordion_icon == 'plus_minus' -%}
-          <div class="flex h-6 w-6 shrink-0 items-center" x-show="!open">
-            {% render 'icon-plus' %}
-          </div>
-          <div
-            class="flex h-6 w-6 shrink-0 items-center"
-            x-show="open"
-            style="display: none;"
-          >
-            {%- render 'icon-minus' -%}
-          </div>
-        {%- else -%}
-          <div
-            class="ease-gentle flex h-6 w-6 shrink-0 rotate-0 items-center transition-transform duration-[280ms]"
-            :class="{ 'rotate-180' : open, 'rotate-0' : ! open }"
-          >
-            {%- render 'icon-chevron-down' -%}
-          </div>
-        {%- endif -%}
-      </button>
-    </h2>
-    <div
-      id="{{ block.id }}"
-      x-show="open"
-      style="display: none;"
-      x-collapse
-    >
-      <div class="rte pt-4 text-base">
-        {{ block.settings.content }}
-        {{ block.settings.page.content }}
       </div>
     </div>
   </data-island>
