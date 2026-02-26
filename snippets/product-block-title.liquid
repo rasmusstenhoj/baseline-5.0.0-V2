@@ -30,8 +30,10 @@
       product: product,
       current_variant: current_variant,
       variant_fragment_id: 'inline-title-price',
-      price_text_size: block.settings.inline_price_text_size,
-      show_discount_tag: false
+      price_text_size: title_text_size,
+      price_font_class_override: title_font,
+      show_discount_tag: false,
+      hide_tax_shipping: true
     -%}
   </div>
 {% endif %}
