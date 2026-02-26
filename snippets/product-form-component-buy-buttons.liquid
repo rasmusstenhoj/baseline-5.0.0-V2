@@ -95,6 +95,10 @@
         assign button_style_overrides = button_style_overrides | append: 'font-size: var(--secondary-heading-size); line-height: var(--heading-line-height);'
     endcase
   endif
+
+  if show_button_arrow == false
+    assign button_style_overrides = button_style_overrides | append: ' --button-after-content: none;'
+  endif
 -%}
 
 <data-island
