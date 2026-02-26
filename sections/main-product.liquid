@@ -1813,6 +1813,31 @@
           "id": "page",
           "label": "Tab content from page"
         },
+
+        {
+          "type": "checkbox",
+          "id": "open_by_default",
+          "label": "Expand by default",
+          "default": false
+        },
+        {
+          "type": "checkbox",
+          "id": "show_bottom_border",
+          "label": "Show bottom border",
+          "default": true
+        },
+        {
+          "visible_if": "{{ block.settings.show_bottom_border }}",
+          "type": "range",
+          "id": "border_width",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "unit": "px",
+          "label": "Border width",
+          "default": 2
+        },
+        
         {
           "type": "select",
           "id": "icon",
