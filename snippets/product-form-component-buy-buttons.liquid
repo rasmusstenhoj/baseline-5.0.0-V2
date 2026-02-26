@@ -20,6 +20,8 @@
   @param {boolean} [preselect_variant] - Whether the product section is configured to pre-select a variant on page load (default: true)
   @param {boolean} [show_pickup_availability] - Whether to show pickup availability section (default: false)
   @param {number} [space_above_pickup_availability] - Spacing multiplier above pickup availability (default: 1.0)
+  @param {string} [button_font] - Font override for add to cart button: 'default', 'font-body', 'font-subheading', or 'font-heading' (default: 'default')
+  @param {string} [button_text_size] - Text size override for add to cart button: 'default', 'text-base', 'text-subheading', 'text-heading-standard', or 'text-heading-secondary' (default: 'default')
 
   @example
   {% render 'product-form-component-buy-buttons',
@@ -37,7 +39,9 @@
     show_quantity_selector: block.settings.show_quantity_selector,
     preselect_variant: section.settings.preselect_variant,
     show_pickup_availability: block.settings.show_pickup_availability,
-    space_above_pickup_availability: block.settings.space_above_pickup_availability
+    space_above_pickup_availability: block.settings.space_above_pickup_availability,
+    button_font: block.settings.button_font,
+    button_text_size: block.settings.button_text_size
   %}
 {% enddoc %}
 
@@ -269,10 +273,9 @@
 
         <button
           class="add-to-cart font-button inline-block w-full justify-center  px-1 py-2 align-middle {% if settings.button_uppercase %}uppercase{% endif %} {{ cta_button_classes }} [&.disabled--transient]:cursor-not-allowed [&.disabled--unavailable]:cursor-not-allowed [&.disabled--unavailable]:opacity-50 [&.disabled--unavailable]:after:content-none{% if current_variant.available != true or preselect_variant != true %} disabled--unavailable{% endif %}"
-          type="submit"
-        {% if button_style_overrides != blank %}
-          style="{{ button_style_overrides }}"
-        {% endif %}
+          {% if button_style_overrides != blank %}
+            style="{{ button_style_overrides }}"
+          {% endif %}
           type="submit"
           {% if current_variant.available != true
             or preselect_variant != true
