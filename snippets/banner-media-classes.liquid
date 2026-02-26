@@ -1,0 +1,68 @@
+{%- liquid
+  case image_size
+    when 'natural'
+      assign size_classes = 'aspect-media'
+    when 'full_screen'
+      assign size_classes = 'h-screen-less-double-gridline'
+      if image_size_desktop != blank
+        assign size_classes = size_classes | append: ' max-lg:first-section:h-screen-less-header-group-less-gridline'
+      else
+        assign size_classes = size_classes | append: ' first-section:h-screen-less-header-group-less-gridline'
+      endif
+    when 'three_quarters_screen'
+      assign size_classes = 'h-[75vh]'
+    when 'two_thirds_screen'
+      assign size_classes = 'h-[66.666667vh]'
+    when 'half_screen'
+      assign size_classes = 'h-[50vh]'
+    when '600px'
+      assign size_classes = 'h-[600px]'
+    when '700px'
+      assign size_classes = 'h-[700px]'
+    when '800px'
+      assign size_classes = 'h-[800px]'
+    when 'full_portrait'
+      assign size_classes = 'aspect-[9/16]'
+    when 'portrait'
+      assign size_classes = 'aspect-[4/5]'
+    when 'square'
+      assign size_classes = 'aspect-square'
+    when 'standard'
+      assign size_classes = 'aspect-[4/3]'
+    when 'widescreen'
+      assign size_classes = 'aspect-[16/9]'
+    when 'cinema'
+      assign size_classes = size_classes | append: ' aspect-[1.85/1]'
+    when 'ultrawide'
+      assign size_classes = size_classes | append: ' aspect-[2.35/1]'
+  endcase
+  if image_size_desktop != blank
+    case image_size_desktop
+      when 'natural'
+        assign size_classes = size_classes | append: ' lg:h-auto lg:aspect-media-desktop'
+      when 'full_screen'
+        assign size_classes = size_classes | append: ' lg:aspect-unset lg:h-screen-less-double-gridline lg:first-section:h-screen-less-header-group-less-gridline'
+      when 'three_quarters_screen'
+        assign size_classes = size_classes | append: ' lg:aspect-unset lg:h-[75vh]'
+      when 'two_thirds_screen'
+        assign size_classes = size_classes | append: ' lg:aspect-unset lg:h-[66.666667vh]'
+      when 'half_screen'
+        assign size_classes = size_classes | append: ' lg:aspect-unset lg:h-[50vh]'
+      when '600px'
+        assign size_classes = size_classes | append: ' lg:aspect-unset lg:h-[600px]'
+      when '700px'
+        assign size_classes = size_classes | append: ' lg:aspect-unset lg:h-[700px]'
+      when '800px'
+        assign size_classes = size_classes | append: ' lg:aspect-unset lg:h-[800px]'
+      when 'standard'
+        assign size_classes = size_classes | append: ' lg:h-auto lg:aspect-[4/3]'
+      when 'widescreen'
+        assign size_classes = size_classes | append: ' lg:h-auto lg:aspect-[16/9]'
+      when 'cinema'
+        assign size_classes = size_classes | append: ' lg:h-auto lg:aspect-[1.85/1]'
+      when 'ultrawide'
+        assign size_classes = size_classes | append: ' lg:h-auto lg:aspect-[2.35/1]'
+    endcase
+  endif
+  echo size_classes
+-%}

@@ -1,0 +1,65 @@
+{%- liquid
+  assign input_id_prefix = 'sort-drop-down'
+
+  if context
+    assign input_id_prefix = input_id_prefix | append: '-' | append: context
+  endif
+-%}
+{%- if show_filters == false -%}
+  <form
+    @submit.prevent="filterFormSubmit"
+    {% if form_id != blank %}
+      id="{{ form_id }}"
+    {% endif %}
+  >
+{%- endif -%}
+<ul class="space-y-1">
+  {%- for option in sort_options -%}
+    <li class="flex items-center justify-start">
+      <input
+        type="radio"
+        class="filter-checkbox custom-input peer sr-only"
+        name="sort_by"
+        value="{{ option.value | escape }}"
+        @input.debounce="filterFormSubmit"
+        id="{{ input_id_prefix }}-{{ option.name | handleize }}-{{ forloop.index }}"
+        {% if option.value == sort_by %}
+          checked
+        {% endif %}
+        {% if form_id != blank %}
+          form="{{ form_id }}"
+        {% endif %}
+      >
+      <label
+        for="{{ input_id_prefix }}-{{ option.name | handleize }}-{{ forloop.index }}"
+        class="flex cursor-pointer items-center hover:text-scheme-accent peer-checked:[&>span:first-child]:bg-current {% if filter_value.count == 0 and filter_value.active == false -%}text-scheme-secondary line-through{%- endif %}{% if settings.filter_labels_uppercase %} uppercase{% else %} capitalize{% endif %}"
+        {% if filter_value.count == 0 and filter_value.active == false -%}
+          disabled
+        {% endif %}
+      >
+        <span
+          class="mr-1 inline-block h-2 w-2 rounded-full border-checkbox border-current"
+        ></span>
+        {{ option.name | escape }}
+      </label>
+    </li>
+  {%- endfor -%}
+</ul>
+{%- if show_filters == false -%}
+  {%- if is_search -%}
+    <input type="hidden" name="q" value="{{ search_terms | escape }}">
+  {%- elsif collection.current_vendor -%}
+    <input
+      type="hidden"
+      name="q"
+      value="{{ collection.current_vendor | escape }}"
+    >
+  {%- elsif collection.current_type -%}
+    <input
+      type="hidden"
+      name="q"
+      value="{{ collection.current_type | escape }}"
+    >
+  {%- endif -%}
+  </form>
+{%- endif -%}

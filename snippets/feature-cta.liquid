@@ -1,0 +1,46 @@
+{% liquid
+  unless top_margin_class
+    assign top_margin_class = 'mt-cta'
+  endunless
+
+  assign font_classes = font
+
+  capture type_scale_classes
+    render 'type-scale-classes', mobile_text_scale: mobile_text_scale, desktop_text_scale: desktop_text_scale
+  endcapture
+
+  assign font_classes = font_classes | append: ' ' | append: type_scale_classes
+%}
+<div class="flex {{ text_align }} {{ desktop_alignment }}">
+  <div class="w-full {{ desktop_width }}">
+    {%- if cta_text != '' -%}
+      <div class="{{ top_margin_class }} text-0">
+        {%- case cta_style -%}
+          {%- when 'link' -%}
+            <a
+              class="theme-link inline-block text-scheme-text hover:text-scheme-accent [&[aria-disabled=true]]:opacity-50 {{ font_classes }}"
+              {% if cta_link != blank %}
+                href="{{ cta_link }}"
+              {% else %}
+                aria-disabled="true"
+              {% endif %}
+            >
+              {{- cta_text -}}
+            </a>
+
+          {%- when 'button' -%}
+            <a
+              {% if cta_link != blank %}
+                href="{{ cta_link }}"
+              {% else %}
+                aria-disabled="true"
+              {% endif %}
+              class="theme-button {% if cta_button_style == 'secondary' %}theme-button--secondary{% endif %} [&[aria-disabled=true]]:opacity-50 {{ font_classes }}"
+            >
+              {{- cta_text -}}
+            </a>
+        {%- endcase -%}
+      </div>
+    {%- endif -%}
+  </div>
+</div>

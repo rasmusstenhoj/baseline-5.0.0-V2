@@ -1,0 +1,43 @@
+{%- liquid
+  unless loading
+    assign loading = null
+  endunless
+
+  unless preload
+    assign preload = false
+  endunless
+
+  assign sizes = '(min-width: 1024px) ' | append: desktop_media_height | append: 'vh, 100vw'
+-%}
+
+<image-with-placeholder
+  data-image-id="{{ image.id }}"
+  class="absolute inset-0 mx-auto my-0 overflow-hidden rounded-grid-media{% if settings.grid_media_style == 'inset' and settings.show_inset_media_border %} border-gridline border-gridline-color{% endif %}"
+  style="--aspect-ratio: {{ image.aspect_ratio }};"
+  {{ wrapper_attributes }}
+>
+  {{
+    image
+    | image_url: width: 2000
+    | image_tag:
+      class: 'peer/image block absolute inset-0 size-full transition-opacity duration-200 ease-in-out',
+      sizes: sizes,
+      tabindex: '-1',
+      loading: loading,
+      preload: preload
+  }}
+  {% unless no_placeholder %}
+    <div
+      class="absolute inset-0 h-full w-full rounded-grid-media bg-scheme-text opacity-[0.05] peer-[.is-complete]/image:opacity-0 no-js:hidden"
+    ></div>
+  {% endunless %}
+  <noscript>
+    <div class="absolute left-0 top-0 h-full w-full">
+      {{
+        image
+        | image_url: width: 2000
+        | image_tag: loading: loading, preload: preload
+      }}
+    </div>
+  </noscript>
+</image-with-placeholder>

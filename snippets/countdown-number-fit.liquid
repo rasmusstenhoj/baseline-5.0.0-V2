@@ -1,0 +1,53 @@
+{%- liquid
+  assign first_digit = display_number | slice: 0, 1
+  assign last_digit = display_number | slice: -1, 1
+
+  if classes
+    assign display_classes = classes
+    assign measure_classes = classes
+  endif
+
+  if measure_classes
+    assign measure_classes = measure_classes
+  endif
+
+  capture measure_unit
+    render 'number-width-measure'
+  endcapture
+
+  assign measure_unit = measure_unit | strip
+-%}
+
+<text-fit class="text-fit">
+  <span
+    ><span
+      {% if display_classes %}
+        class="{{ display_classes }} -mt-[0.0625em]"
+      {% endif %}
+      data-display
+      ><span
+        {% if x_text %}
+          x-text="{{ x_text }}.split('')[0]"
+        {% endif %}
+      >
+        {{- first_digit -}}</span
+      ><span
+        class="tracking-normal"
+        {% if x_text %}
+          x-text="{{ x_text }}.split('')[1]"
+        {% endif %}
+      >
+        {{- last_digit -}}
+      </span>
+    </span></span
+  >
+  <span
+    {% if measure_classes %}
+      class="{{ measure_classes }}"
+    {% endif %}
+    aria-hidden="true"
+  >
+    {{- measure_unit -}}
+    <span class="tracking-normal">{{- measure_unit -}}</span>
+  </span>
+</text-fit>

@@ -1,0 +1,13 @@
+{% comment %} terms and conditions checkbox {% endcomment %}
+
+<div class="accept-box">
+  <input type="checkbox" id="{{ acceptID }}" required aria-label=" Accept terms and conditions">
+  <span class="checkbox-style"></span>
+  <label for="{{ acceptID }}">
+    {{ settings.condition_text | default: "Accept the" }}
+   <a href="{{ shop.url }}/pages/servicevilkar" target="_blank" rel="noopener" style="text-decoration:underline;">
+  {{ settings.TC_button_label | default: "terms and conditions" }}
+</a>
+
+  </label>
+</div>

@@ -1,0 +1,42 @@
+<span id="countdown-timer" class="countdown-timer"></span>
+
+<script>
+  function startCountdown() {
+    const now = new Date();
+    
+    // Set target time to 14:00 CET today
+    let targetTime = new Date();
+    targetTime.setUTCHours(11, 0, 0, 0); // 14:00 CET = 13:00 UTC
+
+    // If the time has already passed today, set it for tomorrow
+    if (now >= targetTime) {
+      targetTime.setUTCDate(targetTime.getUTCDate() + 1);
+    }
+
+    function updateTimer() {
+      const now = new Date();
+      const timeLeft = targetTime - now;
+
+      if (timeLeft <= 0) {
+        // Reset the timer when it reaches 0
+        targetTime.setUTCDate(targetTime.getUTCDate() + 1);
+      }
+
+      const hours = Math.floor((timeLeft / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((timeLeft / (1000 * 60)) % 60);
+      const seconds = Math.floor((timeLeft / 1000) % 60);
+
+      // Update the countdown display
+      document.getElementById("countdown-timer").innerHTML =
+        (hours < 10 ? "0" : "") + hours + " h " +
+        (minutes < 10 ? "0" : "") + minutes + " m " +
+        (seconds < 10 ? "0" : "") + seconds + " s";
+
+      requestAnimationFrame(updateTimer);
+    }
+
+    updateTimer();
+  }
+
+  document.addEventListener("DOMContentLoaded", startCountdown);
+</script>

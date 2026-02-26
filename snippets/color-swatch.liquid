@@ -1,0 +1,61 @@
+{%- liquid
+  assign product_alt_style = ''
+
+  # Find produktets _alt_ tag (f.eks. "_alt_2100-430")
+  for tag in product.tags
+    if tag contains '_alt_'
+      assign product_alt_style = tag
+      break
+    endif
+  endfor
+
+  # Hvis vi har et _alt_ tag, find style-nummeret
+  assign style_number = ''
+  assign enable_swatch = false
+  assign matching_products = ''
+
+  if product_alt_style != ''
+    # Split tagget for at få style-nummeret (f.eks. "2100_430")
+    assign style_parts = product_alt_style | split: '_alt_'
+    assign style_number = style_parts[1]
+
+    # Brug produkttypen til at filtrere søgningen og undgå 50-produkters begrænsning
+    assign product_type_handle = product.type | handleize
+
+    # Gennemgå kun produkter i samme produkttype
+    for alt_product in collections[product_type_handle].products
+      for alt_tag in alt_product.tags
+        if alt_tag contains '_alt_'
+          assign alt_parts = alt_tag | split: '_alt_'
+          assign alt_style_number = alt_parts[1]
+
+          # Hvis style-numrene matcher, tilføj produktet til matching-listen
+          if alt_style_number == style_number
+            assign matching_products = matching_products | append: alt_product.id | append: ','
+          endif
+        endif
+      endfor
+    endfor
+
+    # Aktivér color swatch KUN hvis der er mindst ét andet produkt i listen
+    if matching_products contains ','
+      assign enable_swatch = true
+    endif
+  endif
+-%}
+
+{% if enable_swatch %}
+  <div class="color-swatches">
+   <p class="swatch-label">{{ 'products.product.color_swatch_trigger' | t | downcase | capitalize }}</p>
+    <div class="swatch-container">
+      {%- for alt_product in collections[product_type_handle].products -%}
+        {% if matching_products contains alt_product.id %}
+          <a href="{{ alt_product.url }}" 
+             class="swatch block h-6 w-6 rounded-button {% if alt_product.id == product.id %}current-swatch{% endif %}" 
+             data-image="{{ alt_product.featured_image | image_url: width: 100 }}">
+          </a>
+        {% endif %}
+      {%- endfor -%}
+    </div>
+  </div>
+{% endif %}

@@ -1,0 +1,143 @@
+{% liquid
+  assign show_custom_badges = settings.show_custom_badges
+
+  assign custom_badges_metafield_value = settings.custom_badges_metafield_value
+  if custom_badges_metafield_value != blank
+    assign metafield_namespace = custom_badges_metafield_value | split: '.' | first | strip
+    assign metafield_key = custom_badges_metafield_value | split: '.' | last | strip
+    assign metafield_badges = product.metafields[metafield_namespace][metafield_key]
+  endif
+
+  assign badge_container_classes = 'pointer-events-none absolute bottom-0 left-0 right-0 top-0 z-10 flex flex-wrap'
+  if settings.badge_alignment == 'left'
+    assign badge_container_classes = badge_container_classes | append: ' justify-start'
+  else
+    assign badge_container_classes = badge_container_classes | append: ' justify-end'
+  endif
+
+  assign badge_container_classes = badge_container_classes | append: ' gap-y-1'
+  if settings.badge_bg_color == 'transparent'
+    assign badge_container_classes = badge_container_classes | append: ' gap-x-4'
+  else
+    assign badge_container_classes = badge_container_classes | append: ' gap-x-2'
+  endif
+
+  if settings.grid_media_style == 'fill'
+    assign badge_container_classes = badge_container_classes | append: ' p-section-horizontal-spacing'
+  else
+    assign badge_container_classes = badge_container_classes | append: ' p-media-content'
+  endif
+
+  assign content_alignment = 'content-start'
+  if product_tile_type == 'text_overlay' and settings.title_price_display == 'over_image_top'
+    assign content_alignment = 'content-end'
+  endif
+
+  assign badge_classes = 'h-fit rounded-button'
+  case settings.badges_font
+    when 'body'
+      if settings.badges_uppercase
+        assign badge_classes = badge_classes | append: ' uppercase'
+      endif
+      assign badge_container_classes = badge_container_classes | append: ' ' | append: settings.badges_font_weight
+    when 'heading'
+      assign badge_classes = badge_classes | append: ' font-heading'
+    when 'subheading'
+      assign badge_classes = badge_classes | append: ' font-subheading'
+  endcase
+
+  case settings.badges_scale
+    when -2
+      assign badge_classes = badge_classes | append: ' text-scale-n-2'
+    when -1
+      assign badge_classes = badge_classes | append: ' text-scale-n-1'
+    when 0
+      assign badge_classes = badge_classes | append: ' text-scale-n0'
+  endcase
+
+  if settings.badge_bg_color == 'transparent'
+    assign badge_classes = badge_classes | append: ' p-0'
+  else
+    assign badge_classes = badge_classes | append: ' ' | append: settings.badge_padding
+  endif
+
+  if settings.badge_bg_color == 'accent'
+    assign badge_classes = badge_classes | append: ' bg-scheme-accent text-scheme-accent-contrast'
+  elsif settings.badge_bg_color == 'background'
+    assign badge_classes = badge_classes | append: ' bg-scheme-background text-scheme-text'
+  elsif settings.badge_bg_color == 'text'
+    assign badge_classes = badge_classes | append: ' bg-scheme-text text-scheme-background'
+  else
+    if settings.transparent_badge_text_color == 'accent'
+      assign badge_classes = badge_classes | append: ' bg-transparent text-scheme-accent'
+    elsif settings.transparent_badge_text_color == 'background'
+      assign badge_classes = badge_classes | append: ' bg-transparent text-scheme-background'
+    else
+      assign badge_classes = badge_classes | append: ' bg-transparent text-scheme-text'
+    endif
+  endif
+
+  if settings.button_border_radius != '0' and settings.badge_bg_color != 'transparent'
+    assign badge_span_classes = 'px-0.5'
+  endif
+%}
+
+<div class="{{ badge_container_classes }} {{ content_alignment }}">
+  {%- if show_sold_out_badge and sold_out -%}
+    <div class="{{ badge_classes }}">
+      <span class="{{ badge_span_classes }}">
+        {{- 'products.product.sold_out' | t -}}
+      </span>
+    </div>
+  {%- endif -%}
+
+  {%- if show_sale_badge and on_sale -%}
+    {% liquid
+      assign discount_as_number = product.compare_at_price | minus: product.price
+
+      assign discount_as_number_money = discount_as_number | money_without_trailing_zeros
+      assign discount_as_percentage = 100 | times: discount_as_number | divided_by: product.compare_at_price | round | append: '%'
+
+      if product.price_varies
+        assign discount_as_number_with_tag = 'products.product.discount_tag_on_sale_from' | t: amount: discount_as_number_money
+        assign discount_as_percentage_with_tag = 'products.product.discount_tag_on_sale_from' | t: amount: discount_as_percentage
+      else
+        assign discount_as_number_with_tag = 'products.product.discount_tag' | t: amount: discount_as_number_money
+        assign discount_as_percentage_with_tag = 'products.product.discount_tag' | t: amount: discount_as_percentage
+      endif
+    %}
+
+    <div class="{{ badge_classes }}">
+      <span class="{{ badge_span_classes }}">
+        {% case settings.sale_badge_display %}
+          {% when 'text' %}
+            {{- 'products.product.on_sale' | t -}}
+          {% when 'percentage' %}
+            {{- discount_as_percentage_with_tag -}}
+          {% when 'amount' %}
+            {{- discount_as_number_with_tag -}}
+        {% endcase %}
+      </span>
+    </div>
+  {%- endif -%}
+
+  {%- unless show_custom_badges == 'none' -%}
+    {%- liquid
+      if show_custom_badges == 'metafield' and metafield_badges and metafield_badges.type == 'list.single_line_text_field' and metafield_badges.value.size > 0
+        assign badges = metafield_badges.value
+      elsif show_custom_badges == 'tags' and product.tags
+        assign badges = product.tags
+      endif
+    -%}
+
+    {%- if badges -%}
+      {%- for badge in badges -%}
+        <div class="{{ badge_classes }}">
+          <span class="{{ badge_span_classes }}">
+            {{- badge -}}
+          </span>
+        </div>
+      {%- endfor -%}
+    {%- endif -%}
+  {%- endunless -%}
+</div>

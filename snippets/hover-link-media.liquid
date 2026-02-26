@@ -1,0 +1,68 @@
+{%- liquid
+  unless loading
+    assign loading = 'lazy'
+  endunless
+
+  unless modal_position
+    assign modal_position = 'over'
+  endunless
+
+  if modal
+    if modal_position == 'over'
+      assign modal_position_classes = 'fixed left-1/2 top-1/2 z-30 w-third-screen -translate-x-1/2 -translate-y-1/2'
+    else
+      assign modal_position_classes = 'absolute inset-0 size-full bg-scheme-background -z-[1]'
+      assign sizes = '100vw'
+    endif
+  endif
+
+  assign condition = "isLgBreakpoint() && currentLink === '" | append: handle | append: "'"
+
+  if settings.grid_media_style == 'inset' and settings.media_border_radius > 0
+    assign extra_wrapper_classes = 'shadow-rounded-hover-image'
+  endif
+
+  if settings.grid_media_style == 'inset' and modal_position == 'under'
+    assign wrapper_padding_classes = ' px-section-horizontal-spacing py-section-vertical-spacing'
+    assign media_layout_classes = 'relative h-full w-full'
+  else
+    assign media_layout_classes = 'contents'
+  endif
+
+  assign extra_image_classes = ''
+  if settings.zoom_media_on_hover
+    assign extra_image_classes = 'group-data-[visible=true]/hover-image:scale-[var(--zoom-media-scale)] transition-transform duration-300 ease-zoom'
+  endif
+-%}
+<div
+  class="{% if modal %}pointer-events-none {{ modal_position_classes }} {% endif %}no-js:hidden{{ wrapper_padding_classes }} group/hover-image"
+  x-show="{{ condition }}"
+  x-transition:enter="transition-opacity duration-200"
+  x-transition:enter-start="opacity-0"
+  x-transition:enter-end="opacity-100"
+  x-transition:leave="transition-opacity duration-200"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  style="display: none;"
+  :aria-hidden="{{ condition }}"
+  x-effect="{{ condition }} ? $nextTick(() => { $el.setAttribute('data-visible', 'true') }) : $el.removeAttribute('data-visible');"
+  data-media-for-handle="{{ handle }}"
+>
+  <div class="{{ media_layout_classes }}">
+    {% liquid
+      if modal and modal_position == 'over'
+        if media_type == 'video' and video != blank
+          render 'video', video: video, mode: 'autoplay', container_id: container_id, sizes: 'calc(100vw / 3)', ratio: 'natural', poster_preload: false, poster_loading: loading, is_deep_inset: is_deep_inset
+        elsif media_type == 'image' and image != blank
+          render 'image', image: image, sizes: 'calc(100vw / 3)', preload: false, loading: loading, no_placeholder: true, is_deep_inset: is_deep_inset
+        endif
+      else
+        if media_type == 'video' and video != blank
+          render 'video', video: video, mode: 'autoplay', container_id: container_id, sizes: sizes, ratio: 'natural', fill: true, poster_preload: false, poster_loading: loading, is_deep_inset: is_deep_inset
+        elsif media_type == 'image' and image != blank
+          render 'image-fill', image: image, sizes: sizes, preload: false, loading: loading, no_placeholder: true, is_deep_inset: is_deep_inset, extra_wrapper_classes: extra_wrapper_classes, extra_classes: extra_image_classes
+        endif
+      endif
+    %}
+  </div>
+</div>

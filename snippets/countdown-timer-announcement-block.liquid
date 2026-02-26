@@ -1,0 +1,88 @@
+{%- liquid
+  assign text_before_timer = block.settings.text_before_timer | strip | escape
+  assign text_after_timer = block.settings.text_after_timer | strip | escape
+  assign completion_text = block.settings.completion_text | strip | escape
+
+  if block.settings.labels == 'abbreviated'
+    assign abbreviated_labels = true
+  else
+    assign abbreviated_labels = false
+  endif
+
+  capture timer
+    render 'inline-countdown-timer', in_scrolling_text: in_scrolling_text, sr_title_before: text_before_timer, sr_title: null, sr_title_after: text_after_timer, year: year, month: month, day: day, hour: hour, minute: minute, style: block.settings.style, abbreviated_labels: abbreviated_labels, flash_separators: block.settings.flash_separators, hide_labels_if_only_time: block.settings.hide_labels_if_only_time, minimum_shown_parts: '3', metafield_ns_and_key: null
+  endcapture
+
+  assign countdown_parts_spacing = block.settings.spacing_between_parts
+  assign countdown_parts_separator_type = block.settings.separator_type
+
+  if countdown_parts_spacing != '' and countdown_parts_separator_type == 'symbol'
+    assign countdown_parts_separator_symbol = block.settings.separator
+    assign countdown_parts_separator_repeats = block.settings.separator_repeats
+    assign countdown_parts_separator_spacing = block.settings.spacing_between_repeated_separators
+
+    case countdown_parts_spacing
+      when 'gap-1 lg:gap-2'
+        assign countdown_parts_half_gap = 'px-0.5 lg:px-1'
+      when 'gap-2 lg:gap-4'
+        assign countdown_parts_half_gap = 'px-1 lg:px-2'
+      when 'gap-4 lg:gap-8'
+        assign countdown_parts_half_gap = 'px-2 lg:px-4'
+    endcase
+  endif
+-%}
+
+{%- if countdown_parts_spacing != ''
+  and countdown_parts_separator_type == 'symbol'
+-%}
+  {%- # white-space: normal -%}
+  {%- capture countdown_parts_separator -%}
+    <span class="{{ countdown_parts_half_gap }}">
+      {%- for _ in (1..countdown_parts_separator_repeats) -%}
+        {{- countdown_parts_separator_symbol -}}
+
+        {%- unless forloop.last -%}
+          {{- countdown_parts_separator_spacing -}}
+        {%- endunless -%}
+      {%- endfor -%}
+    </span>
+  {%- endcapture -%}
+{%- endif -%}
+
+{%- if completion_text != blank -%}
+  <span
+    class="[&:has(.already-happened)_>_:not([data-completion-message])]:hidden [&:has(.already-happened)_>_[data-completion-message]]:inline"
+  >
+{%- endif -%}
+
+<span
+  {% if countdown_parts_spacing != '' %}
+    class="inline-flex {{ countdown_parts_spacing }}"
+  {% endif %}
+>
+  {%- if text_before_timer != blank -%}
+    {{- text_before_timer -}}
+  {%- endif -%}
+
+  {%- if timer != blank -%}
+    {%- if spacing_between_parts == '' -%}
+      <span class="whitespace-pre">&#32;</span>
+    {%- endif -%}
+
+    {{- timer | prepend: countdown_parts_separator -}}
+  {%- endif -%}
+
+  {%- if text_after_timer != blank -%}
+    {%- if spacing_between_parts == '' -%}
+      <span class="whitespace-pre">&#32;</span>
+    {%- endif -%}
+
+    {{- text_after_timer | prepend: countdown_parts_separator -}}
+  {%- endif -%}
+</span>
+
+{%- if completion_text != blank -%}
+  <span class="hidden" data-completion-message>
+    {{- completion_text -}}</span
+  ></span>
+{%- endif -%}

@@ -1,0 +1,57 @@
+{%- liquid
+  case desktop_width
+    when 'two_thirds'
+      assign desktop_width = 'lg:w-3/4'
+    when 'half'
+      assign desktop_width = 'lg:w-1/2'
+    else
+      assign desktop_width = 'lg:w-full'
+  endcase
+
+  case desktop_alignment
+    when 'left'
+      assign desktop_alignment = 'justify-start'
+    when 'right'
+      assign desktop_alignment = 'justify-end'
+    else
+      assign desktop_alignment = 'justify-center'
+  endcase
+-%}
+
+<div class="flex {{ text_align }} {{ desktop_alignment }}">
+  <div class="w-full {{ desktop_width }}">
+    {%- if subheading != blank -%}
+      <div class="{% if settings.double_subheading_spacing %}mb-4{% else %}mb-2{% endif %}">
+        <span class="font-subheading text-subheading {% render 'subheading-symbol-classes' %}">
+          {{ subheading | strip }}
+        </span>
+      </div>
+    {%- endif -%}
+
+    <div class="rte {{ font }} {% render 'type-scale-classes', mobile_text_scale: mobile_text_scale, desktop_text_scale: desktop_text_scale %} break-word">
+      {{ text }}
+    </div>
+
+    {%- if cta_link != blank and cta_text != '' -%}
+      <div class="mt-cta text-0">
+        {%- case cta_style -%}
+          {%- when 'link' -%}
+            <a
+              class="theme-link inline-block text-scheme-text hover:text-scheme-accent"
+              href="{{ cta_link }}"
+            >
+              {{- cta_text -}}
+            </a>
+
+          {%- when 'button' -%}
+            <a
+              href="{{ cta_link }}"
+              class="theme-button {% if cta_button_style == 'secondary' %}theme-button--secondary{% endif %}"
+            >
+              {{- cta_text -}}
+            </a>
+        {%- endcase -%}
+      </div>
+    {%- endif -%}
+  </div>
+</div>

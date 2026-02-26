@@ -1,0 +1,17 @@
+{%- liquid
+  assign body_classes = ''
+
+  if settings.fade_in_media_on_load
+    assign body_classes = body_classes | append: 'fade-in-media-enabled'
+  endif
+
+  if settings.slideshow_pagination_style != 'dots'
+    assign body_classes = body_classes | append: ' slideshow-pagination-style--counter slideshow-pagination-active-page-style--' | append: settings.slideshow_pagination_active_page_style
+
+    if settings.slideshow_pagination_style == 'decimal' or settings.slideshow_pagination_style contains '-alpha'
+      assign body_classes = body_classes | append: ' slideshow-pagination-counter-style--grid'
+    endif
+  endif
+
+  echo body_classes | split: ' ' | join: ' '
+-%}

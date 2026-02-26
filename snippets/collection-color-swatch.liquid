@@ -1,0 +1,71 @@
+{%- liquid
+  assign product_alt_style = ''
+  # Find produktets *alt* tag (f.eks. "_alt_2100-430")
+  for tag in product.tags
+    if tag contains '_alt_'
+      assign product_alt_style = tag
+      break
+    endif
+  endfor
+  
+  # Hvis vi har et *alt* tag, find style-nummeret
+  assign style_number = ''
+  assign enable_swatch = false
+  assign matching_products = ''
+  assign unique_product_count = 0
+  assign max_swatches = 8
+  
+  if product_alt_style != ''
+    # Split tagget for at få style-nummeret
+    assign style_parts = product_alt_style | split: '_alt_'
+    assign style_number = style_parts[1]
+    assign product_type_handle = product.type | handleize
+    
+    # Gennemgå kun produkter i samme produkttype
+    for alt_product in collections[product_type_handle].products
+      for alt_tag in alt_product.tags
+        if alt_tag contains '_alt_'
+          assign alt_parts = alt_tag | split: '_alt_'
+          assign alt_style_number = alt_parts[1]
+          
+          # Hvis style-numrene matcher, tilføj produktet til matching-listen
+          if alt_style_number == style_number
+            assign matching_products = matching_products | append: alt_product.id | append: ','
+            assign unique_product_count = unique_product_count | plus: 1
+          endif
+        endif
+      endfor
+    endfor
+    
+    # Aktivér color swatch KUN hvis der er mere end ét produkt i listen (dvs. mindst ét alternativ)
+    if unique_product_count > 1
+      assign enable_swatch = true
+    endif
+  endif
+-%}
+
+{% if enable_swatch %}
+  <div class="collection-color-swatches">
+    <div class="swatch-container">
+      {% assign swatch_count = 0 %}
+      {%- for alt_product in collections[product_type_handle].products -%}
+        {% if matching_products contains alt_product.id and swatch_count < max_swatches %}
+          <div 
+            class="swatch collection-swatch h-6 w-6 rounded-button border border-transparent cursor-pointer {% if alt_product.id == product.id %}current-swatch border-current{% endif %}" 
+            data-product-id="{{ alt_product.id }}"
+            data-product-url="{{ alt_product.url }}"
+            data-product-image="{{ alt_product.featured_image | image_url: width: 600 }}"
+            data-swatch-image="{{ alt_product.featured_image | image_url: width: 100 }}">
+          </div>
+          {% assign swatch_count = swatch_count | plus: 1 %}
+        {% endif %}
+      {%- endfor -%}
+      
+      {% if unique_product_count > max_swatches %}
+        <div class="swatch-more-indicator product-title-style">
+          +{{ unique_product_count | minus: max_swatches }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}

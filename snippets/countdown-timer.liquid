@@ -1,0 +1,327 @@
+{%- liquid
+  assign parts = 'years,months,days,hours,minutes,seconds'
+  assign parts_array = parts | split: ','
+
+  if product
+    assign metafield_resource = product
+  elsif collection
+    assign metafield_resource = collection
+  elsif blog
+    assign metafield_resource = blog
+  elsif article
+    assign metafield_resource = article
+  elsif page
+    assign metafield_resource = page
+  endif
+
+  if metafield_ns_and_key != blank and metafield_resource
+    assign metafield_is_blank = false
+
+    assign metafield_ns_and_key_parts = metafield_ns_and_key | split: '.'
+    assign metafield_namespace = metafield_ns_and_key_parts | first
+    assign metafield_key = metafield_ns_and_key_parts | last
+
+    assign metafield = metafield_resource.metafields[metafield_namespace][metafield_key]
+
+    if metafield.type == 'date_time' and metafield.value != blank
+      assign year = metafield.value | date: '%Y'
+      assign month = metafield.value | date: '%m'
+      assign day = metafield.value | date: '%d'
+      assign hour = metafield.value | date: '%H'
+      assign minute = metafield.value | date: '%M'
+    else
+      assign metafield_is_blank = true
+    endif
+  endif
+
+  assign already_happened = false
+
+  assign invalid_year_error = false
+
+  assign year = year | plus: 0
+
+  assign current_year = 'now' | date: '%Y' | plus: 0
+
+  if year < current_year or year >= 9999
+    assign invalid_year_error = true
+  endif
+
+  assign target_date = year | append: '-' | append: month | append: '-' | append: day | append: 'T' | append: hour | append: ':' | append: minute | append: ' '
+
+  assign not_a_leap_year_error = false
+
+  if month == '02' and day == '29'
+    assign parsed_day = target_date | date: '%-d' | plus: 0
+    if parsed_day != 29
+      assign not_a_leap_year_error = true
+    endif
+  endif
+
+  capture date_diff
+    render 'date-diff', target_date: target_date
+  endcapture
+
+  if date_diff == '0:0:0:0:0:0'
+    assign already_happened = true
+  endif
+
+  assign date_diff_array = date_diff | split: ':'
+
+  assign years_diff = date_diff_array[0] | plus: 0
+  assign months_diff = date_diff_array[1] | plus: 0
+  assign days_diff = date_diff_array[2] | plus: 0
+  assign hours_diff = date_diff_array[3] | plus: 0
+  assign minutes_diff = date_diff_array[4] | plus: 0
+
+  assign padded_years_diff = years_diff | prepend: '0' | slice: -2, 2
+  assign padded_months_diff = months_diff | prepend: '0' | slice: -2, 2
+  assign padded_days_diff = days_diff | prepend: '0' | slice: -2, 2
+  assign padded_hours_diff = hours_diff | prepend: '0' | slice: -2, 2
+  assign padded_minutes_diff = minutes_diff | prepend: '0' | slice: -2, 2
+
+  assign show_years = false
+  assign show_months = false
+  assign show_days = false
+  assign show_hours = false
+  assign show_minutes = false
+
+  assign minimum_shown_parts = minimum_shown_parts | plus: 0
+
+  if years_diff > 0 or minimum_shown_parts == 6
+    assign show_years = true
+  endif
+
+  if months_diff > 0 or show_years == true or minimum_shown_parts >= 5
+    assign show_months = true
+  endif
+
+  if days_diff > 0 or show_months == true or minimum_shown_parts >= 4
+    assign show_days = true
+  endif
+
+  if hours_diff > 0 or show_days == true or minimum_shown_parts >= 3
+    assign show_hours = true
+  endif
+
+  if minutes_diff > 0 or show_hours == true or minimum_shown_parts >= 2
+    assign show_minutes = true
+  endif
+
+  assign total_initial_date_parts = 6
+
+  unless show_years
+    assign total_initial_date_parts = total_initial_date_parts | minus: 1
+  endunless
+
+  unless show_months
+    assign total_initial_date_parts = total_initial_date_parts | minus: 1
+  endunless
+
+  unless show_days
+    assign total_initial_date_parts = total_initial_date_parts | minus: 1
+  endunless
+
+  unless show_hours
+    assign total_initial_date_parts = total_initial_date_parts | minus: 1
+  endunless
+
+  unless show_minutes
+    assign total_initial_date_parts = total_initial_date_parts | minus: 1
+  endunless
+
+  assign font = font | append: ' leading-none'
+
+  assign caption_class = 'font-body text-xs @[24rem]:text-sm'
+
+  if total_initial_date_parts > 5
+    assign caption_class = caption_class | append: ' @[48rem]:text-base'
+  else
+    assign caption_class = caption_class | append: ' @[36rem]:text-base'
+  endif
+
+  assign abbreviate_caption = false
+
+  if total_initial_date_parts > 4
+    assign abbreviate_caption = true
+  endif
+
+  # `no_background` cannot be used with grid layout
+  unless no_background
+    assign background_class = 'bg-scheme-background'
+  else
+    assign background_class = 'bg-scheme-background/0'
+  endunless
+-%}
+
+<data-island
+  x-data="
+    CountdownTimer(
+      {
+        dateTime: {
+          year: '{{ year }}',
+          month: '{{ month }}',
+          day: '{{ day }}',
+          hour: '{{ hour }}',
+          minute: '{{ minute }}',
+          timeZone: '{{ target_date | date: '%:z' }}',
+        },
+        {% comment %}
+          `show*` arguments only affect the initial state, to help
+          avoid CLS. These values are updated in JS as the timer is updated.
+        {% endcomment %}
+        showYears: {{ show_years }},
+        showMonths: {{ show_months }},
+        showDays: {{ show_days }},
+        showHours: {{ show_hours }},
+        showMinutes: {{ show_minutes }},
+        minimumShownParts: {{ minimum_shown_parts }},
+        srTitle: {{ sr_title | json | escape }},
+      }
+    )
+  "
+  {% if style == 'timer' and flash_separators %}
+    style="--number-padding: {{ number_padding }}; --separator-opacity: 0;"
+    :style="{ '--separator-opacity' : separatorOn ? '1' : '0' }"
+  {% else %}
+    style="--number-padding: {{ number_padding }};"
+  {% endif %}
+  {% if metafield_is_blank %}
+    data-metafield-is-blank
+  {% endif %}
+  class="{% if already_happened %}already-happened {% endif %} overflow-hidden @container"
+  :class="{ 'already-happened' : alreadyHappened }"
+  :data-hidden-due-to-error="hidden"
+>
+  {% if request.design_mode %}
+    {% if invalid_year_error or not_a_leap_year_error -%}
+      <template x-teleport="#{{ section.id }}-error-message">
+        <div class="border-b-gridline border-gridline-color">
+          <div
+            class="place-content-center m-5 grid border-text border-scheme-accent p-5 text-sm lg:text-base"
+          >
+            <h3 class="font-heading break-word mb-4 text-heading-secondary">
+              {{ 'sections.countdown_timer.error_heading' | t }}
+            </h3>
+            <div class="space-y-4">
+              {% if invalid_year_error %}
+                <p>
+                  {{
+                    'sections.countdown_timer.invalid_year_html'
+                    | t: year: year
+                  }}
+                </p>
+              {% endif %}
+              {% if not_a_leap_year_error %}
+                <p>
+                  {{
+                    'sections.countdown_timer.not_a_leap_year_html'
+                    | t: year: year
+                  }}
+                </p>
+              {% endif %}
+              <p>
+                {{ 'sections.countdown_timer.design_mode_only' | t }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </template>
+    {% endif %}
+  {% endif %}
+  <div class="sr-only" x-html="screenReaderText"></div>
+  <div
+    class="relative grid grid-cols-auto gap-gridline tabular-nums [--max-font-size:_20rem]{% unless style == 'grid' %} {{ background_class }} -mx-[--number-padding]{% else %} bg-gridline-color{% endunless %}"
+    aria-hidden="true"
+  >
+    {% for part in parts_array %}
+      {%- liquid
+        assign start_hidden = false
+
+        if part == 'years' and show_years == false
+          assign start_hidden = true
+        elsif part == 'months' and show_months == false
+          assign start_hidden = true
+        elsif part == 'days' and show_days == false
+          assign start_hidden = true
+        elsif part == 'hours' and show_hours == false
+          assign start_hidden = true
+        elsif part == 'minutes' and show_minutes == false
+          assign start_hidden = true
+        endif
+
+        case part
+          when 'years'
+            assign text = padded_years_diff
+          when 'months'
+            assign text = padded_months_diff
+          when 'days'
+            assign text = padded_days_diff
+          when 'hours'
+            assign text = padded_hours_diff
+          when 'minutes'
+            assign text = padded_minutes_diff
+          when 'seconds'
+            assign text = '--'
+        endcase
+      -%}
+      <div
+        class="relative {{ background_class }} pt-section-vertical-spacing-half text-center md:pt-section-vertical-spacing px-[--number-padding]{% if style == 'timer' %}{% unless forloop.last %} has-separator{% endunless %}{% endif %}"
+        x-show="show['{{ part }}']"
+        {% if start_hidden %}
+          style="display: none;"
+        {% endif %}
+      >
+        {%- render 'countdown-number-fit',
+          display_number: text,
+          classes: font,
+          x_text: part
+        -%}
+      </div>
+    {% endfor %}
+  </div>
+  <div
+    class="grid grid-cols-auto gap-gridline text-center {% unless style == 'grid' %} {{ background_class }} -mx-[--number-padding]{% else %} bg-gridline-color{% endunless %} {% if settings.body_copy_uppercase %}uppercase{% endif %}"
+    aria-hidden="true"
+  >
+    {% for part in parts_array %}
+      {% liquid
+        assign start_hidden = false
+
+        if part == 'years' and show_years == false
+          assign start_hidden = true
+        elsif part == 'months' and show_months == false
+          assign start_hidden = true
+        elsif part == 'days' and show_days == false
+          assign start_hidden = true
+        elsif part == 'hours' and show_hours == false
+          assign start_hidden = true
+        elsif part == 'minutes' and show_minutes == false
+          assign start_hidden = true
+        endif
+
+        assign t_key = 'general.date_time_parts.' | append: part
+        assign abbreviation_t_key = 'general.date_time_parts.' | append: part | append: '_abbreviated'
+      %}
+      <div
+        class="{{ background_class }} pb-section-vertical-spacing-half text-center md:pb-section-vertical-spacing {{ caption_class }}"
+        x-show="show['{{ part }}']"
+        {% if start_hidden %}
+          style="display: none;"
+        {% endif %}
+      >
+        <span
+          class="{% if abbreviate_caption %}@[36rem]:hidden{% else %}hidden{% endif %}"
+          :class="{ '@[36rem]:hidden' : shownParts > 4, 'hidden': shownParts <= 4}"
+        >
+          {{- abbreviation_t_key | t: count: 2 -}}</span
+        ><span
+          class="{% if abbreviate_caption %}hidden @[36rem]:inline{% endif %}"
+          :class="{ 'hidden @[36rem]:inline' : shownParts > 4 }"
+          x-text="getPluralizedString(theme.strings.dateTimeParts.{{ part }},  {{ part }})"
+        >
+          {{- t_key | t: count: 2 -}}
+        </span>
+      </div>
+    {% endfor %}
+  </div>
+</data-island>

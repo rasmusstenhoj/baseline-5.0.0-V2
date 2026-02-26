@@ -1,0 +1,41 @@
+{%- liquid
+  unless modal_position
+    assign modal_position = 'over'
+  endunless
+
+  if modal
+    if modal_position == 'over'
+      assign modal_position_classes = 'fixed left-1/2 top-1/2 z-30 w-third-screen -translate-x-1/2 -translate-y-1/2'
+    else
+      assign modal_position_classes = 'absolute inset-0 size-full -z-[1]'
+    endif
+  endif
+
+  assign condition = "isLgBreakpoint() && currentLink === 'placeholder'"
+
+  if settings.grid_media_style == 'inset'
+    assign container_padding_classes = ' px-section-horizontal-spacing py-section-vertical-spacing'
+  endif
+-%}
+<div
+  class="{% if modal %}pointer-events-none {{ modal_position_classes }}{% endif %} no-js:hidden{{ container_padding_classes }}"
+  x-show="{{ condition }}"
+  {% if modal_position == 'over' %}
+    x-transition:enter="transition-opacity duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition-opacity duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+  {% endif %}
+  style="display: none;"
+  :aria-hidden="{{ condition }}"
+>
+  <div class="relative {% if modal_position == 'over' %}w-full{% else %}h-full{% endif %}">
+    {% if modal_position == 'over' %}
+      {% render 'image-crop-placeholder', ratio: 1 %}
+    {% else %}
+      {% render 'image-fill-placeholder' %}
+    {% endif %}
+  </div>
+</div>

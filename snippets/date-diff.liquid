@@ -1,0 +1,88 @@
+{%- liquid
+  comment
+    warning: `'now' | date` in Liquid is not very precise due to caching, this snippet should only be used to prevent CLS
+  endcomment
+
+  assign already_happened = false
+
+  assign target_year = target_date | date: '%Y' | plus: 0
+  assign current_year = 'now' | date: '%Y' | plus: 0
+  assign years_diff = target_year | minus: current_year
+
+  assign target_month = target_date | date: '%-m' | plus: 0
+  assign current_month = 'now' | date: '%-m' | plus: 0
+  assign months_diff = target_month | minus: current_month
+
+  assign target_day = target_date | date: '%-d' | plus: 0
+  assign current_day = 'now' | date: '%-d' | plus: 0
+  assign days_diff = target_day | minus: current_day
+
+  assign target_hour = target_date | date: '%H' | plus: 0
+  assign current_hour = 'now' | date: '%H' | plus: 0
+  assign hours_diff = target_hour | minus: current_hour
+
+  assign target_minute = target_date | date: '%M' | plus: 0
+  assign current_minute = 'now' | date: '%M' | plus: 0
+  assign minutes_diff = target_minute | minus: current_minute
+
+  assign target_second = target_date | date: '%S' | plus: 0
+  assign current_second = 'now' | date: '%S' | plus: 0
+  assign seconds_diff = target_second | minus: current_second
+
+  if seconds_diff < 0
+    assign seconds_diff = seconds_diff | plus: 60
+    assign minutes_diff = minutes_diff | minus: 1
+  endif
+
+  if minutes_diff < 0
+    assign minutes_diff = minutes_diff | plus: 60
+    assign hours_diff = hours_diff | minus: 1
+  endif
+
+  if hours_diff < 0
+    assign hours_diff = hours_diff | plus: 24
+    assign days_diff = days_diff | minus: 1
+  endif
+
+  if days_diff < 0
+    assign previous_month = target_month | minus: 1
+    assign last_day_of_previous_month = 28
+
+    for i in (0..3)
+      assign test_day = 28 | plus: forloop.index0
+      assign month_check = target_year | append: '-' | append: previous_month | append: '-' | append: test_day | date: '%m' | plus: 0
+
+      if month_check == previous_month
+        assign last_day_of_previous_month = test_day
+      endif
+    endfor
+
+    assign days_diff = days_diff | plus: last_day_of_previous_month
+    assign months_diff = months_diff | minus: 1
+  endif
+
+  if months_diff < 0
+    assign months_diff = months_diff | plus: 12
+    assign years_diff = years_diff | minus: 1
+  endif
+
+  if years_diff < 0
+    assign already_happened = true
+  endif
+-%}
+
+{%- unless already_happened -%}
+  {{- years_diff -}}
+  :
+  {{- months_diff -}}
+  :
+  {{- days_diff -}}
+  :
+  {{- hours_diff -}}
+  :
+  {{- minutes_diff -}}
+  :
+  {{- seconds_diff -}}
+{%- else -%}
+  0:0:0:0:0:0
+{%- endunless -%}
