@@ -449,28 +449,11 @@
           aria-controls="menu{{ counter }}"
         >
           <span class="inline-block pr-1">{{ link.title }}</span>
-          {%- if settings.accordion_icon == 'caret' -%}
-            <span
-              class="rotate mr-1 inline-block h-3 w-3 origin-center transform align-middle transition"
-              :class="{ 'rotate-180' : expanded }"
-            >
-              {%- render 'icon-chevron-down' -%}
-            </span>
-          {%- else -%}
-            <span
-              class="mr-1 inline-block h-3 w-3 origin-center align-middle"
-              x-show="!expanded"
-            >
-              {%- render 'icon-plus' -%}
-            </span>
-            <span
-              class="mr-1 inline-block h-3 w-3 origin-center align-middle"
-              x-show="expanded"
-              style="display: none;"
-            >
-              {%- render 'icon-minus' -%}
-            </span>
-          {%- endif -%}
+          <span class="nav-expand-indicator inline-flex items-center leading-none" aria-hidden="true">
+            <span class="nav-expand-paren">(</span>
+            <span x-text="expanded ? '−' : '+'">+</span>
+            <span class="nav-expand-paren">)</span>
+          </span>
         </button>
         <div
           id="menu{{ counter }}"

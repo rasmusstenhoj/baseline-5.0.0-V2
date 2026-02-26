@@ -295,6 +295,15 @@
   {% endstyle %}
 {% endif %}
 
+{% style %}
+  .nav-expand-paren {
+    visibility: hidden;
+  }
+  .nav-expand-indicator:hover .nav-expand-paren {
+    visibility: visible;
+  }
+{% endstyle %}
+
 <data-island
   x-data="Header"
   class="block{% if overlay_header %} absolute top-0 left-0 right-0 z-50{% endif %}"
