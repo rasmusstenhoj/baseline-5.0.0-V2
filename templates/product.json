@@ -81,6 +81,10 @@
             "hide_option_labels": false,
             "hide_sold_out_variants": false,
             "hide_unavailable_variants": false,
+            "label_font": "font-body",
+            "label_text_size": "text-base",
+            "values_font": "font-heading",
+            "values_text_size": "text-subheading",
             "space_above": 2
           }
         },
