@@ -11,6 +11,10 @@
   @param {boolean} [preselect_variant] - Whether to preselect the first available variant (default: false)
   @param {boolean} [hide_sold_out_variants] - Whether to hide sold out variant options (default: false)
   @param {boolean} [hide_unavailable_variants] - Whether to hide unavailable variant options (default: false)
+  @param {string} [label_font] - Font class for option labels (default: none/inherited)
+  @param {string} [label_text_size] - Text size class for option labels (default: none/inherited)
+  @param {string} [values_font] - Font class for option values (default: none/inherited)
+  @param {string} [values_text_size] - Text size class for option values (default: none/inherited)
 
   @example
   {% render 'product-form-component-variant-picker',
@@ -176,7 +180,7 @@
         >
           {%- if option_style == 'drop_down' -%}
             <label
-              class="{{ label_class }} {{ label_padding }}"
+              class="{{ label_class }} {{ label_padding }} {{ label_font }} {{ label_text_size }}"
               id="{{ id_base }}-option{{ option.position }}"
             >
               {% if preselect_variant %}
@@ -190,7 +194,7 @@
               {% endif %}
             </label>
           {%- else -%}
-            <legend class="{{ label_class }} {{ label_padding }}">
+            <legend class="{{ label_class }} {{ label_padding }} {{ label_font }} {{ label_text_size }}">
               {% if preselect_variant %}
                 {{ option.name }}:
               {% else %}
@@ -215,7 +219,7 @@
           {%- case option_style -%}
             {%- when 'radio', 'text_underline', 'buttons' -%}
               <div
-                class="{{ option_wrapper_classes }}"
+                class="{{ option_wrapper_classes }} {{ values_font }} {{ values_text_size }}"
                 id="{{ id_base }}-option{{ option.position }}"
               >
                 {% for value in option.values %}
@@ -352,7 +356,7 @@
                   style="display: none;"
                 >
                   <div
-                    class="flex w-full min-w-[theme(spacing.16)] flex-col gap-[--text-border-width] sm:w-auto"
+                    class="flex w-full min-w-[theme(spacing.16)] flex-col gap-[--text-border-width] sm:w-auto {{ values_font }} {{ values_text_size }}"
                     role="listbox"
                     @keydown.right.prevent.stop="$focus.wrap().next()"
                     @keydown.down.prevent.stop="$focus.wrap().next()"
