@@ -1,1 +1,78 @@
-{"type":"header","name":"Header","sections":{"announcement-bar":{"type":"announcement-bar","blocks":{"text_zYwbbF":{"type":"text","settings":{"text":"YEAR OF THE HORSE ONLINE EXCLUSIVE DROP - LIVE NOW"}}},"block_order":["text_zYwbbF"],"settings":{"home_page_only":false,"hide_on_mobile":false,"uppercase":true,"link":"shopify:\/\/pages\/year-of-the-horse-drop","display":"scrolling-text","speed":120,"direction":"normal","repeat_text":true,"spacing_between_repeated_text":"gap-4 lg:gap-8","separator_type":"gap","separator":"&mdash;","separator_repeats":1,"spacing_between_repeated_separators":"","inline_link_text":"Button label","button_style":"secondary","color_scheme":"scheme-cdced931-71b0-411c-922d-28415875c494"}},"header":{"type":"header","settings":{"logo_max_width":180,"logo_max_width_mobile":120,"menu":"hovedmenu-baseline-giftguidedk","layout":"logo_left_menu_left","header_vertical_spacing":"py-4","show_search":true,"sticky_header":true,"show_icons":true,"show_collection_count":false,"show_current_page_indicator":false,"dropdown_heading_font":"font-heading","dropdown_text_align":"text-left","dropdown_style":"grid","show_all_navigation_links":true,"show_top_level_menu_link_dropdown":false,"show_collection_count_dropdown":false,"show_locale_selector":false,"show_country_selector":true,"color_scheme":"scheme-a8e638e6-366e-4670-8fd6-073410c0890c","overlay_homepage":false,"overlay_text_color_scheme":"scheme3","overlay_logo":"shopify:\/\/shop_images\/aeaeae.svg"}}},"order":["announcement-bar","header"]}
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "type": "header",
+  "name": "Header",
+  "sections": {
+    "announcement-bar": {
+      "type": "announcement-bar",
+      "blocks": {
+        "text_zYwbbF": {
+          "type": "text",
+          "settings": {
+            "text": "YEAR OF THE HORSE ONLINE EXCLUSIVE DROP - LIVE NOW"
+          }
+        }
+      },
+      "block_order": [
+        "text_zYwbbF"
+      ],
+      "settings": {
+        "home_page_only": false,
+        "hide_on_mobile": false,
+        "uppercase": true,
+        "link": "shopify://pages/year-of-the-horse-drop",
+        "display": "scrolling-text",
+        "speed": 120,
+        "direction": "normal",
+        "repeat_text": true,
+        "spacing_between_repeated_text": "gap-4 lg:gap-8",
+        "separator_type": "gap",
+        "separator": "&mdash;",
+        "separator_repeats": 1,
+        "spacing_between_repeated_separators": "",
+        "inline_link_text": "Button label",
+        "button_style": "secondary",
+        "color_scheme": "scheme-a8e638e6-366e-4670-8fd6-073410c0890c"
+      }
+    },
+    "header": {
+      "type": "header",
+      "settings": {
+        "logo_max_width": 140,
+        "logo_max_width_mobile": 120,
+        "menu": "hovedmenu-baseline-giftguidedk",
+        "layout": "logo_left_menu_left",
+        "header_vertical_spacing": "py-2",
+        "show_search": true,
+        "sticky_header": true,
+        "show_icons": true,
+        "show_collection_count": false,
+        "show_current_page_indicator": false,
+        "dropdown_heading_font": "font-heading",
+        "dropdown_text_align": "text-left",
+        "dropdown_style": "grid",
+        "show_all_navigation_links": true,
+        "show_top_level_menu_link_dropdown": false,
+        "show_collection_count_dropdown": false,
+        "show_locale_selector": false,
+        "show_country_selector": true,
+        "color_scheme": "scheme-a8e638e6-366e-4670-8fd6-073410c0890c",
+        "overlay_homepage": false,
+        "overlay_text_color_scheme": "scheme3",
+        "overlay_logo": "shopify://shop_images/aeaeae.svg"
+      }
+    }
+  },
+  "order": [
+    "announcement-bar",
+    "header"
+  ]
+}
