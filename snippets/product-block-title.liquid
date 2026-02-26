@@ -4,10 +4,13 @@
   else
     assign tag = 'h2'
   endif
+
+  assign title_font = block.settings.font | default: 'font-heading'
+  assign title_text_size = block.settings.text_size | default: 'text-heading-feature'
 %}
 
 <{{ tag }}
-  class="product-title-block font-heading break-word text-heading-feature"
+  class="product-title-block {{ title_font }} break-word {{ title_text_size }}"
   data-product-title
 >
   {%- if wrap_with_link -%}
