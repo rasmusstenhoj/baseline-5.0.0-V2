@@ -40,7 +40,9 @@
         "spacing_between_repeated_separators": "",
         "inline_link_text": "Button label",
         "button_style": "secondary",
-        "color_scheme": "scheme-a8e638e6-366e-4670-8fd6-073410c0890c"
+        "color_scheme": "scheme-a8e638e6-366e-4670-8fd6-073410c0890c",
+        "show_bottom_border": true,
+        "bottom_border_width": 1
       }
     },
     "header": {
@@ -56,6 +58,9 @@
         "show_icons": true,
         "show_collection_count": false,
         "show_current_page_indicator": false,
+        "nav_font": "font-heading",
+        "nav_text_size": "default",
+        "nav_uppercase_override": "default",
         "dropdown_heading_font": "font-heading",
         "dropdown_text_align": "text-left",
         "dropdown_style": "grid",
