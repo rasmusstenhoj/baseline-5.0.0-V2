@@ -823,6 +823,10 @@
               "label": "Text with underline"
             },
             {
+              "value": "parentheses",
+              "label": "Parentheses"
+            },
+            {
               "value": "radio",
               "label": "Radio"
             },
@@ -853,7 +857,7 @@
           "default": false
         },
         {
-          "visible_if": "{{ block.settings.option_style == 'text_underline' }}",
+          "visible_if": "{{ block.settings.option_style == 'text_underline' or block.settings.option_style == 'parentheses' }}",
           "type": "checkbox",
           "id": "spread_options",
           "label": "Spread options",
